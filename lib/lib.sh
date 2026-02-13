@@ -515,7 +515,11 @@ download_release_asset() {
   if [ $curl_exit_code -ne 0 ]; then
     error "Failed to download asset (curl exit code: $curl_exit_code)"
     error "Asset URL: $asset_url"
-    error "Make sure your GitHub token has 'repo' scope access to $repo"
+    if [ -n "$token" ]; then
+      error "Make sure your GitHub token has 'repo' scope access to $repo"
+    else
+      error "If this is a private repository, provide a GitHub token with 'repo' scope"
+    fi
     return 1
   fi
 

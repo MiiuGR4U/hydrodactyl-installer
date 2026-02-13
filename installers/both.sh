@@ -166,7 +166,8 @@ install_panel_dependencies() {
 install_panel_release() {
   print_flame "Downloading Panel Release"
 
-  if [ -z "$GITHUB_TOKEN" ]; then
+  # Only require token for private repos
+  if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -z "$GITHUB_TOKEN" ]; then
     error "GitHub token is required to download the panel from the private repository."
     error "Please provide a token using --github-token or set the GITHUB_TOKEN environment variable."
     exit 1
@@ -174,12 +175,19 @@ install_panel_release() {
 
   output "Fetching latest release from ${PANEL_REPO}..."
 
+  # Build curl headers based on whether we have a token
+  local curl_headers=(
+    "--header" "Accept: application/vnd.github+json"
+    "--header" "X-GitHub-Api-Version: 2022-11-28"
+  )
+  
+  if [ -n "$GITHUB_TOKEN" ]; then
+    curl_headers+=("--header" "Authorization: Bearer $GITHUB_TOKEN")
+  fi
+
   # Get the latest release info from GitHub API
   local release_data
-  release_data=$(curl -sS \
-    --header "Accept: application/vnd.github+json" \
-    --header "Authorization: Bearer $GITHUB_TOKEN" \
-    --header "X-GitHub-Api-Version: 2022-11-28" \
+  release_data=$(curl -sS "${curl_headers[@]}" \
     "https://api.github.com/repos/${PANEL_REPO}/releases/latest")
 
   # Check if we got a valid response
@@ -208,15 +216,26 @@ install_panel_release() {
   mkdir -p "$INSTALL_DIR"
   cd "$INSTALL_DIR"
 
-  # Download using the asset API URL with authentication
-  if ! curl --location --fail --silent --show-error \
-    --header "Accept: application/octet-stream" \
-    --header "Authorization: Bearer $GITHUB_TOKEN" \
-    --header "X-GitHub-Api-Version: 2022-11-28" \
+  # Build download headers - token optional for public repos
+  local download_headers=(
+    "--header" "Accept: application/octet-stream"
+    "--header" "X-GitHub-Api-Version: 2022-11-28"
+  )
+  
+  if [ -n "$GITHUB_TOKEN" ]; then
+    download_headers+=("--header" "Authorization: Bearer $GITHUB_TOKEN")
+  fi
+
+  # Download using the asset API URL
+  if ! curl --location --fail --silent --show-error "${download_headers[@]}" \
     --output panel.tar.gz \
     "$asset_api_url"; then
-    error "Failed to download panel from private repository"
-    error "Please check that your GitHub token has 'repo' scope and the release exists."
+    error "Failed to download panel from repository"
+    if [ "$PANEL_REPO_PRIVATE" == "true" ]; then
+      error "Please check that your GitHub token has 'repo' scope and the release exists."
+    else
+      error "Please check that the release exists and is accessible."
+    fi
     exit 1
   fi
 
