@@ -40,7 +40,7 @@ SSL_KEY_PATH=""
 DB_HOST="127.0.0.1"
 DB_PORT="3306"
 DB_NAME="panel"
-DB_USER="pterodactyl"
+DB_USER="pyrodactyl"
 DB_PASSWORD=""
 
 # Elytra Configuration

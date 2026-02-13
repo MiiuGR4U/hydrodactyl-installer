@@ -41,7 +41,7 @@ SSL_KEY_PATH=""
 DB_HOST="127.0.0.1"
 DB_PORT="3306"
 DB_NAME="panel"
-DB_USER="pterodactyl"
+DB_USER="pyrodactyl"
 DB_PASSWORD=""
 
 # ------------------ Repository Configuration ----------------- #
@@ -214,7 +214,7 @@ configure_database() {
   fi
 
   required_input DB_NAME "Database name [panel]: " "" "panel"
-  required_input DB_USER "Database username [pterodactyl]: " "" "pterodactyl"
+  required_input DB_USER "Database username [pyrodactyl]: " "" "pyrodactyl"
   password_input DB_PASSWORD "Database password: " "Password cannot be empty"
 }
 

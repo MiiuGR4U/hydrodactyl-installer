@@ -7,7 +7,7 @@ set -e
 # Pyrodactyl Elytra Installer - Pinnacle Edition                                     #
 #                                                                                    #
 # Incorporates best practices from:                                                  #
-# - Pterodactyl Installer reference                                                  #
+# - Pyrodactyl Installer reference                                                  #
 # - Original Pyrodactyl scripts                                                      #
 # - Modern error handling and validation                                             #
 #                                                                                    #
@@ -135,9 +135,9 @@ install_elytra() {
   # Create directories
   mkdir -p "$INSTALL_DIR"
   mkdir -p "$PANEL_CONFIG_DIR"
-  mkdir -p /var/lib/pterodactyl/volumes
-  mkdir -p /var/lib/pterodactyl/archives
-  mkdir -p /var/lib/pterodactyl/backups
+  mkdir -p /var/lib/pyrodactyl/volumes
+  mkdir -p /var/lib/pyrodactyl/archives
+  mkdir -p /var/lib/pyrodactyl/backups
 
   # Determine architecture
   local arch
@@ -197,7 +197,7 @@ configure_elytra() {
     sed -i "s|<TRUSTED_PROXIES>|[]|g" "${INSTALL_DIR}/config.yml"
   fi
 
-  # Copy config to pterodactyl directory for compatibility
+  # Copy config to pyrodactyl directory for compatibility
   cp "${INSTALL_DIR}/config.yml" "${PANEL_CONFIG_DIR}/config.yml" 2>/dev/null || true
 
   success "Elytra configured"

@@ -8,11 +8,6 @@ set -e
 #                                                                                    #
 # Installs both Panel and Elytra on the same machine with automatic configuration    #
 #                                                                                    #
-# Incorporates best practices from:                                                  #
-# - Pterodactyl Installer reference                                                  #
-# - Original Pyrodactyl scripts                                                      #
-# - Modern error handling and validation                                             #
-#                                                                                    #
 ######################################################################################
 
 # Check if lib is loaded, load if not or fail otherwise.
@@ -43,7 +38,7 @@ SSL_KEY_PATH="${SSL_KEY_PATH:-}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-panel}"
-DB_USER="${DB_USER:-pterodactyl}"
+DB_USER="${DB_USER:-pyrodactyl}"
 DB_PASSWORD="${DB_PASSWORD:-$(gen_passwd 64)}"
 MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$(gen_passwd 64)}"
 
@@ -171,36 +166,86 @@ install_panel_dependencies() {
 install_panel_release() {
   print_flame "Downloading Panel Release"
 
-  local latest_release
-  latest_release=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN")
-
-  if [ -z "$latest_release" ] || [ "$latest_release" == "null" ]; then
-    error "Could not fetch latest release from $PANEL_REPO"
+  if [ -z "$GITHUB_TOKEN" ]; then
+    error "GitHub token is required to download the panel from the private repository."
+    error "Please provide a token using --github-token or set the GITHUB_TOKEN environment variable."
     exit 1
   fi
 
-  info "Latest release: $latest_release"
+  output "Fetching latest release from ${PANEL_REPO}..."
 
-  local download_url="https://github.com/${PANEL_REPO}/releases/download/${latest_release}/panel.tar.gz"
-  local curl_opts="-fsSL"
+  # Get the latest release info from GitHub API
+  local release_data
+  release_data=$(curl -sS \
+    --header "Accept: application/vnd.github+json" \
+    --header "Authorization: Bearer $GITHUB_TOKEN" \
+    --header "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/${PANEL_REPO}/releases/latest")
 
-  if [ -n "$GITHUB_TOKEN" ] && [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    curl_opts="$curl_opts -H \"Authorization: Bearer ${GITHUB_TOKEN}\""
+  # Check if we got a valid response
+  if echo "$release_data" | grep -q '"message"'; then
+    error "Failed to fetch release data from ${PANEL_REPO}"
+    error "API Response: $(echo "$release_data" | jq -r '.message' 2>/dev/null || echo "$release_data")"
+    exit 1
   fi
 
+  # Get the asset API URL
+  local asset_api_url
+  asset_api_url=$(echo "$release_data" | jq -r ".assets[] | select(.name == \"panel.tar.gz\") | .url")
+
+  if [ -z "$asset_api_url" ] || [ "$asset_api_url" == "null" ]; then
+    error "Could not find asset 'panel.tar.gz' in latest release"
+    error "Available assets: $(echo "$release_data" | jq -r '.assets[].name' 2>/dev/null || echo "(failed to parse)")"
+    exit 1
+  fi
+
+  local release_tag
+  release_tag=$(echo "$release_data" | jq -r '.tag_name')
+  info "Latest release: $release_tag"
+
   output "Downloading panel.tar.gz..."
+
   mkdir -p "$INSTALL_DIR"
   cd "$INSTALL_DIR"
 
-  if ! eval curl $curl_opts -o /tmp/panel.tar.gz "$download_url"; then
-    error "Failed to download panel release"
+  # Download using the asset API URL with authentication
+  if ! curl --location --fail --silent --show-error \
+    --header "Accept: application/octet-stream" \
+    --header "Authorization: Bearer $GITHUB_TOKEN" \
+    --header "X-GitHub-Api-Version: 2022-11-28" \
+    --output panel.tar.gz \
+    "$asset_api_url"; then
+    error "Failed to download panel from private repository"
+    error "Please check that your GitHub token has 'repo' scope and the release exists."
     exit 1
   fi
 
   output "Extracting files..."
-  tar -xzf /tmp/panel.tar.gz
-  chmod -R 755 storage/* bootstrap/cache/
-  rm -f /tmp/panel.tar.gz
+  tar -xzf panel.tar.gz
+  chmod -R 755 storage/* bootstrap/cache/ 2>/dev/null || true
+  rm -f panel.tar.gz
+
+  # Check if .env.example exists, if not download from repo
+  if [ ! -f ".env.example" ]; then
+    output ".env.example not found in release, downloading from repository..."
+    local env_url="https://raw.githubusercontent.com/${PANEL_REPO}/main/.env.example"
+
+    if [ -n "$GITHUB_TOKEN" ]; then
+      curl -fsSL \
+        --header "Authorization: Bearer $GITHUB_TOKEN" \
+        --header "Accept: application/vnd.github.v3.raw" \
+        -o .env.example \
+        "$env_url" 2>/dev/null || warning "Failed to download .env.example from repository"
+    else
+      curl -fsSL -o .env.example "$env_url" 2>/dev/null || warning "Failed to download .env.example from repository"
+    fi
+
+    if [ ! -f ".env.example" ]; then
+      error "Could not obtain .env.example file"
+      error "The release package may be incomplete or the repository may be inaccessible"
+      exit 1
+    fi
+  fi
 
   cp .env.example .env
 
@@ -463,9 +508,9 @@ install_elytra_daemon() {
   # Create directories
   mkdir -p "$ELYTRA_DIR"
   mkdir -p "$PANEL_CONFIG_DIR"
-  mkdir -p /var/lib/pterodactyl/volumes
-  mkdir -p /var/lib/pterodactyl/archives
-  mkdir -p /var/lib/pterodactyl/backups
+  mkdir -p /var/lib/pyrodactyl/volumes
+  mkdir -p /var/lib/pyrodactyl/archives
+  mkdir -p /var/lib/pyrodactyl/backups
 
   # Determine architecture
   local arch
@@ -519,7 +564,7 @@ install_elytra_daemon() {
     sed -i "s|<TRUSTED_PROXIES>|[]|g" "${ELYTRA_DIR}/config.yml"
   fi
 
-  # Copy config to pterodactyl directory
+  # Copy config to pyrodactyl directory
   cp "${ELYTRA_DIR}/config.yml" "${PANEL_CONFIG_DIR}/config.yml" 2>/dev/null || true
 
   # Install rustic

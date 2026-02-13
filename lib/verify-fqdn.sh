@@ -138,8 +138,19 @@ else
 
   # Ask if user wants to continue anyway
   echo ""
-  read -rp "* Continue anyway? [y/N]: " continue_anyway
-  if [[ "$continue_anyway" =~ [Yy] ]]; then
+  local continue_anyway=""
+  while [[ "$continue_anyway" != "y" && "$continue_anyway" != "n" ]]; do
+    echo -n "* Continue anyway? [y/N]: "
+    read -r continue_anyway
+    continue_anyway=$(echo "$continue_anyway" | tr '[:upper:]' '[:lower:]')
+    [ -z "$continue_anyway" ] && continue_anyway="n"
+
+    if [[ "$continue_anyway" != "y" && "$continue_anyway" != "n" ]]; then
+      echo "* Invalid input. Please enter 'y' or 'n'."
+    fi
+  done
+
+  if [[ "$continue_anyway" == "y" ]]; then
     warning "Continuing without verified DNS resolution"
     warning "SSL certificate setup may fail"
     exit 0

@@ -14,9 +14,9 @@ api:
     trusted-proxies: <TRUSTED_PROXIES>
 
 system:
-    data: /var/lib/pterodactyl/volumes
-    archive: /var/lib/pterodactyl/archives
-    backup: /var/lib/pterodactyl/backups
+    data: /var/lib/pyrodactyl/volumes
+    archive: /var/lib/pyrodactyl/archives
+    backup: /var/lib/pyrodactyl/backups
 
 allowed-mounts: []
 allowed-origins: []
@@ -33,7 +33,7 @@ docker:
         gateway: 172.18.0.1
         subnet: 172.18.0.0/16
         mtu: 1500
-    domainname: ''
+    domainname: ""
     registries: {}
     tmpfs:
         size: 100

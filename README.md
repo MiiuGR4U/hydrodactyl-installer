@@ -338,7 +338,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Pyrodactyl](https://github.com/pyrodactyl-oss/pyrodactyl) - The panel software
 - [Elytra](https://github.com/pyrohost/elytra) - The daemon software
-- [Pterodactyl Installer](https://github.com/pterodactyl-installer/pterodactyl-installer) - Inspiration for structure
+- [Pterodactyl Installer](https://github.com/pterodactyl-installer/pterodactyl-installer) - Inspiration
 
 ---
 

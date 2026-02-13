@@ -8,7 +8,7 @@ source /tmp/pyrodactyl-lib.sh
 # Configuration
 PANEL_DIR="/var/www/pyrodactyl"
 ELYTRA_DIR="/etc/elytra"
-PANEL_DATA_DIR="/var/lib/pterodactyl"
+PANEL_DATA_DIR="/var/lib/pyrodactyl"
 
 remove_panel() {
     print_flame "Removing Pyrodactyl Panel"
@@ -39,7 +39,7 @@ remove_panel() {
     systemctl daemon-reload
 
     # Remove cron job
-    crontab -l 2>/dev/null | grep -v "pterodactyl" | crontab - 2>/dev/null || true
+    crontab -l 2>/dev/null | grep -v "pyrodactyl" | crontab - 2>/dev/null || true
 
     # Remove SSL certificates if Let's Encrypt was used
     if [ -d "/etc/letsencrypt" ]; then
@@ -111,9 +111,9 @@ remove_database() {
 
         # Drop user
         output "Dropping database user..."
-        mysql -u root -p"${db_root_pass}" -e "DROP USER IF EXISTS 'pterodactyl'@'localhost';" 2>/dev/null || true
-        mysql -u root -p"${db_root_pass}" -e "DROP USER IF EXISTS 'pterodactyl'@'127.0.0.1';" 2>/dev/null || true
-        mysql -u root -p"${db_root_pass}" -e "DROP USER IF EXISTS 'pterodactyl'@'%';" 2>/dev/null || true
+        mysql -u root -p"${db_root_pass}" -e "DROP USER IF EXISTS 'pyrodactyl'@'localhost';" 2>/dev/null || true
+        mysql -u root -p"${db_root_pass}" -e "DROP USER IF EXISTS 'pyrodactyl'@'127.0.0.1';" 2>/dev/null || true
+        mysql -u root -p"${db_root_pass}" -e "DROP USER IF EXISTS 'pyrodactyl'@'%';" 2>/dev/null || true
         mysql -u root -p"${db_root_pass}" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
 
         # Remove credentials file
@@ -139,7 +139,7 @@ remove_data() {
 
     # Remove any remaining Docker volumes
     output "Removing Docker volumes..."
-    docker volume ls -q --filter "name=pterodactyl" | xargs -r docker volume rm 2>/dev/null || true
+    docker volume ls -q --filter "name=pyrodactyl" | xargs -r docker volume rm 2>/dev/null || true
 
     success "Data files removed"
 }

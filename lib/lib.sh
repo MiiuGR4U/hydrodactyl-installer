@@ -51,17 +51,18 @@ export COLOR_NC='\033[0m'
 
 # ------------------ Gradient Colors for Header ----------------- #
 # Smooth flame gradient from red (top) to yellow (bottom)
+# Smooth flame gradient colors (top to bottom) - red to gold
 export GRADIENT_1='\033[38;5;196m'   # Deep red
 export GRADIENT_2='\033[38;5;202m'   # Red-orange
 export GRADIENT_3='\033[38;5;208m'   # Dark orange
 export GRADIENT_4='\033[38;5;214m'   # Orange
 export GRADIENT_5='\033[38;5;220m'   # Light orange
 export GRADIENT_6='\033[38;5;221m'   # Yellow-orange
-export GRADIENT_7='\033[38;5;226m'   # Yellow
-export GRADIENT_8='\033[38;5;227m'   # Bright yellow
-export GRADIENT_9='\033[38;5;228m'   # Light yellow
-export GRADIENT_10='\033[38;5;220m'  # Light orange (text)
-export GRADIENT_11='\033[38;5;214m'  # Orange (bottom border)
+export GRADIENT_7='\033[38;5;222m'   # Gold
+export GRADIENT_8='\033[38;5;226m'   # Yellow-gold
+export GRADIENT_9='\033[38;5;227m'   # Bright gold
+export GRADIENT_10='\033[38;5;228m'  # Light gold
+export GRADIENT_11='\033[38;5;229m'  # Pale gold
 
 # Gradient array for flame effects
 GRADIENT_COLORS=(
@@ -286,8 +287,19 @@ detect_os() {
     error "Operating system $OS $OS_VER is not officially supported."
     warning "The installer may still work, but proceed at your own risk."
     echo ""
-    read -rp "Continue anyway? [y/N]: " continue_anyway
-    if [[ ! "$continue_anyway" =~ [Yy] ]]; then
+    local continue_anyway=""
+    while [[ "$continue_anyway" != "y" && "$continue_anyway" != "n" ]]; do
+      echo -n "* Continue anyway? [y/N]: "
+      read -r continue_anyway
+      continue_anyway=$(echo "$continue_anyway" | tr '[:upper:]' '[:lower:]')
+      [ -z "$continue_anyway" ] && continue_anyway="n"
+
+      if [[ "$continue_anyway" != "y" && "$continue_anyway" != "n" ]]; then
+        error "Invalid input. Please enter 'y' or 'n'."
+      fi
+    done
+
+    if [[ "$continue_anyway" == "n" ]]; then
       exit 1
     fi
   fi
@@ -441,10 +453,28 @@ get_release_asset_url() {
   local token="${3:-$GITHUB_TOKEN}"
 
   local release_json
-  release_json=$(curl -sL ${token:+-H "Authorization: Bearer $token"} \
-    "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
+  if [ -n "$token" ]; then
+    release_json=$(curl -sS \
+      --header "Accept: application/vnd.github+json" \
+      --header "Authorization: Bearer $token" \
+      --header "X-GitHub-Api-Version: 2022-11-28" \
+      "https://api.github.com/repos/$repo/releases/latest" 2>&1)
+  else
+    release_json=$(curl -sS \
+      --header "Accept: application/vnd.github+json" \
+      --header "X-GitHub-Api-Version: 2022-11-28" \
+      "https://api.github.com/repos/$repo/releases/latest" 2>&1)
+  fi
 
   if [ -z "$release_json" ]; then
+    error "Failed to fetch release info from GitHub API (empty response)"
+    return 1
+  fi
+
+  if echo "$release_json" | grep -q '"message"'; then
+    local error_msg
+    error_msg=$(echo "$release_json" | jq -r '.message' 2>/dev/null || echo "$release_json")
+    error "GitHub API error: $error_msg"
     return 1
   fi
 
@@ -461,19 +491,36 @@ download_release_asset() {
   asset_url=$(get_release_asset_url "$repo" "$asset_name" "$token")
 
   if [ -z "$asset_url" ] || [ "$asset_url" == "null" ]; then
-    error "Could not find asset '$asset_name' in latest release"
+    error "Could not find asset '$asset_name' in latest release of $repo"
+    error "Make sure the release exists and the asset is attached to it."
     return 1
   fi
 
-  local curl_opts="-fsSL --max-time 300"
-  curl_opts="$curl_opts -H \"Accept: application/octet-stream\""
-
+  # Download using GitHub API asset URL with proper headers
+  local curl_exit_code=0
   if [ -n "$token" ]; then
-    curl_opts="$curl_opts -H \"Authorization: Bearer $token\""
+    curl --location --fail --silent --show-error --max-time 300 \
+      --header "Accept: application/octet-stream" \
+      --header "Authorization: Bearer $token" \
+      --header "X-GitHub-Api-Version: 2022-11-28" \
+      --output "$output_path" \
+      "$asset_url" 2>&1 || curl_exit_code=$?
+  else
+    curl --location --fail --silent --show-error --max-time 300 \
+      --header "Accept: application/octet-stream" \
+      --output "$output_path" \
+      "$asset_url" 2>&1 || curl_exit_code=$?
   fi
 
-  if ! eval curl $curl_opts --output "$output_path" "$asset_url"; then
-    error "Failed to download asset"
+  if [ $curl_exit_code -ne 0 ]; then
+    error "Failed to download asset (curl exit code: $curl_exit_code)"
+    error "Asset URL: $asset_url"
+    error "Make sure your GitHub token has 'repo' scope access to $repo"
+    return 1
+  fi
+
+  if [ ! -f "$output_path" ] || [ ! -s "$output_path" ]; then
+    error "Downloaded file is empty or does not exist: $output_path"
     return 1
   fi
 
@@ -696,17 +743,34 @@ create_db() {
 
 ask_firewall() {
   local __resultvar=$1
+  local confirm=""
 
   case "$OS" in
     ubuntu|debian)
-      echo -n "* Automatically configure UFW firewall? [y/N]: "
-      read -r confirm
-      [[ "$confirm" =~ [Yy] ]] && eval "$__resultvar=true" || eval "$__resultvar=false"
+      while [[ "$confirm" != "y" && "$confirm" != "n" ]]; do
+        echo -n "* Automatically configure UFW firewall? [y/N]: "
+        read -r confirm
+        confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+        [ -z "$confirm" ] && confirm="n"
+
+        if [[ "$confirm" != "y" && "$confirm" != "n" ]]; then
+          error "Invalid input. Please enter 'y' or 'n'."
+        fi
+      done
+      [[ "$confirm" == "y" ]] && eval "$__resultvar=true" || eval "$__resultvar=false"
       ;;
     rocky|almalinux|fedora|rhel|centos)
-      echo -n "* Automatically configure firewalld? [y/N]: "
-      read -r confirm
-      [[ "$confirm" =~ [Yy] ]] && eval "$__resultvar=true" || eval "$__resultvar=false"
+      while [[ "$confirm" != "y" && "$confirm" != "n" ]]; do
+        echo -n "* Automatically configure firewalld? [y/N]: "
+        read -r confirm
+        confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+        [ -z "$confirm" ] && confirm="n"
+
+        if [[ "$confirm" != "y" && "$confirm" != "n" ]]; then
+          error "Invalid input. Please enter 'y' or 'n'."
+        fi
+      done
+      [[ "$confirm" == "y" ]] && eval "$__resultvar=true" || eval "$__resultvar=false"
       ;;
     *)
       warning "Automatic firewall configuration not supported for $OS"
@@ -718,6 +782,8 @@ ask_firewall() {
 ask_game_ports() {
   local __start_var=$1
   local __end_var=$2
+  local start_port=""
+  local end_port=""
 
   echo ""
   output "Configure game server port range"
@@ -729,13 +795,38 @@ ask_game_ports() {
   output "  - Valheim: 2456-2466"
   output "  - FiveM/GTA: 30120-30130"
   output "  - General range: 27015-28025"
-  echo -n "* Start port [27015]: "
-  read -r start_port
-  start_port=${start_port:-27015}
 
-  echo -n "* End port [28025]: "
-  read -r end_port
-  end_port=${end_port:-28025}
+  # Validate start port
+  while true; do
+    echo -n "* Start port [27015]: "
+    read -r start_port
+    start_port=${start_port:-27015}
+
+    if ! [[ "$start_port" =~ ^[0-9]+$ ]]; then
+      error "Invalid input. Please enter a numeric port value."
+    elif [ "$start_port" -lt 1 ] || [ "$start_port" -gt 65535 ]; then
+      error "Invalid port. Port must be between 1 and 65535."
+    else
+      break
+    fi
+  done
+
+  # Validate end port
+  while true; do
+    echo -n "* End port [28025]: "
+    read -r end_port
+    end_port=${end_port:-28025}
+
+    if ! [[ "$end_port" =~ ^[0-9]+$ ]]; then
+      error "Invalid input. Please enter a numeric port value."
+    elif [ "$end_port" -lt 1 ] || [ "$end_port" -gt 65535 ]; then
+      error "Invalid port. Port must be between 1 and 65535."
+    elif [ "$end_port" -le "$start_port" ]; then
+      error "End port must be greater than start port ($start_port)."
+    else
+      break
+    fi
+  done
 
   eval "$__start_var=$start_port"
   eval "$__end_var=$end_port"
@@ -878,9 +969,21 @@ check_virt() {
     openvz|lxc)
       warning "Unsupported virtualization detected: $virt_type"
       warning "Docker may not work properly in this environment"
-      echo -n "* Continue anyway? [y/N]: "
-      read -r confirm
-      [[ "$confirm" =~ [Yy] ]] || exit 1
+      local confirm=""
+      while [[ "$confirm" != "y" && "$confirm" != "n" ]]; do
+        echo -n "* Continue anyway? [y/N]: "
+        read -r confirm
+        confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+        [ -z "$confirm" ] && confirm="n"
+
+        if [[ "$confirm" != "y" && "$confirm" != "n" ]]; then
+          error "Invalid input. Please enter 'y' or 'n'."
+        fi
+      done
+
+      if [[ "$confirm" == "n" ]]; then
+        exit 1
+      fi
       ;;
     *)
       [ -n "$virt_type" ] && info "Virtualization: $virt_type"
@@ -914,7 +1017,7 @@ install_composer() {
 php_fpm_conf() {
   output "Configuring PHP-FPM..."
 
-  local config_file="/etc/php-fpm.d/www-pterodactyl.conf"
+  local config_file="/etc/php-fpm.d/www-pyrodactyl.conf"
 
   # Download config from GitHub
   if ! curl -fsSL -o "$config_file" "$GITHUB_URL/configs/www-pyrodactyl.conf" 2>/dev/null; then
@@ -938,7 +1041,7 @@ get_php_socket() {
       echo "/run/php/php${PHP_VERSION}-fpm.sock"
       ;;
     rocky|almalinux|fedora|rhel|centos)
-      echo "/run/php-fpm/www-pterodactyl.sock"
+      echo "/run/php-fpm/www-pyrodactyl.sock"
       ;;
     *)
       echo "/run/php/php${PHP_VERSION}-fpm.sock"

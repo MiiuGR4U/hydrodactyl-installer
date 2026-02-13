@@ -33,18 +33,18 @@ export COLOR_BLUE='\033[0;34m'
 export COLOR_CYAN='\033[0;36m'
 export COLOR_NC='\033[0m'
 
-# Smooth flame gradient colors (top to bottom)
+# Smooth flame gradient colors (top to bottom) - red to gold
 export GRADIENT_1='\033[38;5;196m'   # Deep red
 export GRADIENT_2='\033[38;5;202m'   # Red-orange
 export GRADIENT_3='\033[38;5;208m'   # Dark orange
 export GRADIENT_4='\033[38;5;214m'   # Orange
 export GRADIENT_5='\033[38;5;220m'   # Light orange
-export GRADIENT_6='\033[38;5;221m'   # Yellow-orange
-export GRADIENT_7='\033[38;5;226m'   # Yellow
-export GRADIENT_8='\033[38;5;227m'   # Bright yellow
-export GRADIENT_9='\033[38;5;228m'   # Light yellow
-export GRADIENT_10='\033[38;5;220m'  # Light orange (text)
-export GRADIENT_11='\033[38;5;214m'  # Orange (bottom border)
+export GRADIENT_6='\033[38;5;221m'   # Gold-orange
+export GRADIENT_7='\033[38;5;222m'   # Gold
+export GRADIENT_8='\033[38;5;226m'   # Yellow-gold
+export GRADIENT_9='\033[38;5;227m'   # Bright gold
+export GRADIENT_10='\033[38;5;228m'  # Light gold
+export GRADIENT_11='\033[38;5;229m'  # Pale gold
 
 output() {
   echo -e "* $1"
@@ -68,6 +68,37 @@ warning() {
   echo ""
 }
 
+# Error handler - called when script exits with error
+error_handler() {
+  local exit_code=$?
+  local line_no=$1
+
+  if [ $exit_code -ne 0 ]; then
+    echo ""
+    echo -e "* ${COLOR_RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_NC}"
+    echo -e "* ${COLOR_RED}INSTALLATION FAILED${COLOR_NC}"
+    echo -e "* ${COLOR_RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_NC}"
+    echo ""
+    echo -e "* ${COLOR_YELLOW}Exit code:${COLOR_NC} $exit_code"
+    [ -n "$line_no" ] && echo -e "* ${COLOR_YELLOW}Failed at line:${COLOR_NC} $line_no"
+    echo ""
+    echo -e "* ${COLOR_CYAN}Troubleshooting tips:${COLOR_NC}"
+    echo -e "  1. Check the log file: ${COLOR_ORANGE}$LOG_PATH${COLOR_NC}"
+    echo -e "  2. Ensure you have a stable internet connection"
+    echo -e "  3. Verify your GitHub token has 'repo' scope"
+    echo -e "  4. Check that your OS is supported"
+    echo ""
+    echo -e "* ${COLOR_CYAN}For help, visit:${COLOR_NC} https://github.com/Muspelheim-Hosting/pyrodactyl-installer/issues"
+    echo ""
+    echo -e "* ${COLOR_RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_NC}"
+    echo ""
+  fi
+}
+
+# Set up error trap
+trap 'error_handler $LINENO' ERR
+
+# Cleanup function for temporary files
 print_brake() {
   local char="${2:-─}"
   for ((n = 0; n < $1; n++)); do
@@ -165,9 +196,17 @@ execute_ui() {
 
   if [[ -n "$next_script" ]]; then
     echo ""
-    echo -n "* Installation of $script_name completed. Do you want to proceed to $next_script installation? (y/N): "
-    read -r CONFIRM
-    if [[ "$CONFIRM" =~ [Yy] ]]; then
+    local CONFIRM=""
+    while [[ "$CONFIRM" != "y" && "$CONFIRM" != "n" ]]; do
+      echo -n "* Installation of $script_name completed. Do you want to proceed to $next_script installation? [y/N]: "
+      read -r CONFIRM
+      CONFIRM=$(echo "$CONFIRM" | tr '[:upper:]' '[:lower:]')
+      [ -z "$CONFIRM" ] && CONFIRM="n"
+      if [[ "$CONFIRM" != "y" && "$CONFIRM" != "n" ]]; then
+        error "Invalid input. Please enter 'y' or 'n'."
+      fi
+    done
+    if [[ "$CONFIRM" == "y" ]]; then
       execute_ui "$next_script"
     else
       warning "Installation of $next_script aborted."
