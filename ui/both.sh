@@ -152,7 +152,13 @@ configure_panel_settings() {
     required_input PANEL_FQDN "Enter the domain for your panel (e.g., panel.example.com): " "Domain is required"
 
     if check_fqdn "$PANEL_FQDN"; then
-      valid_fqdn=true
+      # Verify DNS resolution
+      if bash <(curl -sSL "$GITHUB_URL/lib/verify-fqdn.sh") "$PANEL_FQDN"; then
+        valid_fqdn=true
+      else
+        # DNS verification failed and user chose not to continue
+        error "Please fix your DNS configuration or enter a different domain."
+      fi
     else
       error "Invalid FQDN format. Must be a valid domain name."
     fi
