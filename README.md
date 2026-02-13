@@ -1,12 +1,9 @@
-pyrodactyl\install-scripts\new\README.md
-# 🔥 Pyrodactyl Installer
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer/main/assets/logo.png" alt="Pyrodactyl Logo" width="200"/>
+  <img width="1467" height="401" alt="image" src="https://github.com/user-attachments/assets/7d5138a4-acd0-43e5-932b-419c5125c0d7" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/Muspelheim-Hosting/pyrodactyl-installer/releases"><img src="https://img.shields.io/github/v/release/Muspelheim-Hosting/pyrodactyl-installer?style=for-the-badge&color=orange" alt="Release"></a>
+  <!-- <a href="https://github.com/Muspelheim-Hosting/pyrodactyl-installer/releases"><img src="https://img.shields.io/github/v/release/Muspelheim-Hosting/pyrodactyl-installer?style=for-the-badge&color=orange" alt="Release"></a> -->
   <a href="https://github.com/Muspelheim-Hosting/pyrodactyl-installer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Muspelheim-Hosting/pyrodactyl-installer?style=for-the-badge&color=orange" alt="License"></a>
 </p>
 
@@ -60,31 +57,10 @@ bash install.sh
 
 ## 🔧 Installation Options
 
-### 1. Install Pyrodactyl Panel Only
-
-Installs just the web panel with database, web server, and SSL.
+<img width="848" height="504" alt="image" src="https://github.com/user-attachments/assets/9974e217-f667-4488-8a13-8745a9d2498f" />
 
 ```bash
 bash <(curl -sSL https://installers.muspelheim.host/install.sh)
-# Select option [0]
-```
-
-### 2. Install Elytra Daemon Only
-
-Installs the Elytra daemon (node) to connect to an existing panel.
-
-```bash
-bash <(curl -sSL https://installers.muspelheim.host/install.sh)
-# Select option [1]
-```
-
-### 3. Install Both (Panel + Node)
-
-Installs both panel and Elytra on the same machine, fully configured to work together.
-
-```bash
-bash <(curl -sSL https://installers.muspelheim.host/install.sh)
-# Select option [2]
 ```
 
 ## 🔄 Auto-Updater Installation
@@ -102,13 +78,6 @@ The installer can set up automatic updates that check for new releases every hou
 - Stops service, updates, restarts
 - Creates backups of binary and config
 - Validates successful restart
-
-### Installing Auto-Updaters Later
-
-```bash
-bash <(curl -sSL https://installers.muspelheim.host/install.sh)
-# Select option [8] - Install Auto-Updaters
-```
 
 ## 🔐 Private Repository Support
 
@@ -149,15 +118,6 @@ During installation, select "Use custom repository" and provide:
   - Panel: `panel.tar.gz`
   - Elytra: `elytra_linux_amd64` or `elytra_linux_arm64`
 
-## 🗑️ Uninstallation
-
-To completely remove Pyrodactyl and Elytra:
-
-```bash
-bash <(curl -sSL https://installers.muspelheim.host/install.sh)
-# Select option [11] - Uninstall
-```
-
 ### Uninstall Options
 
 - **Panel only**: Removes panel files, database (optional), web server config
@@ -170,8 +130,8 @@ bash <(curl -sSL https://installers.muspelheim.host/install.sh)
 ```
 /var/www/pyrodactyl/         # Panel installation
 /etc/elytra/                 # Elytra configuration
-/etc/pterodactyl/            # Panel configuration (Elytra)
-/var/lib/pterodactyl/        # Game server data
+/etc/pyrodactyl/             # Panel configuration (Elytra)
+/var/lib/pyrodactyl/         # Game server data
 /var/log/pyrodactyl-*.log    # Installation/update logs
 /var/backups/pyrodactyl/     # Panel backups
 /var/backups/elytra/         # Elytra backups
