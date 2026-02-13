@@ -4,7 +4,7 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Panel Auto-Updater - Pinnacle Edition                                   #
+# Pyrodactyl Panel Auto-Updater                                                      #
 #                                                                                    #
 # Advanced auto-updater with cron support, dry-run mode, backups, and notifications  #
 #                                                                                    #

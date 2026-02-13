@@ -78,29 +78,34 @@ configure_panel_repository() {
   echo ""
   output "Repository: ${COLOR_ORANGE}${PANEL_REPO}${COLOR_NC}"
 
-  local is_private=""
-  bool_input is_private "Is this a private repository?" "n"
-  PANEL_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+  # Only ask about private repo if not using default (default is public)
+  if [ "$use_default" == "n" ]; then
+    local is_private=""
+    bool_input is_private "Is this a private repository?" "n"
+    PANEL_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
 
-  if [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    echo ""
-    output "A GitHub Personal Access Token is required for private repositories."
-    output "Create one at: https://github.com/settings/tokens"
-    output "Required scopes: ${COLOR_ORANGE}repo${COLOR_NC}"
-    echo ""
+    if [ "$PANEL_REPO_PRIVATE" == "true" ]; then
+      echo ""
+      output "A GitHub Personal Access Token is required for private repositories."
+      output "Create one at: https://github.com/settings/tokens"
+      output "Required scopes: ${COLOR_ORANGE}repo${COLOR_NC}"
+      echo ""
 
-    local token_valid=false
-    while [ "$token_valid" == false ]; do
-      password_input GITHUB_TOKEN_PANEL "Enter your GitHub token: " "Token cannot be empty"
+      local token_valid=false
+      while [ "$token_valid" == false ]; do
+        password_input GITHUB_TOKEN_PANEL "Enter your GitHub token: " "Token cannot be empty"
 
-      output "Validating token..."
-      if validate_github_token "$GITHUB_TOKEN_PANEL" "$PANEL_REPO"; then
-        success "Token validated successfully"
-        token_valid=true
-      else
-        warning "Token validation failed. Please check your token and try again."
-      fi
-    done
+        output "Validating token..."
+        if validate_github_token "$GITHUB_TOKEN_PANEL" "$PANEL_REPO"; then
+          success "Token validated successfully"
+          token_valid=true
+        else
+          warning "Token validation failed. Please check your token and try again."
+        fi
+      done
+    fi
+  else
+    PANEL_REPO_PRIVATE="false"
   fi
 
   output "Checking for releases in repository..."
@@ -234,28 +239,33 @@ configure_elytra_repository() {
   echo ""
   output "Repository: ${COLOR_ORANGE}${ELYTRA_REPO}${COLOR_NC}"
 
-  local is_private=""
-  bool_input is_private "Is this a private repository?" "n"
-  ELYTRA_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+  # Only ask about private repo if not using default (default is public)
+  if [ "$use_default" == "n" ]; then
+    local is_private=""
+    bool_input is_private "Is this a private repository?" "n"
+    ELYTRA_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
 
-  if [ "$ELYTRA_REPO_PRIVATE" == "true" ]; then
-    echo ""
-    output "A GitHub Personal Access Token is required for private repositories."
-    output "Create one at: https://github.com/settings/tokens"
-    echo ""
+    if [ "$ELYTRA_REPO_PRIVATE" == "true" ]; then
+      echo ""
+      output "A GitHub Personal Access Token is required for private repositories."
+      output "Create one at: https://github.com/settings/tokens"
+      echo ""
 
-    local token_valid=false
-    while [ "$token_valid" == false ]; do
-      password_input GITHUB_TOKEN_ELYTRA "Enter your GitHub token: " "Token cannot be empty"
+      local token_valid=false
+      while [ "$token_valid" == false ]; do
+        password_input GITHUB_TOKEN_ELYTRA "Enter your GitHub token: " "Token cannot be empty"
 
-      output "Validating token..."
-      if validate_github_token "$GITHUB_TOKEN_ELYTRA" "$ELYTRA_REPO"; then
-        success "Token validated successfully"
-        token_valid=true
-      else
-        warning "Token validation failed. Please check your token and try again."
-      fi
-    done
+        output "Validating token..."
+        if validate_github_token "$GITHUB_TOKEN_ELYTRA" "$ELYTRA_REPO"; then
+          success "Token validated successfully"
+          token_valid=true
+        else
+          warning "Token validation failed. Please check your token and try again."
+        fi
+      done
+    fi
+  else
+    ELYTRA_REPO_PRIVATE="false"
   fi
 
   output "Checking for releases in repository..."

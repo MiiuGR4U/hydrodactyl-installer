@@ -24,7 +24,7 @@ A beautiful, modern, and feature-rich installer for **Pyrodactyl Panel** and **E
 ## 🚀 Quick Start
 
 ```bash
-bash <(curl -sSL https://installers.muspelheim.host/install.sh)
+bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)
 ```
 
 Or download and run:
@@ -60,7 +60,7 @@ bash install.sh
 <img width="848" height="504" alt="image" src="https://github.com/user-attachments/assets/9974e217-f667-4488-8a13-8745a9d2498f" />
 
 ```bash
-bash <(curl -sSL https://installers.muspelheim.host/install.sh)
+bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)
 ```
 
 ## 🔄 Auto-Updater Installation

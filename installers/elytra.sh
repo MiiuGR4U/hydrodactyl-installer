@@ -4,7 +4,7 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Elytra Installer - Pinnacle Edition                                     #
+# Pyrodactyl Elytra Installer                                                        #
 #                                                                                    #
 # Incorporates best practices from:                                                  #
 # - Pyrodactyl Installer reference                                                  #

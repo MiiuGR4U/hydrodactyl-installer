@@ -4,7 +4,7 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Installer - Pinnacle Edition                                            #
+# Pyrodactyl Installer                                                               #
 #                                                                                    #
 # One-command installer for Pyrodactyl Panel and Elytra Daemon                       #
 #                                                                                    #

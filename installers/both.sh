@@ -4,7 +4,7 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl + Elytra Combined Installer - Pinnacle Edition                          #
+# Pyrodactyl + Elytra Combined Installer                                             #
 #                                                                                    #
 # Installs both Panel and Elytra on the same machine with automatic configuration    #
 #                                                                                    #
