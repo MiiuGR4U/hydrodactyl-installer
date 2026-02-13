@@ -33,6 +33,19 @@ export COLOR_BLUE='\033[0;34m'
 export COLOR_CYAN='\033[0;36m'
 export COLOR_NC='\033[0m'
 
+# Smooth flame gradient colors (top to bottom)
+export GRADIENT_1='\033[38;5;196m'   # Deep red
+export GRADIENT_2='\033[38;5;202m'   # Red-orange
+export GRADIENT_3='\033[38;5;208m'   # Dark orange
+export GRADIENT_4='\033[38;5;214m'   # Orange
+export GRADIENT_5='\033[38;5;220m'   # Light orange
+export GRADIENT_6='\033[38;5;221m'   # Yellow-orange
+export GRADIENT_7='\033[38;5;226m'   # Yellow
+export GRADIENT_8='\033[38;5;227m'   # Bright yellow
+export GRADIENT_9='\033[38;5;228m'   # Light yellow
+export GRADIENT_10='\033[38;5;220m'  # Light orange (text)
+export GRADIENT_11='\033[38;5;214m'  # Orange (bottom border)
+
 output() {
   echo -e "* $1"
 }
@@ -67,18 +80,18 @@ print_header() {
   clear 2>/dev/null || true
   echo ""
 
-  # Flame gradient header
-  echo -e "${COLOR_DARK_ORANGE}    ╔══════════════════════════════════════════════════════════════════════════════════════╗"
-  echo -e "${COLOR_ORANGE}    ║                                                                                      ║"
-  echo -e "${COLOR_ORANGE}    ║  ███╗   ███╗██╗   ██╗███████╗██████╗ ███████╗██╗     ██╗  ██╗███████╗██╗███╗   ███╗  ║"
-  echo -e "${COLOR_ORANGE}    ║  ████╗ ████║██║   ██║██╔════╝██╔══██╗██╔════╝██║     ██║  ██║██╔════╝██║████╗ ████║  ║"
-  echo -e "${COLOR_ORANGE}    ║  ██╔████╔██║██║   ██║███████╗██████╔╝█████╗  ██║     ███████║█████╗  ██║██╔████╔██║  ║"
-  echo -e "${COLOR_LIGHT_ORANGE}    ║  ██║╚██╔╝██║██║   ██║╚════██║██╔═══╝ ██╔══╝  ██║     ██╔══██║██╔══╝  ██║██║╚██╔╝██║  ║"
-  echo -e "${COLOR_LIGHT_ORANGE}    ║  ██║ ╚═╝ ██║╚██████╔╝███████║██║     ███████╗███████╗██║  ██║███████╗██║██║ ╚═╝ ██║  ║"
-  echo -e "${COLOR_LIGHT_ORANGE}    ║  ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚═╝     ╚═╝  ║"
-  echo -e "${COLOR_LIGHT_ORANGE}    ║                                                                                      ║"
-  echo -e "${COLOR_ORANGE}    ║                            Pyrodactyl Installation Manager                           ║"
-  echo -e "${COLOR_DARK_ORANGE}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
+  # Flame gradient header - smooth color transition from top to bottom
+  echo -e "${GRADIENT_1}    ╔══════════════════════════════════════════════════════════════════════════════════════╗"
+  echo -e "${GRADIENT_2}    ║                                                                                      ║"
+  echo -e "${GRADIENT_3}    ║  ███╗   ███╗██╗   ██╗███████╗██████╗ ███████╗██╗     ██╗  ██╗███████╗██╗███╗   ███╗  ║"
+  echo -e "${GRADIENT_4}    ║  ████╗ ████║██║   ██║██╔════╝██╔══██╗██╔════╝██║     ██║  ██║██╔════╝██║████╗ ████║  ║"
+  echo -e "${GRADIENT_5}    ║  ██╔████╔██║██║   ██║███████╗██████╔╝█████╗  ██║     ███████║█████╗  ██║██╔████╔██║  ║"
+  echo -e "${GRADIENT_6}    ║  ██║╚██╔╝██║██║   ██║╚════██║██╔═══╝ ██╔══╝  ██║     ██╔══██║██╔══╝  ██║██║╚██╔╝██║  ║"
+  echo -e "${GRADIENT_7}    ║  ██║ ╚═╝ ██║╚██████╔╝███████║██║     ███████╗███████╗██║  ██║███████╗██║██║ ╚═╝ ██║  ║"
+  echo -e "${GRADIENT_8}    ║  ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚═╝     ╚═╝  ║"
+  echo -e "${GRADIENT_9}    ║                                                                                      ║"
+  echo -e "${GRADIENT_10}    ║                            Pyrodactyl Installation Manager                           ║"
+  echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
   echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Muspelheim Hosting"
   echo ""
@@ -86,18 +99,8 @@ print_header() {
 
 print_flame() {
   local message="$1"
-  local colors=('\033[38;5;196m' '\033[38;5;202m' '\033[38;5;208m' '\033[38;5;214m' '\033[38;5;220m' '\033[38;5;226m')
-  local len=${#colors[@]}
 
   echo ""
-  for ((i=0; i<len; i++)); do
-    local padding=""
-    for ((j=0; j<i; j++)); do
-      padding+=" "
-    done
-    echo -e "${colors[$i]}${padding}🔥${COLOR_NC}"
-  done
-
   echo -e "${COLOR_ORANGE}  $message${COLOR_NC}"
   echo ""
 }
