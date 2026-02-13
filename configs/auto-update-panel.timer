@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Pyrodactyl Panel Auto-Updater periodically
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

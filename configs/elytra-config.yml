@@ -1,0 +1,52 @@
+debug: false
+uuid: <UUID>
+token-id: <TOKEN_ID>
+token: <TOKEN>
+
+api:
+    host: 0.0.0.0
+    port: 8080
+    ssl:
+        enabled: false
+        certificate: /etc/elytra/certificate.pem
+        key: /etc/elytra/certificate.key
+    upload-limit: 100
+    trusted-proxies: <TRUSTED_PROXIES>
+
+system:
+    data: /var/lib/pterodactyl/volumes
+    archive: /var/lib/pterodactyl/archives
+    backup: /var/lib/pterodactyl/backups
+
+allowed-mounts: []
+allowed-origins: []
+
+remote: <REMOTE>
+remote_query:
+    timeout: 10
+    interval: 60
+    always: false
+
+docker:
+    network:
+        interface: 172.18.0.1
+        gateway: 172.18.0.1
+        subnet: 172.18.0.0/16
+        mtu: 1500
+    domainname: ''
+    registries: {}
+    tmpfs:
+        size: 100
+        mode: 1777
+    container:
+        pid_limit: 512
+    installer_limits:
+        memory: 1024
+        cpu: 100
+
+throttles:
+    enabled: true
+    lines: 1000
+    line_reset_interval: 100
+
+installed: true

@@ -1,0 +1,10 @@
+[Unit]
+Description=Pyrodactyl Elytra Auto-Updater
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pyrodactyl-auto-update-elytra.sh
+EnvironmentFile=/etc/pyrodactyl/auto-update-elytra.env
+StandardOutput=journal
+StandardError=journal
