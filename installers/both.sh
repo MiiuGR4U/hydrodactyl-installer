@@ -142,11 +142,7 @@ install_panel_dependencies() {
       update_repos true
       install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis php${PHP_VERSION}-sqlite3"
 
-      # Set PHP 8.4 as the default
-      output "Setting PHP ${PHP_VERSION} as the default..."
-      update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
+      ensure_php_default
       ;;
 
     debian)
@@ -157,11 +153,7 @@ install_panel_dependencies() {
       update_repos true
       install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis php${PHP_VERSION}-sqlite3"
 
-      # Set PHP 8.4 as the default
-      output "Setting PHP ${PHP_VERSION} as the default..."
-      update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
+      ensure_php_default
       ;;
 
     rocky|almalinux)
@@ -424,7 +416,7 @@ configure_panel_environment() {
 
   # Configure database
   output "Configuring database..."
-  php artisan p:environment:database \
+  php artisan p:environment:database -n \
     --host="$DB_HOST" \
     --port="$DB_PORT" \
     --database="$DB_NAME" \
@@ -769,9 +761,13 @@ main() {
 
   configure_panel_environment
   setup_panel_services
+  install_phpmyadmin
 
   # Create node in panel
   create_node_in_panel
+
+  # Setup database host for the panel
+  setup_database_host "$PANEL_FQDN"
 
   # Elytra installation
   install_elytra_daemon

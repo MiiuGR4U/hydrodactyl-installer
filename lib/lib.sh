@@ -731,7 +731,7 @@ install_packages() {
 create_db_user() {
   local username="$1"
   local password="$2"
-  local host="${3:-localhost}"
+  local host="${3:-127.0.0.1}"
 
   output "Creating database user '$username'..."
 
@@ -747,7 +747,7 @@ create_db_user() {
 grant_all_privileges() {
   local db_name="$1"
   local username="$2"
-  local host="${3:-localhost}"
+  local host="${3:-127.0.0.1}"
 
   output "Granting privileges on '$db_name' to '$username'..."
 
@@ -763,7 +763,7 @@ grant_all_privileges() {
 create_db() {
   local db_name="$1"
   local username="$2"
-  local host="${3:-localhost}"
+  local host="${3:-127.0.0.1}"
 
   output "Creating database '$db_name'..."
 
@@ -1051,6 +1051,22 @@ install_composer() {
   fi
 }
 
+ensure_php_default() {
+  local restart_fpm="${1:-false}"
+  
+  output "Ensuring PHP ${PHP_VERSION} is set as default..."
+  update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
+  update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
+  update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
+  
+  if [ "$restart_fpm" == "true" ]; then
+    output "Restarting PHP-FPM..."
+    systemctl restart php${PHP_VERSION}-fpm 2>/dev/null || systemctl restart php-fpm 2>/dev/null || true
+  fi
+  
+  success "PHP ${PHP_VERSION} is set as default"
+}
+
 install_nodejs() {
   if cmd_exists node; then
     output "Node.js is already installed ($(node --version))"
@@ -1093,6 +1109,10 @@ install_pnpm() {
   
   # Install pnpm globally using npm
   npm install -g pnpm
+  
+  # Ensure npm global bin is in PATH
+  export PATH="$PATH:$(npm bin -g 2>/dev/null || echo '/usr/local/bin')"
+  export PATH="$PATH:$(npm config get prefix 2>/dev/null)/bin"
 
   if cmd_exists pnpm; then
     success "pnpm installed ($(pnpm --version))"
@@ -1127,6 +1147,103 @@ build_panel_assets() {
   pnpm build
 
   success "Frontend assets built successfully"
+}
+
+install_phpmyadmin() {
+  print_flame "Installing phpMyAdmin"
+
+  export DEBIAN_FRONTEND=noninteractive
+
+  # Pre-configure phpMyAdmin debconf settings
+  echo 'phpmyadmin phpmyadmin/dbconfig-install boolean true' | debconf-set-selections
+  echo 'phpmyadmin phpmyadmin/app-password-confirm password ptero' | debconf-set-selections
+  echo "phpmyadmin phpmyadmin/mysql/admin-pass password ${MYSQL_ROOT_PASSWORD}" | debconf-set-selections
+  echo 'phpmyadmin phpmyadmin/mysql/app-pass password ptero' | debconf-set-selections
+  echo 'phpmyadmin phpmyadmin/reconfigure-webserver multiselect' | debconf-set-selections
+
+  output "Installing phpMyAdmin and PHP extensions..."
+  install_packages "phpmyadmin php${PHP_VERSION}-mbstring php${PHP_VERSION}-zip php${PHP_VERSION}-gd php${PHP_VERSION}-curl"
+
+  output "Creating phpMyAdmin database user..."
+  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
+    CREATE USER IF NOT EXISTS 'phpmyadmin'@'127.0.0.1' IDENTIFIED BY 'phpmyadmin';
+    GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'127.0.0.1' WITH GRANT OPTION;
+    FLUSH PRIVILEGES;
+  " 2>/dev/null || warning "Could not create phpMyAdmin user (may already exist)"
+
+  output "Setting up phpMyAdmin configuration..."
+  cat > /etc/phpmyadmin/conf.d/99-custom.php << 'PHPEOF'
+<?php
+# Custom phpMyAdmin configuration for Pyrodactyl
+$cfg['Servers'][$i]['AllowNoPassword'] = false;
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+$cfg['LoginCookieValidity'] = 3600;
+$cfg['LoginCookieStore'] = 0;
+PHPEOF
+
+  output "Configuring nginx for phpMyAdmin..."
+  
+  # Download config from GitHub
+  local phpmyadmin_config="/etc/nginx/sites-available/phpmyadmin.conf"
+  if ! curl -fsSL -o "$phpmyadmin_config" "${GITHUB_BASE_URL}/${GITHUB_SOURCE}/configs/phpmyadmin.conf" 2>/dev/null; then
+    error "Failed to download phpMyAdmin nginx configuration"
+    return 1
+  fi
+  
+  # Replace PHP_VERSION placeholder
+  sed -i "s/<PHP_VERSION>/${PHP_VERSION}/g" "$phpmyadmin_config"
+
+  ln -sf /etc/nginx/sites-available/phpmyadmin.conf /etc/nginx/sites-enabled/phpmyadmin.conf
+
+  output "Restarting services..."
+  systemctl reload nginx 2>/dev/null || systemctl restart nginx 2>/dev/null || true
+
+  success "phpMyAdmin installed and accessible at http://$(hostname -I | awk '{print $1}'):8081"
+}
+
+setup_database_host() {
+  local panel_fqdn="${1:-127.0.0.1}"
+  local db_host_name="${2:-Local Database Host}"
+  local db_host_user="${3:-dbhost}"
+  local db_host_pass="${4:-dbhostpassword}"
+  local db_host_port="${5:-3306}"
+  
+  print_flame "Setting up Database Host"
+  
+  # Create database user if it doesn't exist
+  output "Creating database host user..."
+  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
+    CREATE USER IF NOT EXISTS '${db_host_user}'@'127.0.0.1' IDENTIFIED BY '${db_host_pass}';
+    CREATE USER IF NOT EXISTS '${db_host_user}'@'%' IDENTIFIED BY '${db_host_pass}';
+    GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'127.0.0.1' WITH GRANT OPTION;
+    GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'%' WITH GRANT OPTION;
+    FLUSH PRIVILEGES;
+  " 2>/dev/null || warning "Could not create database host user (may already exist)"
+  
+  # Use Laravel's HostCreationService to create the database host
+  output "Creating database host in panel..."
+  
+  cd "$INSTALL_DIR" || return 1
+  
+  php artisan tinker --execute="
+use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
+try {
+    app(HostCreationService::class)->handle([
+        'name' => '${db_host_name}',
+        'host' => '${panel_fqdn}',
+        'port' => ${db_host_port},
+        'username' => '${db_host_user}',
+        'password' => '${db_host_pass}',
+    ]);
+    echo 'Database host created successfully';
+} catch (\\Exception \$e) {
+    echo 'Error: ' . \$e->getMessage();
+}
+" 2>/dev/null | grep -q "Database host created successfully" && {
+    success "Database host '${db_host_name}' configured successfully"
+} || {
+    warning "Could not create database host (may already exist or service unavailable)"
+}
 }
 
 php_fpm_conf() {

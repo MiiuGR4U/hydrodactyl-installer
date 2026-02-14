@@ -96,11 +96,7 @@ install_dependencies() {
 
       install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis"
 
-      # Set PHP 8.4 as the default
-      output "Setting PHP ${PHP_VERSION} as the default..."
-      update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
+      ensure_php_default
       ;;
 
     debian)
@@ -112,11 +108,7 @@ install_dependencies() {
 
       install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis"
 
-      # Set PHP 8.4 as the default
-      output "Setting PHP ${PHP_VERSION} as the default..."
-      update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
-      update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
+      ensure_php_default
       ;;
 
     rocky|almalinux|fedora|rhel|centos)
@@ -409,7 +401,7 @@ configure_panel() {
 
   # Configure database
   output "Configuring database connection..."
-  php artisan p:environment:database \
+  php artisan p:environment:database -n \
     --host="$DB_HOST" \
     --port="$DB_PORT" \
     --database="$DB_NAME" \
@@ -474,6 +466,12 @@ setup_services() {
 
   # Install queue worker
   install_pyroq
+
+  # Ensure PHP 8.4 is the default (in case other packages changed it)
+  ensure_php_default true
+  
+  # Reload nginx to apply any config changes
+  systemctl reload nginx 2>/dev/null || true
 
   success "Services configured"
 }
@@ -546,6 +544,8 @@ main() {
 
   configure_panel
   setup_services
+  install_phpmyadmin
+  setup_database_host "$PANEL_FQDN"
   configure_firewall
   setup_auto_updater
 
