@@ -387,7 +387,7 @@ configure_panel() {
 
   # Setup environment
   output "Configuring environment..."
-  php artisan p:environment:setup \
+  php artisan p:environment:setup -n \
     --author="$PANEL_ADMIN_EMAIL" \
     --url="$app_url" \
     --timezone="$PANEL_TIMEZONE" \
@@ -397,7 +397,7 @@ configure_panel() {
     --redis-host="localhost" \
     --redis-pass="null" \
     --redis-port="6379" \
-    --settings-ui=true
+    --settings-ui=true </dev/null
 
   # Configure database
   output "Configuring database connection..."
@@ -406,21 +406,21 @@ configure_panel() {
     --port="$DB_PORT" \
     --database="$DB_NAME" \
     --username="$DB_USER" \
-    --password="$DB_PASSWORD"
+    --password="$DB_PASSWORD" </dev/null
 
   # Run migrations
   output "Running database migrations..."
-  php artisan migrate --seed --force
+  php artisan migrate --seed --force </dev/null
 
   # Create admin user
   output "Creating admin user..."
-  php artisan p:user:make \
+  php artisan p:user:make -n \
     --email="$PANEL_ADMIN_EMAIL" \
     --username="$PANEL_ADMIN_USERNAME" \
     --name-first="$PANEL_ADMIN_FIRSTNAME" \
     --name-last="$PANEL_ADMIN_LASTNAME" \
     --password="$PANEL_ADMIN_PASSWORD" \
-    --admin=1
+    --admin=1 </dev/null
 
   success "Panel configured"
 }

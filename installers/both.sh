@@ -402,7 +402,7 @@ configure_panel_environment() {
 
   # Setup environment using artisan commands
   output "Configuring environment..."
-  php artisan p:environment:setup \
+  php artisan p:environment:setup -n \
     --author="$PANEL_ADMIN_EMAIL" \
     --url="$app_url" \
     --timezone="$PANEL_TIMEZONE" \
@@ -412,7 +412,7 @@ configure_panel_environment() {
     --redis-host="localhost" \
     --redis-pass="null" \
     --redis-port="6379" \
-    --settings-ui=true
+    --settings-ui=true </dev/null
 
   # Configure database
   output "Configuring database..."
@@ -421,21 +421,21 @@ configure_panel_environment() {
     --port="$DB_PORT" \
     --database="$DB_NAME" \
     --username="$DB_USER" \
-    --password="$DB_PASSWORD"
+    --password="$DB_PASSWORD" </dev/null
 
   # Run migrations
   output "Running database migrations..."
-  php artisan migrate --seed --force
+  php artisan migrate --seed --force </dev/null
 
   # Create admin user
   output "Creating admin user..."
-  php artisan p:user:make \
+  php artisan p:user:make -n \
     --email="$PANEL_ADMIN_EMAIL" \
     --username="$PANEL_ADMIN_USERNAME" \
     --name-first="$PANEL_ADMIN_FIRSTNAME" \
     --name-last="$PANEL_ADMIN_LASTNAME" \
     --password="$PANEL_ADMIN_PASSWORD" \
-    --admin=1
+    --admin=1 </dev/null
 
   success "Environment configured"
 }
@@ -492,13 +492,13 @@ create_node_in_panel() {
   if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_FQDN" ]; then
     local panel_url="https://${PANEL_FQDN}"
     [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && panel_url="http://${PANEL_FQDN}"
-    
+
     # Step 1: Detect country and get/create location
     output "Detecting server location..."
     local country_code
     country_code=$(get_server_country_code)
     info "Detected country code: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
-    
+
     local location_id
     if ! location_id=$(get_or_create_location "$PANEL_API_KEY" "$panel_url" "$country_code"); then
       error "Failed to set up location via API, falling back to manual method"
@@ -510,7 +510,7 @@ create_node_in_panel() {
       local disk_mb
       memory_mb=$(get_system_memory)
       disk_mb=$(df -m / | awk 'NR==2 {print $2}')
-      
+
       if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY"); then
         error "Failed to create node via API, falling back to manual method"
         # Fall through to manual method below
@@ -518,7 +518,7 @@ create_node_in_panel() {
         # Step 3: Create allocations via API
         output "Creating allocations via API..."
         create_node_allocations "$PANEL_API_KEY" "$panel_url" "$NODE_ID" "$GAME_PORT_START" "$GAME_PORT_END" || true
-        
+
         # Step 4: Get node configuration
         output "Retrieving node configuration..."
         local config_result
@@ -555,7 +555,7 @@ create_node_in_panel() {
 
   # Create location first
   output "Creating location..."
-  php artisan p:location:make --short=local --long="Local Location" 2>/dev/null || true
+  php artisan p:location:make -n --short=local --long="Local Location" 2>/dev/null || true
 
   # Get location ID
   local location_id
@@ -563,7 +563,7 @@ create_node_in_panel() {
 
   # Create node with actual system specs
   output "Creating node: $NODE_NAME..."
-  php artisan p:node:make \
+  php artisan p:node:make -n \
     --name="$NODE_NAME" \
     --description="$NODE_DESCRIPTION" \
     --locationId="$location_id" \
@@ -575,7 +575,7 @@ create_node_in_panel() {
     --overallocateMemory=0 \
     --maxDisk="$max_disk" \
     --overallocateDisk=0 \
-    --uploadSize=100 2>/dev/null || true
+    --uploadSize=100 </dev/null 2>/dev/null || true
 
   # Get the node ID
   NODE_ID=$(mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -D panel -N -B -e "SELECT id FROM nodes WHERE name='${NODE_NAME}' LIMIT 1;" 2>/dev/null || echo "1")
@@ -789,15 +789,6 @@ main() {
   setup_panel_services
   install_phpmyadmin
 
-  # Create node in panel
-  create_node_in_panel
-
-  # Configure MariaDB for TCP connections
-  configure_mariadb_tcp
-
-  # Setup database host for the panel
-  setup_database_host "$PANEL_FQDN"
-
   # Generate API key for automated operations
   output "Generating Application API Key..."
   PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" || echo "")
@@ -810,6 +801,15 @@ main() {
   else
     warning "Failed to generate API key - automated server creation will be skipped"
   fi
+
+  # Create node in panel (uses API key if available)
+  create_node_in_panel
+
+  # Configure MariaDB for TCP connections
+  configure_mariadb_tcp
+
+  # Setup database host for the panel
+  setup_database_host "$PANEL_FQDN"
 
   # Elytra installation
   install_elytra_daemon
