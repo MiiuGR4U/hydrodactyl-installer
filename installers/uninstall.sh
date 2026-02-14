@@ -77,6 +77,22 @@ remove_elytra() {
     rm -f /etc/systemd/system/elytra.service
     systemctl daemon-reload
 
+    # Remove Elytra data directory
+    if [ -d "/var/lib/elytra" ]; then
+        output "Removing Elytra data directory..."
+        rm -rf /var/lib/elytra
+    fi
+
+    # Remove Elytra version file
+    rm -f /etc/pyrodactyl/elytra-version
+
+    # Remove pyrodactyl user (if it exists)
+    if id -u pyrodactyl >/dev/null 2>&1; then
+        output "Removing pyrodactyl user..."
+        userdel pyrodactyl 2>/dev/null || true
+        groupdel pyrodactyl 2>/dev/null || true
+    fi
+
     success "Elytra removed"
 }
 
@@ -92,6 +108,11 @@ remove_auto_updaters() {
     # Remove backup directories
     rm -rf /var/backups/pyrodactyl
     rm -rf /var/backups/elytra
+
+    # Remove /etc/pyrodactyl directory if empty
+    if [ -d "/etc/pyrodactyl" ]; then
+        rmdir /etc/pyrodactyl 2>/dev/null || true
+    fi
 
     success "Auto-updaters removed"
 }
