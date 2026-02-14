@@ -1825,7 +1825,7 @@ create_minecraft_server() {
   while [ "$api_ready" == false ] && [ $attempts -lt 30 ]; do
     local api_test
     local http_code
-    api_test=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
+    api_test=$(curl -s -L -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
       -H "Accept: Application/vnd.pterodactyl.v1+json" \
       "${panel_url}/api/application/users" 2>/dev/null)
 
@@ -1855,10 +1855,10 @@ create_minecraft_server() {
   # Create the server
   output "Sending server creation request..."
   output "DEBUG: POST ${panel_url}/api/application/servers"
-  
+
   local server_response
   local server_http_code
-  server_response=$(curl -s -w "\n%{http_code}" -X POST \
+  server_response=$(curl -s -L -w "\n%{http_code}" -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Content-Type: application/json" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
@@ -1867,7 +1867,7 @@ create_minecraft_server() {
 
   server_http_code=$(echo "$server_response" | tail -n1)
   server_response=$(echo "$server_response" | sed '$d')
-  
+
   output "DEBUG: Server creation HTTP status: $server_http_code"
   output "DEBUG: Server creation response: $(echo "$server_response" | head -c 300)"
 
@@ -1905,19 +1905,23 @@ generate_api_key() {
     use Pterodactyl\Models\ApiKey;
     use Pterodactyl\Models\User;
     use Pterodactyl\Services\Api\KeyCreationService;
-    
-    $user = User::first();
+
+    // Get the first ADMIN user (root_admin = 1)
+    $user = User::where("root_admin", true)->first();
     if (!$user) {
-        fwrite(STDERR, "No users found in database\n");
+        fwrite(STDERR, "No admin users found in database\n");
         exit(1);
     }
-    
+
+    echo "DEBUG: Using admin user ID: " . $user->id . " (root_admin: " . $user->root_admin . ")\n";
+
     // Delete existing key with same memo
-    ApiKey::query()
+    $deleted = ApiKey::query()
         ->where("user_id", $user->id)
         ->where("memo", "Installer API Key")
         ->delete();
-    
+    echo "DEBUG: Deleted existing keys: " . $deleted . "\n";
+
     $service = app(KeyCreationService::class);
     $apiKey = $service->setKeyType(ApiKey::TYPE_APPLICATION)->handle([
         "user_id" => $user->id,
@@ -1934,27 +1938,36 @@ generate_api_key() {
         "r_database_hosts" => 3,
         "r_server_databases" => 3,
     ]);
-    
-    // Output only the key for easy capture
+
+    echo "DEBUG: API Key created - Identifier: " . $apiKey->identifier . ", Key Type: " . $apiKey->key_type . "\n";
+
+    // Output only the key for easy capture (no newlines, no extra output)
     echo $apiKey->identifier . decrypt($apiKey->token);
   ' 2>&1)
 
   local exit_code=$?
+
+  output "DEBUG: PHP exit code: $exit_code"
+  output "DEBUG: Raw output preview: $(echo "$api_key_result" | head -c 200)"
 
   if [ $exit_code -ne 0 ]; then
     warning "Failed to generate API key: $api_key_result"
     return 1
   fi
 
+  # Extract the API key - remove whitespace and validate format
   local api_key
-  api_key=$(echo "$api_key_result" | grep -E '^[a-zA-Z0-9_]{30,}$' | tail -1)
+  api_key=$(echo "$api_key_result" | tr -d '[:space:]' | grep -oE 'pyro_[a-zA-Z0-9_]{40,}' | tail -c 48)
 
-  if [ -n "$api_key" ]; then
+  output "DEBUG: Extracted key length: ${#api_key}"
+  output "DEBUG: Key prefix: ${api_key:0:20}..."
+
+  if [ -n "$api_key" ] && [ "${#api_key}" -eq 48 ]; then
     success "API Key generated successfully"
     echo "$api_key"
     return 0
   else
-    warning "Failed to generate API key"
+    warning "Failed to generate API key (invalid format or length ${#api_key})"
     return 1
   fi
 }
@@ -1964,20 +1977,20 @@ generate_api_key() {
 # Get server country code via IP geolocation
 get_server_country_code() {
   local country_code=""
-  
+
   # Try ipapi.co first (free, no auth required for basic requests)
   country_code=$(curl -s --max-time 10 "https://ipapi.co/country_code/" 2>/dev/null || echo "")
-  
+
   # If that fails, try ipinfo.io
   if [ -z "$country_code" ] || [ "$country_code" == "null" ]; then
     country_code=$(curl -s --max-time 10 "https://ipinfo.io/country" 2>/dev/null || echo "")
   fi
-  
+
   # If that fails, try ifconfig.co
   if [ -z "$country_code" ] || [ "$country_code" == "null" ]; then
     country_code=$(curl -s --max-time 10 "https://ifconfig.co/country-iso" 2>/dev/null || echo "")
   fi
-  
+
   # Return uppercase country code or default to "XX"
   if [ -n "$country_code" ] && [ "$country_code" != "null" ]; then
     echo "$country_code" | tr '[:lower:]' '[:upper:]'
@@ -1991,59 +2004,59 @@ get_or_create_location() {
   local api_key="$1"
   local panel_url="$2"
   local country_code="$3"
-  
+
   output "Checking for existing location with code: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
-  
+
   # Get all locations
   output "DEBUG: Fetching locations from ${panel_url}/api/application/locations"
   local locations_response
   local http_code
-  locations_response=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
+  locations_response=$(curl -s -L -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     "${panel_url}/api/application/locations" 2>/dev/null || echo "")
-  
+
   http_code=$(echo "$locations_response" | tail -n1)
   locations_response=$(echo "$locations_response" | sed '$d')
-  
+
   output "DEBUG: HTTP status code: $http_code"
-  
+
   if [ "$http_code" != "200" ]; then
     error "Failed to fetch locations. HTTP status: $http_code"
     error "Response: $locations_response"
     return 1
   fi
-  
+
   if [ -n "$locations_response" ] && echo "$locations_response" | grep -q '"object":"list"'; then
     # Check if location with this short code exists
     local existing_location
     existing_location=$(echo "$locations_response" | jq -r ".data[] | select(.attributes.short == \"${country_code}\") | .attributes.id" 2>/dev/null | head -1)
-    
+
     if [ -n "$existing_location" ] && [ "$existing_location" != "null" ]; then
       info "Found existing location: ${country_code} (ID: ${existing_location})"
       echo "$existing_location"
       return 0
     fi
   fi
-  
+
   # Location doesn't exist, create it
   output "Creating new location: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
   output "DEBUG: POST ${panel_url}/api/application/locations with data: {\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}"
-  
+
   local create_response
   local create_http_code
-  create_response=$(curl -s -w "\n%{http_code}" -X POST \
+  create_response=$(curl -s -L -w "\n%{http_code}" -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     -H "Content-Type: application/json" \
     -d "{\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}" \
-    "${panel_url}/api/application/locations" 2>/dev/null || echo "")
-  
+    "${panel_url}/api/application/locations" 2>/dev/null)
+
   create_http_code=$(echo "$create_response" | tail -n1)
   create_response=$(echo "$create_response" | sed '$d')
-  
+
   output "DEBUG: Create location HTTP status: $create_http_code"
   output "DEBUG: Create location response: $create_response"
-  
+
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"location"'; then
     local new_location_id
     new_location_id=$(echo "$create_response" | jq -r '.attributes.id' 2>/dev/null)
@@ -2073,38 +2086,38 @@ create_node_via_api() {
   local memory_mb="$5"
   local disk_mb="$6"
   local behind_proxy="${7:-false}"
-  
+
   output "Creating node: ${COLOR_ORANGE}${node_name}${COLOR_NC}"
-  
+
   # Convert bash boolean to JSON boolean
   local json_behind_proxy="false"
   if [ "$behind_proxy" == "true" ] || [ "$behind_proxy" == "1" ]; then
     json_behind_proxy="true"
   fi
-  
+
   # Detect system specs if not provided
   if [ -z "$memory_mb" ] || [ "$memory_mb" == "0" ]; then
     memory_mb=$(get_system_memory)
     memory_mb=${memory_mb:-8192}
   fi
-  
+
   if [ -z "$disk_mb" ] || [ "$disk_mb" == "0" ]; then
     disk_mb=$(df -m / | awk 'NR==2 {print $2}')
     disk_mb=${disk_mb:-32768}
   fi
-  
+
   # Get server FQDN and sanitize it
   local fqdn
   fqdn=$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "localhost")
   # Sanitize FQDN - remove quotes and backslashes that would break JSON
   fqdn=$(echo "$fqdn" | sed 's/["\\]//g')
-  
+
   # Build JSON using temp file to avoid shell escaping issues
   local json_file
   json_file=$(mktemp)
   local current_date
   current_date=$(date +%Y-%m-%d)
-  
+
   if cmd_exists jq; then
     # Use jq for proper JSON construction
     jq -n \
@@ -2121,28 +2134,28 @@ create_node_via_api() {
     printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"http","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false}' \
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
-  
+
   output "DEBUG: POST ${panel_url}/api/application/nodes"
   output "DEBUG: Request JSON: $(cat "$json_file")"
-  
+
   local create_response
   local create_http_code
-  create_response=$(curl -s -w "\n%{http_code}" -X POST \
+  create_response=$(curl -s -L -w "\n%{http_code}" -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     -H "Content-Type: application/json" \
     -d @"$json_file" \
     "${panel_url}/api/application/nodes" 2>/dev/null)
-  
+
   create_http_code=$(echo "$create_response" | tail -n1)
   create_response=$(echo "$create_response" | sed '$d')
-  
+
   # Clean up temp file
   rm -f "$json_file"
-  
+
   output "DEBUG: Create node HTTP status: $create_http_code"
   output "DEBUG: Create node response preview: $(echo "$create_response" | head -c 300)"
-  
+
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"node"'; then
     local node_id
     node_id=$(echo "$create_response" | jq -r '.attributes.id' 2>/dev/null)
@@ -2169,16 +2182,16 @@ create_node_allocations() {
   local node_id="$3"
   local game_port_start="${4:-28015}"
   local game_port_end="${5:-28100}"
-  
+
   output "Creating allocations for node..."
-  
+
   # Get primary IP
   local primary_ip
   primary_ip=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "0.0.0.0")
-  
+
   # Create port ranges (Minecraft, Source Engine, general range)
   local ports_json="[\"25565-25665\",\"27015-27150\",\"${game_port_start}-${game_port_end}\"]"
-  
+
   local create_response
   create_response=$(curl -s -X POST \
     -H "Authorization: Bearer $api_key" \
@@ -2189,7 +2202,7 @@ create_node_allocations() {
       \"ports\":${ports_json}
     }" \
     "${panel_url}/api/application/nodes/${node_id}/allocations" 2>/dev/null || echo "")
-  
+
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"list"'; then
     local allocation_count
     allocation_count=$(echo "$create_response" | jq -r '.data | length' 2>/dev/null)
@@ -2206,31 +2219,31 @@ get_node_configuration() {
   local api_key="$1"
   local panel_url="$2"
   local node_id="$3"
-  
+
   output "Retrieving node configuration..."
-  
+
   local config_response
   config_response=$(curl -s \
     -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     "${panel_url}/api/application/nodes/${node_id}/configuration" 2>/dev/null || echo "")
-  
+
   if [ -z "$config_response" ] || ! echo "$config_response" | grep -q '"token"'; then
     error "Failed to get node configuration"
     return 1
   fi
-  
+
   # Extract token and UUID
   local node_token
   local node_uuid
   node_token=$(echo "$config_response" | jq -r '.token' 2>/dev/null || echo "")
   node_uuid=$(echo "$config_response" | jq -r '.uuid' 2>/dev/null || echo "")
-  
+
   if [ -z "$node_token" ] || [ "$node_token" == "null" ]; then
     error "Failed to extract node token from configuration"
     return 1
   fi
-  
+
   # Output token and UUID separated by pipe
   echo "${node_token}|${node_uuid}"
   return 0

@@ -531,7 +531,6 @@ create_node_in_panel() {
   # Check if we have API key for API-based creation
   if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_FQDN" ]; then
     local panel_url="https://${PANEL_FQDN}"
-    [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && panel_url="http://${PANEL_FQDN}"
 
     # Step 1: Detect country and get/create location
     output "Detecting server location..."
@@ -555,12 +554,15 @@ create_node_in_panel() {
         error "Failed to create node via API, falling back to manual method"
         # Fall through to manual method below
       else
+        output "DEBUG: Node created via API with NODE_ID=${NODE_ID}"
+        
         # Step 3: Create allocations via API
         output "Creating allocations via API..."
         create_node_allocations "$PANEL_API_KEY" "$panel_url" "$NODE_ID" "$GAME_PORT_START" "$GAME_PORT_END" || true
 
         # Step 4: Get node configuration
         output "Retrieving node configuration..."
+        output "DEBUG: Calling get_node_configuration with NODE_ID=${NODE_ID}"
         local config_result
         if config_result=$(get_node_configuration "$PANEL_API_KEY" "$panel_url" "$NODE_ID"); then
           NODE_TOKEN=$(echo "$config_result" | cut -d'|' -f1)
@@ -635,6 +637,7 @@ create_node_in_panel() {
   done
 
   # Update node with daemon token
+  output "DEBUG: Updating node ${NODE_ID} with daemon token"
   mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
     UPDATE panel.nodes SET
       daemon_token = '${NODE_TOKEN}',
@@ -643,7 +646,7 @@ create_node_in_panel() {
     WHERE id = ${NODE_ID}
   " 2>/dev/null || true
 
-  success "Node created in panel"
+  success "Node created in panel (ID: ${NODE_ID})"
 }
 
 # ---------------- Elytra Installation ---------------- #
@@ -708,9 +711,12 @@ install_elytra_daemon() {
   output "DEBUG: PANEL_FQDN=${PANEL_FQDN}"
   output "DEBUG: ELYTRA_DIR=${ELYTRA_DIR}"
 
-  # Determine panel URL based on SSL configuration
+  # Determine panel URL - always use HTTPS for API
   local panel_url="https://${PANEL_FQDN}"
-  [ "$ASSUME_SSL" != "true" ] && [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && panel_url="http://${PANEL_FQDN}"
+
+  # Debug: Show template before replacements
+  output "DEBUG: Elytra config template before sed:"
+  head -10 "${ELYTRA_DIR}/config.yml"
 
   # Replace placeholders
   sed -i "s|<UUID>|${uuid}|g" "${ELYTRA_DIR}/config.yml"
@@ -719,8 +725,19 @@ install_elytra_daemon() {
   sed -i "s|<REMOTE>|${panel_url}|g" "${ELYTRA_DIR}/config.yml"
 
   # Debug: Show resulting config
-  output "DEBUG: Elytra config after sed replacements:"
-  grep -E "^(uuid:|token_id:|token:|remote:)" "${ELYTRA_DIR}/config.yml" || output "DEBUG: (config lines not found as expected)"
+  output "DEBUG: Elytra config after sed replacements (first 15 lines):"
+  head -15 "${ELYTRA_DIR}/config.yml"
+  
+  # Validate YAML syntax if yamllint or python is available
+  if cmd_exists python3; then
+    if ! python3 -c "import yaml; yaml.safe_load(open('${ELYTRA_DIR}/config.yml'))" 2>/dev/null; then
+      error "DEBUG: YAML syntax validation failed!"
+      error "DEBUG: Config file content:"
+      cat "${ELYTRA_DIR}/config.yml"
+    else
+      output "DEBUG: YAML syntax is valid"
+    fi
+  fi
 
   if [ "$BEHIND_PROXY" == "true" ]; then
     sed -i "s|<TRUSTED_PROXIES>|[\"0.0.0.0/0\"]|g" "${ELYTRA_DIR}/config.yml"
@@ -876,9 +893,8 @@ main() {
     ALLOCATION_ID=$(mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -D panel -N -B -e "SELECT id FROM allocations WHERE node_id=${NODE_ID} LIMIT 1;" 2>/dev/null || echo "")
 
     if [ -n "$ALLOCATION_ID" ]; then
-      # Determine panel URL
+      # Determine panel URL - always use HTTPS for API
       PANEL_URL="https://${PANEL_FQDN}"
-      [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && PANEL_URL="http://${PANEL_FQDN}"
 
       # Create the server
       if create_minecraft_server "$PANEL_URL" "$PANEL_API_KEY" "$NODE_ID" "$LOCATION_ID" "$ALLOCATION_ID"; then
