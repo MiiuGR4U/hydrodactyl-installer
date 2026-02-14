@@ -340,12 +340,12 @@ cmd_exists() {
 # Returns 0 if credentials loaded successfully, 1 otherwise
 load_existing_db_credentials() {
   local creds_file="/root/.config/pyrodactyl/db-credentials"
-  
+
   if [ -f "$creds_file" ]; then
     output "Found existing database credentials, loading..."
     local saved_root_pass
     saved_root_pass=$(grep '^root:' "$creds_file" | cut -d':' -f2)
-    
+
     # Test if saved credentials work
     if mysql -u root -p"${saved_root_pass}" -e "SELECT 1" >/dev/null 2>&1; then
       echo "${saved_root_pass}"
@@ -646,9 +646,17 @@ bool_input() {
   local prompt="$2"
   local default="${3:-n}"
   local result=""
+  local prompt_suffix=""
+
+  # Set prompt suffix based on default
+  if [ "$default" == "y" ]; then
+    prompt_suffix="[Y/n] (default: y)"
+  else
+    prompt_suffix="[y/N] (default: n)"
+  fi
 
   while [[ "$result" != "y" && "$result" != "n" ]]; do
-    echo -n "* $prompt [y/N]: "
+    echo -n "* $prompt $prompt_suffix: "
     read -r result
     result=$(echo "$result" | tr '[:upper:]' '[:lower:]')
     [ -z "$result" ] && result="$default"
@@ -730,7 +738,7 @@ install_packages() {
 
 configure_mariadb_tcp() {
   output "Configuring MariaDB for TCP connections..."
-  
+
   # Create MariaDB configuration file to enable TCP connections
   local mariadb_conf_dir=""
   case "$OS" in
@@ -744,10 +752,10 @@ configure_mariadb_tcp() {
       mariadb_conf_dir="/etc/mysql/conf.d"
       ;;
   esac
-  
+
   # Ensure the directory exists
   mkdir -p "$mariadb_conf_dir"
-  
+
   # Create configuration file
   cat > "${mariadb_conf_dir}/99-pyrodactyl.cnf" <<EOF
 [mysqld]
@@ -762,7 +770,7 @@ EOF
 
   # Restart MariaDB to apply changes
   systemctl restart mariadb || systemctl restart mysql || true
-  
+
   # Wait for MariaDB to be ready
   local attempts=0
   while ! mysqladmin ping --silent 2>/dev/null; do
@@ -773,7 +781,7 @@ EOF
     fi
     sleep 1
   done
-  
+
   success "MariaDB configured for TCP connections"
 }
 
@@ -1102,17 +1110,17 @@ install_composer() {
 
 ensure_php_default() {
   local restart_fpm="${1:-false}"
-  
+
   output "Ensuring PHP ${PHP_VERSION} is set as default..."
   update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
   update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
   update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
-  
+
   if [ "$restart_fpm" == "true" ]; then
     output "Restarting PHP-FPM..."
     systemctl restart php${PHP_VERSION}-fpm 2>/dev/null || systemctl restart php-fpm 2>/dev/null || true
   fi
-  
+
   success "PHP ${PHP_VERSION} is set as default"
 }
 
@@ -1123,7 +1131,7 @@ install_nodejs() {
   fi
 
   output "Installing Node.js..."
-  
+
   case "$OS" in
     ubuntu|debian)
       curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -1155,10 +1163,10 @@ install_pnpm() {
   fi
 
   output "Installing pnpm..."
-  
+
   # Install pnpm globally using npm
   npm install -g pnpm
-  
+
   # Ensure npm global bin is in PATH
   export PATH="$PATH:$(npm bin -g 2>/dev/null || echo '/usr/local/bin')"
   export PATH="$PATH:$(npm config get prefix 2>/dev/null)/bin"
@@ -1173,7 +1181,7 @@ install_pnpm() {
 
 build_panel_assets() {
   local install_dir="${1:-$INSTALL_DIR}"
-  
+
   if [ -z "$install_dir" ]; then
     error "Install directory not specified for asset building"
     return 1
@@ -1227,7 +1235,7 @@ install_phpmyadmin() {
     GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'%' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
   " 2>/dev/null || warning "Could not create phpMyAdmin user (may already exist)"
-  
+
   # Save credentials to file
   mkdir -p /root/.config/pyrodactyl
   echo "phpmyadmin:${PHPMYADMIN_PASSWORD}" >> /root/.config/pyrodactyl/db-credentials
@@ -1243,14 +1251,14 @@ $cfg['LoginCookieStore'] = 0;
 PHPEOF
 
   output "Configuring nginx for phpMyAdmin..."
-  
+
   # Download config from GitHub
   local phpmyadmin_config="/etc/nginx/sites-available/phpmyadmin.conf"
   if ! curl -fsSL -o "$phpmyadmin_config" "${GITHUB_BASE_URL}/${GITHUB_SOURCE}/configs/phpmyadmin.conf" 2>/dev/null; then
     error "Failed to download phpMyAdmin nginx configuration"
     return 1
   fi
-  
+
   # Replace PHP_VERSION placeholder
   sed -i "s/<PHP_VERSION>/${PHP_VERSION}/g" "$phpmyadmin_config"
 
@@ -1268,9 +1276,9 @@ setup_database_host() {
   local db_host_user="${3:-dbhost}"
   local db_host_pass="${4:-dbhostpassword}"
   local db_host_port="${5:-3306}"
-  
+
   print_flame "Setting up Database Host"
-  
+
   # Create database user if it doesn't exist
   output "Creating database host user..."
   mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
@@ -1280,12 +1288,12 @@ setup_database_host() {
     GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'%' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
   " 2>/dev/null || warning "Could not create database host user (may already exist)"
-  
+
   # Use Laravel's HostCreationService to create the database host
   output "Creating database host in panel..."
-  
+
   cd "$INSTALL_DIR" || return 1
-  
+
   local tinker_output
   tinker_output=$(php artisan tinker --execute="
 use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
@@ -1302,7 +1310,7 @@ try {
     echo 'Error: ' . \$e->getMessage();
 }
 " 2>&1)
-  
+
   if echo "$tinker_output" | grep -q "Database host created successfully"; then
     success "Database host '${db_host_name}' configured successfully"
   else
