@@ -728,6 +728,55 @@ install_packages() {
 
 # ------------------ MySQL/MariaDB Functions ----------------- #
 
+configure_mariadb_tcp() {
+  output "Configuring MariaDB for TCP connections..."
+  
+  # Create MariaDB configuration file to enable TCP connections
+  local mariadb_conf_dir=""
+  case "$OS" in
+    ubuntu|debian)
+      mariadb_conf_dir="/etc/mysql/mariadb.conf.d"
+      ;;
+    rocky|almalinux|fedora|rhel|centos)
+      mariadb_conf_dir="/etc/my.cnf.d"
+      ;;
+    *)
+      mariadb_conf_dir="/etc/mysql/conf.d"
+      ;;
+  esac
+  
+  # Ensure the directory exists
+  mkdir -p "$mariadb_conf_dir"
+  
+  # Create configuration file
+  cat > "${mariadb_conf_dir}/99-pyrodactyl.cnf" <<EOF
+[mysqld]
+bind-address = 0.0.0.0
+port = 3306
+max_connections = 1000
+innodb_buffer_pool_size = 1G
+innodb_log_file_size = 256M
+innodb_flush_log_at_trx_commit = 1
+innodb_lock_wait_timeout = 50
+EOF
+
+  # Restart MariaDB to apply changes
+  systemctl restart mariadb || systemctl restart mysql || true
+  
+  # Wait for MariaDB to be ready
+  local attempts=0
+  while ! mysqladmin ping --silent 2>/dev/null; do
+    attempts=$((attempts + 1))
+    if [ $attempts -gt 30 ]; then
+      error "MariaDB failed to start after configuration"
+      return 1
+    fi
+    sleep 1
+  done
+  
+  success "MariaDB configured for TCP connections"
+}
+
 create_db_user() {
   local username="$1"
   local password="$2"
@@ -1152,6 +1201,10 @@ build_panel_assets() {
 install_phpmyadmin() {
   print_flame "Installing phpMyAdmin"
 
+  # Generate random password for phpMyAdmin
+  PHPMYADMIN_PASSWORD="${PHPMYADMIN_PASSWORD:-$(gen_passwd 32)}"
+  export PHPMYADMIN_PASSWORD
+
   export DEBIAN_FRONTEND=noninteractive
 
   # Pre-configure phpMyAdmin debconf settings
@@ -1166,10 +1219,16 @@ install_phpmyadmin() {
 
   output "Creating phpMyAdmin database user..."
   mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
-    CREATE USER IF NOT EXISTS 'phpmyadmin'@'127.0.0.1' IDENTIFIED BY 'phpmyadmin';
+    CREATE USER IF NOT EXISTS 'phpmyadmin'@'127.0.0.1' IDENTIFIED BY '${PHPMYADMIN_PASSWORD}';
+    CREATE USER IF NOT EXISTS 'phpmyadmin'@'%' IDENTIFIED BY '${PHPMYADMIN_PASSWORD}';
     GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'127.0.0.1' WITH GRANT OPTION;
+    GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'%' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
   " 2>/dev/null || warning "Could not create phpMyAdmin user (may already exist)"
+  
+  # Save credentials to file
+  mkdir -p /root/.config/pyrodactyl
+  echo "phpmyadmin:${PHPMYADMIN_PASSWORD}" >> /root/.config/pyrodactyl/db-credentials
 
   output "Setting up phpMyAdmin configuration..."
   cat > /etc/phpmyadmin/conf.d/99-custom.php << 'PHPEOF'

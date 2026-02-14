@@ -565,6 +565,11 @@ main() {
   echo ""
   output "Database credentials saved to: ${COLOR_ORANGE}/root/.config/pyrodactyl/db-credentials${COLOR_NC}"
   echo ""
+  output "phpMyAdmin Access:"
+  output "  URL: ${COLOR_ORANGE}http://${PANEL_FQDN}:8081${COLOR_NC}"
+  output "  Username: ${COLOR_ORANGE}phpmyadmin${COLOR_NC}"
+  output "  Password: ${COLOR_ORANGE}${PHPMYADMIN_PASSWORD}${COLOR_NC}"
+  echo ""
 
   if [ "$INSTALL_AUTO_UPDATER" == true ]; then
     output "✅ Auto-updater is enabled and will check for updates hourly."
