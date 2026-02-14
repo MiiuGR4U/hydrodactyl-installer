@@ -2004,44 +2004,46 @@ get_or_create_location() {
   local api_key="$1"
   local panel_url="$2"
   local country_code="$3"
-
-  output "Checking for existing location with code: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
-
+  
+  # Output to stderr so it doesn't pollute the return value
+  output "Checking for existing location with code: ${COLOR_ORANGE}${country_code}${COLOR_NC}" >&2
+  
   # Get all locations
-  output "DEBUG: Fetching locations from ${panel_url}/api/application/locations"
+  output "DEBUG: Fetching locations from ${panel_url}/api/application/locations" >&2
   local locations_response
   local http_code
   locations_response=$(curl -s -L -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     "${panel_url}/api/application/locations" 2>/dev/null || echo "")
-
+  
   http_code=$(echo "$locations_response" | tail -n1)
   locations_response=$(echo "$locations_response" | sed '$d')
-
-  output "DEBUG: HTTP status code: $http_code"
-
+  
+  output "DEBUG: HTTP status code: $http_code" >&2
+  
   if [ "$http_code" != "200" ]; then
-    error "Failed to fetch locations. HTTP status: $http_code"
-    error "Response: $locations_response"
+    error "Failed to fetch locations. HTTP status: $http_code" >&2
+    error "Response: $locations_response" >&2
     return 1
   fi
-
+  
   if [ -n "$locations_response" ] && echo "$locations_response" | grep -q '"object":"list"'; then
     # Check if location with this short code exists
     local existing_location
     existing_location=$(echo "$locations_response" | jq -r ".data[] | select(.attributes.short == \"${country_code}\") | .attributes.id" 2>/dev/null | head -1)
-
+    
     if [ -n "$existing_location" ] && [ "$existing_location" != "null" ]; then
-      info "Found existing location: ${country_code} (ID: ${existing_location})"
+      info "Found existing location: ${country_code} (ID: ${existing_location})" >&2
+      # Only output the ID to stdout
       echo "$existing_location"
       return 0
     fi
   fi
-
+  
   # Location doesn't exist, create it
-  output "Creating new location: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
-  output "DEBUG: POST ${panel_url}/api/application/locations with data: {\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}"
-
+  output "Creating new location: ${COLOR_ORANGE}${country_code}${COLOR_NC}" >&2
+  output "DEBUG: POST ${panel_url}/api/application/locations with data: {\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}" >&2
+  
   local create_response
   local create_http_code
   create_response=$(curl -s -L -w "\n%{http_code}" -X POST \
@@ -2050,28 +2052,29 @@ get_or_create_location() {
     -H "Content-Type: application/json" \
     -d "{\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}" \
     "${panel_url}/api/application/locations" 2>/dev/null)
-
+  
   create_http_code=$(echo "$create_response" | tail -n1)
   create_response=$(echo "$create_response" | sed '$d')
-
-  output "DEBUG: Create location HTTP status: $create_http_code"
-  output "DEBUG: Create location response: $create_response"
-
+  
+  output "DEBUG: Create location HTTP status: $create_http_code" >&2
+  output "DEBUG: Create location response: $create_response" >&2
+  
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"location"'; then
     local new_location_id
     new_location_id=$(echo "$create_response" | jq -r '.attributes.id' 2>/dev/null)
-    success "Created location: ${country_code} (ID: ${new_location_id})"
+    success "Created location: ${country_code} (ID: ${new_location_id})" >&2
+    # Only output the ID to stdout
     echo "$new_location_id"
     return 0
   else
-    error "Failed to create location"
-    error "HTTP status code: $create_http_code"
-    error "Response body: $create_response"
+    error "Failed to create location" >&2
+    error "HTTP status code: $create_http_code" >&2
+    error "Response body: $create_response" >&2
     # Try to extract error details if present
     local error_detail
     error_detail=$(echo "$create_response" | jq -r '.errors[0].detail // .message // "No detailed error available"' 2>/dev/null)
     if [ -n "$error_detail" ] && [ "$error_detail" != "null" ]; then
-      error "API Error: $error_detail"
+      error "API Error: $error_detail" >&2
     fi
     return 1
   fi
