@@ -1730,47 +1730,91 @@ create_minecraft_server() {
 
   output "Creating Minecraft server via API..."
 
-  # Create server JSON payload
+  # Build JSON with jq to avoid formatting issues
   local server_json
-  server_json=$(cat <<EOF
-{
-    "name": "Minecraft Vanilla Server",
-    "description": "Automatically created Minecraft Vanilla Server",
-    "user": 1,
-    "egg": 8,
-    "docker_image": "ghcr.io/pterodactyl/yolks:java_17",
-    "startup": "java -Xms128M -Xmx4096M -jar {{SERVER_JARFILE}}",
-    "environment": {
-        "SERVER_JARFILE": "server.jar",
-        "VANILLA_VERSION": "latest"
-    },
-    "limits": {
-        "memory": 4096,
-        "overhead_memory": 2048,
-        "swap": 0,
-        "disk": 32768,
-        "io": 500,
-        "cpu": 400
-    },
-    "feature_limits": {
-        "databases": 0,
-        "allocations": 1,
-        "backups": 0
-    },
-    "allocation": {
-        "default": ${allocation_id}
-    },
-    "deploy": {
-        "locations": [${location_id}],
-        "dedicated_ip": false,
-        "port_range": []
-    },
-    "start_on_completion": false,
-    "skip_scripts": false,
-    "oom_disabled": false
-}
-EOF
-)
+  if [ -n "$allocation_id" ] && [ "$allocation_id" != "null" ]; then
+    # Use specific allocation - don't include deploy section
+    server_json=$(jq -n \
+      --arg name "Minecraft Vanilla Server" \
+      --arg desc "Automatically created Minecraft Vanilla Server" \
+      --argjson user 1 \
+      --argjson egg 8 \
+      --arg docker_image "ghcr.io/pterodactyl/yolks:java_17" \
+      --arg startup 'java -Xms128M -Xmx4096M -jar {{SERVER_JARFILE}}' \
+      --argjson allocation_id "$allocation_id" \
+      '{
+        name: $name,
+        description: $desc,
+        user: $user,
+        egg: $egg,
+        docker_image: $docker_image,
+        startup: $startup,
+        environment: {
+          SERVER_JARFILE: "server.jar",
+          VANILLA_VERSION: "latest"
+        },
+        limits: {
+          memory: 4096,
+          swap: 0,
+          disk: 32768,
+          io: 500,
+          cpu: 400
+        },
+        feature_limits: {
+          databases: 0,
+          allocations: 1,
+          backups: 0
+        },
+        allocation: {
+          default: $allocation_id
+        },
+        start_on_completion: false,
+        skip_scripts: false,
+        oom_disabled: false
+      }')
+  else
+    # Auto-deploy to location
+    server_json=$(jq -n \
+      --arg name "Minecraft Vanilla Server" \
+      --arg desc "Automatically created Minecraft Vanilla Server" \
+      --argjson user 1 \
+      --argjson egg 8 \
+      --arg docker_image "ghcr.io/pterodactyl/yolks:java_17" \
+      --arg startup 'java -Xms128M -Xmx4096M -jar {{SERVER_JARFILE}}' \
+      --argjson location_id "$location_id" \
+      '{
+        name: $name,
+        description: $desc,
+        user: $user,
+        egg: $egg,
+        docker_image: $docker_image,
+        startup: $startup,
+        environment: {
+          SERVER_JARFILE: "server.jar",
+          VANILLA_VERSION: "latest"
+        },
+        limits: {
+          memory: 4096,
+          swap: 0,
+          disk: 32768,
+          io: 500,
+          cpu: 400
+        },
+        feature_limits: {
+          databases: 0,
+          allocations: 1,
+          backups: 0
+        },
+        deploy: {
+          locations: [$location_id],
+          dedicated_ip: false,
+          port_range: []
+        },
+        start_on_completion: false,
+        skip_scripts: false,
+        oom_disabled: false
+      }')
+  fi
 
   # Wait for API to be ready
   output "Waiting for API to be ready..."
@@ -1797,12 +1841,15 @@ EOF
   fi
 
   # Create the server
+  output "Sending server creation request..."
+  
   local server_response
-  server_response=$(curl -s -X POST "${panel_url}/api/application/servers" \
+  server_response=$(curl -s -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Content-Type: application/json" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
-    -d "$server_json" 2>/dev/null)
+    -d "$server_json" \
+    "${panel_url}/api/application/servers" 2>/dev/null)
 
   if echo "$server_response" | grep -q '"object":"server"'; then
     local server_id
@@ -1814,7 +1861,10 @@ EOF
     return 0
   else
     warning "Failed to create Minecraft server"
-    output "API response: $server_response"
+    local error_detail
+    error_detail=$(echo "$server_response" | jq -r '.errors[0].detail // .message // "Unknown error"' 2>/dev/null)
+    error "API Error: $error_detail"
+    error "Raw response: $server_response"
     return 1
   fi
 }
@@ -1976,6 +2026,12 @@ create_node_via_api() {
   
   output "Creating node: ${COLOR_ORANGE}${node_name}${COLOR_NC}"
   
+  # Convert bash boolean to JSON boolean
+  local json_behind_proxy="false"
+  if [ "$behind_proxy" == "true" ] || [ "$behind_proxy" == "1" ]; then
+    json_behind_proxy="true"
+  fi
+  
   # Detect system specs if not provided
   if [ -z "$memory_mb" ] || [ "$memory_mb" == "0" ]; then
     memory_mb=$(get_system_memory)
@@ -1987,33 +2043,45 @@ create_node_via_api() {
     disk_mb=${disk_mb:-32768}
   fi
   
-  # Get server FQDN
+  # Get server FQDN and sanitize it
   local fqdn
   fqdn=$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "localhost")
+  # Sanitize FQDN - remove quotes and backslashes that would break JSON
+  fqdn=$(echo "$fqdn" | sed 's/["\\]//g')
+  
+  # Build JSON using temp file to avoid shell escaping issues
+  local json_file
+  json_file=$(mktemp)
+  local current_date
+  current_date=$(date +%Y-%m-%d)
+  
+  if cmd_exists jq; then
+    # Use jq for proper JSON construction
+    jq -n \
+      --arg name "$node_name" \
+      --arg desc "Elytra node auto-created on $current_date" \
+      --argjson location_id "$location_id" \
+      --arg fqdn "$fqdn" \
+      --argjson behind_proxy "$json_behind_proxy" \
+      --argjson memory "$memory_mb" \
+      --argjson disk "$disk_mb" \
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "http", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false}' > "$json_file"
+  else
+    # Fallback: write JSON directly to file
+    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"http","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false}' \
+      "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
+  fi
   
   local create_response
   create_response=$(curl -s -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     -H "Content-Type: application/json" \
-    -d "{
-      \"name\":\"${node_name}\",
-      \"description\":\"Elytra node auto-created on $(date +%Y-%m-%d)\",
-      \"location_id\":${location_id},
-      \"fqdn\":\"${fqdn}\",
-      \"scheme\":\"http\",
-      \"behind_proxy\":${behind_proxy},
-      \"public\":true,
-      \"memory\":${memory_mb},
-      \"memory_overallocate\":0,
-      \"disk\":${disk_mb},
-      \"disk_overallocate\":0,
-      \"upload_size\":100,
-      \"daemon_listen\":8080,
-      \"daemon_sftp\":2022,
-      \"maintenance_mode\":false
-    }" \
-    "${panel_url}/api/application/nodes" 2>/dev/null || echo "")
+    -d @"$json_file" \
+    "${panel_url}/api/application/nodes" 2>/dev/null)
+  
+  # Clean up temp file
+  rm -f "$json_file"
   
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"node"'; then
     local node_id
@@ -2024,8 +2092,12 @@ create_node_via_api() {
   else
     error "Failed to create node"
     local error_detail
-    error_detail=$(echo "$create_response" | jq -r '.errors[0].detail' 2>/dev/null || echo "Unknown error")
+    error_detail=$(echo "$create_response" | jq -r '.errors[0].detail // .message // "Unknown error"' 2>/dev/null || echo "Unknown error")
     error "API Error: ${error_detail}"
+    # Debug output
+    if [ -n "$create_response" ]; then
+      warning "Raw response: $create_response"
+    fi
     return 1
   fi
 }

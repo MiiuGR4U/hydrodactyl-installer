@@ -311,7 +311,7 @@ show_menu() {
         break
         ;;
       2)
-        execute_ui "panel" "elytra"
+        execute_ui "both"
         break
         ;;
       3)
