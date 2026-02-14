@@ -159,10 +159,10 @@ cleanup_packages() {
         case "$OS" in
             ubuntu | debian)
                 apt-get remove -y \
-                    php8.3-fpm php8.3-cli php8.3-gd php8.3-mysql \
-                    php8.3-pdo php8.3-mbstring php8.3-tokenizer \
-                    php8.3-bcmath php8.3-xml php8.3-curl php8.3-zip \
-                    php8.3-intl php8.3-redis php8.3-sqlite3 \
+                    php8.4-fpm php8.4-cli php8.4-gd php8.4-mysql \
+                    php8.4-pdo php8.4-mbstring php8.4-tokenizer \
+                    php8.4-bcmath php8.4-xml php8.4-curl php8.4-zip \
+                    php8.4-intl php8.4-redis php8.4-sqlite3 \
                     nginx mariadb-server redis-server \
                     2>/dev/null || warning "Some packages may not have been installed"
 

@@ -35,7 +35,7 @@ export LOG_PATH="/var/log/pyrodactyl-installer.log"
 
 export WEBUSER="www-data"
 export WEBGROUP="www-data"
-export PHP_VERSION="8.3"
+export PHP_VERSION="8.4"
 
 # ------------------ Colors - Orange Gradient ----------------- #
 

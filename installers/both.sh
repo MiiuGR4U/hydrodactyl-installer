@@ -141,6 +141,12 @@ install_panel_dependencies() {
       LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
       update_repos true
       install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis php${PHP_VERSION}-sqlite3"
+
+      # Set PHP 8.4 as the default
+      output "Setting PHP ${PHP_VERSION} as the default..."
+      update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
+      update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
+      update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
       ;;
 
     debian)
@@ -150,6 +156,12 @@ install_panel_dependencies() {
       echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
       update_repos true
       install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis php${PHP_VERSION}-sqlite3"
+
+      # Set PHP 8.4 as the default
+      output "Setting PHP ${PHP_VERSION} as the default..."
+      update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
+      update-alternatives --set phar /usr/bin/phar${PHP_VERSION} 2>/dev/null || true
+      update-alternatives --set phar.phar /usr/bin/phar.phar${PHP_VERSION} 2>/dev/null || true
       ;;
 
     rocky|almalinux)
@@ -157,7 +169,7 @@ install_panel_dependencies() {
       install_packages "epel-release"
       dnf install -y "https://rpms.remirepo.net/enterprise/remi-release-${OS_VER_MAJOR}.rpm"
       dnf module reset php -y
-      dnf module enable php:remi-8.3 -y
+      dnf module enable php:remi-${PHP_VERSION} -y
       install_packages "php-fpm php-cli php-gd php-mysqlnd php-pdo php-mbstring php-tokenizer php-bcmath php-xml php-curl php-zip php-intl php-redis php-sqlite3"
       php_fpm_conf
       ;;
