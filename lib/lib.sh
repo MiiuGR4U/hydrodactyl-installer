@@ -1818,38 +1818,58 @@ create_minecraft_server() {
 
   # Wait for API to be ready
   output "Waiting for API to be ready..."
+  output "DEBUG: Checking API at ${panel_url}/api/application/users"
+  output "DEBUG: Using node_id=${node_id}, location_id=${location_id}, allocation_id=${allocation_id}"
   local api_ready=false
   local attempts=0
   while [ "$api_ready" == false ] && [ $attempts -lt 30 ]; do
     local api_test
-    api_test=$(curl -s -H "Authorization: Bearer $api_key" \
+    local http_code
+    api_test=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
       -H "Accept: Application/vnd.pterodactyl.v1+json" \
-      "${panel_url}/api/application/users" 2>/dev/null || echo "failed")
+      "${panel_url}/api/application/users" 2>/dev/null)
+
+    http_code=$(echo "$api_test" | tail -n1)
+    api_test=$(echo "$api_test" | sed '$d')
 
     if echo "$api_test" | grep -q '"object":"list"'; then
       api_ready=true
+      output "DEBUG: API is ready after $attempts attempts"
       break
     fi
 
     attempts=$((attempts + 1))
+    if [ $((attempts % 5)) -eq 0 ]; then
+      output "DEBUG: API check attempt $attempts, HTTP status: $http_code, response: $(echo "$api_test" | head -c 100)"
+    fi
     sleep 2
   done
 
   if [ "$api_ready" == false ]; then
     warning "API did not become ready in time, skipping server creation"
+    error "DEBUG: Final HTTP status: $http_code"
+    error "DEBUG: Final response: $api_test"
     return 1
   fi
 
   # Create the server
   output "Sending server creation request..."
+  output "DEBUG: POST ${panel_url}/api/application/servers"
   
   local server_response
-  server_response=$(curl -s -X POST \
+  local server_http_code
+  server_response=$(curl -s -w "\n%{http_code}" -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Content-Type: application/json" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     -d "$server_json" \
     "${panel_url}/api/application/servers" 2>/dev/null)
+
+  server_http_code=$(echo "$server_response" | tail -n1)
+  server_response=$(echo "$server_response" | sed '$d')
+  
+  output "DEBUG: Server creation HTTP status: $server_http_code"
+  output "DEBUG: Server creation response: $(echo "$server_response" | head -c 300)"
 
   if echo "$server_response" | grep -q '"object":"server"'; then
     local server_id
@@ -1861,6 +1881,7 @@ create_minecraft_server() {
     return 0
   else
     warning "Failed to create Minecraft server"
+    error "HTTP status: $server_http_code"
     local error_detail
     error_detail=$(echo "$server_response" | jq -r '.errors[0].detail // .message // "Unknown error"' 2>/dev/null)
     error "API Error: $error_detail"
@@ -1974,10 +1995,23 @@ get_or_create_location() {
   output "Checking for existing location with code: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
   
   # Get all locations
+  output "DEBUG: Fetching locations from ${panel_url}/api/application/locations"
   local locations_response
-  locations_response=$(curl -s -H "Authorization: Bearer $api_key" \
+  local http_code
+  locations_response=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     "${panel_url}/api/application/locations" 2>/dev/null || echo "")
+  
+  http_code=$(echo "$locations_response" | tail -n1)
+  locations_response=$(echo "$locations_response" | sed '$d')
+  
+  output "DEBUG: HTTP status code: $http_code"
+  
+  if [ "$http_code" != "200" ]; then
+    error "Failed to fetch locations. HTTP status: $http_code"
+    error "Response: $locations_response"
+    return 1
+  fi
   
   if [ -n "$locations_response" ] && echo "$locations_response" | grep -q '"object":"list"'; then
     # Check if location with this short code exists
@@ -1993,14 +2027,22 @@ get_or_create_location() {
   
   # Location doesn't exist, create it
   output "Creating new location: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
+  output "DEBUG: POST ${panel_url}/api/application/locations with data: {\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}"
   
   local create_response
-  create_response=$(curl -s -X POST \
+  local create_http_code
+  create_response=$(curl -s -w "\n%{http_code}" -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     -H "Content-Type: application/json" \
     -d "{\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}" \
     "${panel_url}/api/application/locations" 2>/dev/null || echo "")
+  
+  create_http_code=$(echo "$create_response" | tail -n1)
+  create_response=$(echo "$create_response" | sed '$d')
+  
+  output "DEBUG: Create location HTTP status: $create_http_code"
+  output "DEBUG: Create location response: $create_response"
   
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"location"'; then
     local new_location_id
@@ -2010,6 +2052,14 @@ get_or_create_location() {
     return 0
   else
     error "Failed to create location"
+    error "HTTP status code: $create_http_code"
+    error "Response body: $create_response"
+    # Try to extract error details if present
+    local error_detail
+    error_detail=$(echo "$create_response" | jq -r '.errors[0].detail // .message // "No detailed error available"' 2>/dev/null)
+    if [ -n "$error_detail" ] && [ "$error_detail" != "null" ]; then
+      error "API Error: $error_detail"
+    fi
     return 1
   fi
 }
@@ -2072,16 +2122,26 @@ create_node_via_api() {
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
   
+  output "DEBUG: POST ${panel_url}/api/application/nodes"
+  output "DEBUG: Request JSON: $(cat "$json_file")"
+  
   local create_response
-  create_response=$(curl -s -X POST \
+  local create_http_code
+  create_response=$(curl -s -w "\n%{http_code}" -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     -H "Content-Type: application/json" \
     -d @"$json_file" \
     "${panel_url}/api/application/nodes" 2>/dev/null)
   
+  create_http_code=$(echo "$create_response" | tail -n1)
+  create_response=$(echo "$create_response" | sed '$d')
+  
   # Clean up temp file
   rm -f "$json_file"
+  
+  output "DEBUG: Create node HTTP status: $create_http_code"
+  output "DEBUG: Create node response preview: $(echo "$create_response" | head -c 300)"
   
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"node"'; then
     local node_id
