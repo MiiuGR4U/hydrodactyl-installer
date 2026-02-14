@@ -112,20 +112,6 @@ install_elytra() {
     groupadd --gid 8888 pyrodactyl 2>/dev/null || true
   fi
 
-  # Set proper ownership on Elytra data directories
-  output "Setting permissions on Elytra data directories..."
-  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
-  chown -R 8888:8888 "$INSTALL_DIR" 2>/dev/null || true
-
-  # Set full permissions so containers can read/write/execute
-  # TODO: Can we figure out if 777 is required or not? Launching a server did not work without this...
-  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
-  chmod -R 777 "$INSTALL_DIR" 2>/dev/null || true
-
   # Determine architecture
   local arch
   arch=$(uname -m)
@@ -385,6 +371,20 @@ main() {
   install_rustic
   setup_systemd_service
   start_elytra
+
+  # Set proper ownership on Elytra data directories (after service starts)
+  output "Setting final permissions on Elytra data directories..."
+  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
+  chown -R 8888:8888 "$INSTALL_DIR" 2>/dev/null || true
+
+  # Set full permissions so containers can read/write/execute
+  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
+  chmod -R 777 "$INSTALL_DIR" 2>/dev/null || true
+
   configure_firewall
   install_auto_updater_if_requested
   verify_connection
