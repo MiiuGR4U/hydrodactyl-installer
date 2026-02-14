@@ -1209,9 +1209,9 @@ install_phpmyadmin() {
 
   # Pre-configure phpMyAdmin debconf settings
   echo 'phpmyadmin phpmyadmin/dbconfig-install boolean true' | debconf-set-selections
-  echo 'phpmyadmin phpmyadmin/app-password-confirm password ptero' | debconf-set-selections
+  echo "phpmyadmin phpmyadmin/app-password-confirm password ${PHPMYADMIN_PASSWORD}" | debconf-set-selections
   echo "phpmyadmin phpmyadmin/mysql/admin-pass password ${MYSQL_ROOT_PASSWORD}" | debconf-set-selections
-  echo 'phpmyadmin phpmyadmin/mysql/app-pass password ptero' | debconf-set-selections
+  echo "phpmyadmin phpmyadmin/mysql/app-pass password ${PHPMYADMIN_PASSWORD}" | debconf-set-selections
   echo 'phpmyadmin phpmyadmin/reconfigure-webserver multiselect' | debconf-set-selections
 
   output "Installing phpMyAdmin and PHP extensions..."
