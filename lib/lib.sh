@@ -2026,10 +2026,10 @@ get_or_create_location() {
   local api_key="$1"
   local panel_url="$2"
   local country_code="$3"
-  
+
   # Output to stderr so it doesn't pollute the return value
   output "Checking for existing location with code: ${COLOR_ORANGE}${country_code}${COLOR_NC}" >&2
-  
+
   # Get all locations
   output "DEBUG: Fetching locations from ${panel_url}/api/application/locations" >&2
   local locations_response
@@ -2037,23 +2037,23 @@ get_or_create_location() {
   locations_response=$(curl -s -L -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     "${panel_url}/api/application/locations" 2>/dev/null || echo "")
-  
+
   http_code=$(echo "$locations_response" | tail -n1)
   locations_response=$(echo "$locations_response" | sed '$d')
-  
+
   output "DEBUG: HTTP status code: $http_code" >&2
-  
+
   if [ "$http_code" != "200" ]; then
     error "Failed to fetch locations. HTTP status: $http_code" >&2
     error "Response: $locations_response" >&2
     return 1
   fi
-  
+
   if [ -n "$locations_response" ] && echo "$locations_response" | grep -q '"object":"list"'; then
     # Check if location with this short code exists
     local existing_location
     existing_location=$(echo "$locations_response" | jq -r ".data[] | select(.attributes.short == \"${country_code}\") | .attributes.id" 2>/dev/null | head -1)
-    
+
     if [ -n "$existing_location" ] && [ "$existing_location" != "null" ]; then
       info "Found existing location: ${country_code} (ID: ${existing_location})" >&2
       # Only output the ID to stdout
@@ -2061,11 +2061,11 @@ get_or_create_location() {
       return 0
     fi
   fi
-  
+
   # Location doesn't exist, create it
   output "Creating new location: ${COLOR_ORANGE}${country_code}${COLOR_NC}" >&2
   output "DEBUG: POST ${panel_url}/api/application/locations with data: {\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}" >&2
-  
+
   local create_response
   local create_http_code
   create_response=$(curl -s -L -w "\n%{http_code}" -X POST \
@@ -2074,13 +2074,13 @@ get_or_create_location() {
     -H "Content-Type: application/json" \
     -d "{\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}" \
     "${panel_url}/api/application/locations" 2>/dev/null)
-  
+
   create_http_code=$(echo "$create_response" | tail -n1)
   create_response=$(echo "$create_response" | sed '$d')
-  
+
   output "DEBUG: Create location HTTP status: $create_http_code" >&2
   output "DEBUG: Create location response: $create_response" >&2
-  
+
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"location"'; then
     local new_location_id
     new_location_id=$(echo "$create_response" | jq -r '.attributes.id' 2>/dev/null)
@@ -2139,7 +2139,7 @@ create_node_via_api() {
 
   # Sanitize node_name - remove characters that would break JSON
   node_name=$(echo "$node_name" | sed 's/["\\]//g')
-  
+
   # Ensure node_name is not empty
   if [ -z "$node_name" ]; then
     node_name="Elytra-Node-$(hostname -s)"
@@ -2169,7 +2169,7 @@ create_node_via_api() {
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "http", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "elytra", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "http", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemonType: "elytra", backupDisk: "rustic_local"}' > "$json_file" 2>&1; then
       error "Failed to build JSON with jq"
       error "jq error: $(cat "$json_file")"
       rm -f "$json_file"
@@ -2177,7 +2177,7 @@ create_node_via_api() {
     fi
   else
     # Fallback: write JSON directly to file
-    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"http","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"elytra","backup_disk":"rustic_local"}' \
+    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"http","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemonType":"elytra","backupDisk":"rustic_local"}' \
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
