@@ -1981,9 +1981,19 @@ get_server_country_code() {
   # Try ipapi.co first (free, no auth required for basic requests)
   country_code=$(curl -s --max-time 10 "https://ipapi.co/country_code/" 2>/dev/null || echo "")
 
+  # Check if response is an error (contains ERROR or RATELIMITED)
+  if echo "$country_code" | grep -qi "error\|ratelimited"; then
+    country_code=""
+  fi
+
   # If that fails, try ipinfo.io
   if [ -z "$country_code" ] || [ "$country_code" == "null" ]; then
     country_code=$(curl -s --max-time 10 "https://ipinfo.io/country" 2>/dev/null || echo "")
+  fi
+
+  # Check if response is an error
+  if echo "$country_code" | grep -qi "error\|ratelimited"; then
+    country_code=""
   fi
 
   # If that fails, try ifconfig.co
@@ -1991,12 +2001,24 @@ get_server_country_code() {
     country_code=$(curl -s --max-time 10 "https://ifconfig.co/country-iso" 2>/dev/null || echo "")
   fi
 
-  # Return uppercase country code or default to "XX"
-  if [ -n "$country_code" ] && [ "$country_code" != "null" ]; then
-    echo "$country_code" | tr '[:lower:]' '[:upper:]'
-  else
-    echo "XX"
+  # Check if response is an error
+  if echo "$country_code" | grep -qi "error\|ratelimited"; then
+    country_code=""
   fi
+
+  # Validate country code - should be exactly 2 characters (letters only)
+  if [ -n "$country_code" ] && [ "$country_code" != "null" ]; then
+    # Clean up whitespace and convert to uppercase
+    country_code=$(echo "$country_code" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+    # Validate it's exactly 2 letters
+    if [[ "$country_code" =~ ^[A-Z]{2}$ ]]; then
+      echo "$country_code"
+      return 0
+    fi
+  fi
+
+  # Default to XX if all failed or invalid
+  echo "XX"
 }
 
 # Get or create location via API
