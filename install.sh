@@ -225,6 +225,38 @@ execute_ui() {
 }
 
 # Show welcome screen
+# Check installations and set state variables
+check_installations() {
+  PANEL_INSTALLED=false
+  ELYTRA_INSTALLED=false
+  PANEL_VERSION=""
+  ELYTRA_VERSION=""
+  PANEL_UPDATER_INSTALLED=false
+  ELYTRA_UPDATER_INSTALLED=false
+
+  if [ -d "/var/www/pyrodactyl" ]; then
+    PANEL_INSTALLED=true
+    if [ -f "/var/www/pyrodactyl/config/app.php" ]; then
+      PANEL_VERSION=$(grep "'version'" "/var/www/pyrodactyl/config/app.php" 2>/dev/null | head -1 | cut -d"'" -f4 || echo "")
+    fi
+  fi
+
+  if [ -f "/usr/local/bin/elytra" ]; then
+    ELYTRA_INSTALLED=true
+    if [ -f "/etc/pyrodactyl/elytra-version" ]; then
+      ELYTRA_VERSION=$(cat "/etc/pyrodactyl/elytra-version" 2>/dev/null || echo "")
+    fi
+  fi
+
+  if systemctl is-enabled --quiet pyrodactyl-panel-auto-update.timer 2>/dev/null; then
+    PANEL_UPDATER_INSTALLED=true
+  fi
+
+  if systemctl is-enabled --quiet pyrodactyl-elytra-auto-update.timer 2>/dev/null; then
+    ELYTRA_UPDATER_INSTALLED=true
+  fi
+}
+
 show_welcome() {
   print_header
 
@@ -239,35 +271,28 @@ show_welcome() {
   echo -e "  ${COLOR_ORANGE}Operating System:${COLOR_NC} $os_info"
   echo ""
 
-  # Check installed components
-  if [ -d "/var/www/pyrodactyl" ]; then
-    local panel_version="unknown"
-    if [ -f "/var/www/pyrodactyl/config/app.php" ]; then
-      panel_version=$(grep "'version'" /var/www/pyrodactyl/config/app.php 2>/dev/null | head -1 | cut -d"'" -f4 || echo "unknown")
-    fi
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${panel_version:+ ($panel_version)}"
+  # Check and display installed components
+  check_installations
+
+  if [ "$PANEL_INSTALLED" == true ]; then
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${PANEL_VERSION:+ ($PANEL_VERSION)}"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel not installed"
   fi
 
-  if [ -f "/usr/local/bin/elytra" ]; then
-    local elytra_version=""
-    if [ -f "/etc/pyrodactyl/elytra-version" ]; then
-      elytra_version=$(cat "/etc/pyrodactyl/elytra-version" 2>/dev/null || echo "")
-    fi
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Elytra installed${elytra_version:+ ($elytra_version)}"
+  if [ "$ELYTRA_INSTALLED" == true ]; then
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Elytra installed${ELYTRA_VERSION:+ ($ELYTRA_VERSION)}"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Elytra not installed"
   fi
 
-  # Check auto-updaters
-  if systemctl is-enabled --quiet pyrodactyl-panel-auto-update.timer 2>/dev/null; then
+  if [ "$PANEL_UPDATER_INSTALLED" == true ]; then
     echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel auto-updater enabled"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel auto-updater not installed"
   fi
 
-  if systemctl is-enabled --quiet pyrodactyl-elytra-auto-update.timer 2>/dev/null; then
+  if [ "$ELYTRA_UPDATER_INSTALLED" == true ]; then
     echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Elytra auto-updater enabled"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Elytra auto-updater not installed"
@@ -379,27 +404,14 @@ run_both_updates() {
   run_elytra_update
 }
 
-# Check what's installed
-check_installations() {
-  PANEL_INSTALLED=false
-  ELYTRA_INSTALLED=false
 
-  if [ -d "/var/www/pyrodactyl" ]; then
-    PANEL_INSTALLED=true
-  fi
-
-  if [ -f "/usr/local/bin/elytra" ]; then
-    ELYTRA_INSTALLED=true
-  fi
-}
 
 # Show main menu
 show_menu() {
   local choice=""
 
   while true; do
-    # Check installations before showing menu
-    check_installations
+    show_welcome
 
     echo ""
     output "${COLOR_ORANGE}What would you like to do?${COLOR_NC}"
