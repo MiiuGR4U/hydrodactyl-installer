@@ -335,6 +335,32 @@ cmd_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
+# Load existing database credentials from previous run
+# Usage: load_existing_db_credentials [variable_name]
+# Returns 0 if credentials loaded successfully, 1 otherwise
+load_existing_db_credentials() {
+  local creds_file="/root/.config/pyrodactyl/db-credentials"
+  
+  if [ -f "$creds_file" ]; then
+    output "Found existing database credentials, loading..."
+    local saved_root_pass
+    saved_root_pass=$(grep '^root:' "$creds_file" | cut -d':' -f2)
+    
+    # Test if saved credentials work
+    if mysql -u root -p"${saved_root_pass}" -e "SELECT 1" >/dev/null 2>&1; then
+      echo "${saved_root_pass}"
+      success "Existing database credentials validated"
+      return 0
+    else
+      error "Saved database credentials don't work!"
+      error "MariaDB may have been configured with a different password."
+      error "Please set MYSQL_ROOT_PASSWORD environment variable or reset MariaDB"
+      exit 1
+    fi
+  fi
+  return 1
+}
+
 check_existing_installation() {
   local component="$1"
   local has_existing=false

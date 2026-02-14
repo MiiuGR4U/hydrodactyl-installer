@@ -39,8 +39,14 @@ DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-panel}"
 DB_USER="${DB_USER:-pyrodactyl}"
-DB_PASSWORD="${DB_PASSWORD:-$(gen_passwd 64)}"
-MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$(gen_passwd 64)}"
+
+# Load existing credentials or generate new ones
+if saved_pass=$(load_existing_db_credentials); then
+  MYSQL_ROOT_PASSWORD="${saved_pass}"
+else
+  DB_PASSWORD="${DB_PASSWORD:-$(gen_passwd 64)}"
+  MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-$(gen_passwd 64)}"
+fi
 
 # Elytra configuration
 ELYTRA_REPO="${ELYTRA_REPO:-pyrohost/elytra}"
@@ -180,7 +186,7 @@ install_panel_release() {
     "--header" "Accept: application/vnd.github+json"
     "--header" "X-GitHub-Api-Version: 2022-11-28"
   )
-  
+
   if [ -n "$GITHUB_TOKEN" ]; then
     curl_headers+=("--header" "Authorization: Bearer $GITHUB_TOKEN")
   fi
@@ -221,7 +227,7 @@ install_panel_release() {
     "--header" "Accept: application/octet-stream"
     "--header" "X-GitHub-Api-Version: 2022-11-28"
   )
-  
+
   if [ -n "$GITHUB_TOKEN" ]; then
     download_headers+=("--header" "Authorization: Bearer $GITHUB_TOKEN")
   fi
@@ -309,25 +315,49 @@ configure_mariadb() {
   systemctl start mariadb
   systemctl enable mariadb
 
-  output "Securing MariaDB..."
-  mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';" 2>/dev/null || true
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.user WHERE User='';" 2>/dev/null || true
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" 2>/dev/null || true
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS test;" 2>/dev/null || true
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';" 2>/dev/null || true
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+  # Check if MariaDB is already secured with our credentials
+  if mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; then
+    output "MariaDB already secured with existing credentials"
+  else
+    output "Securing MariaDB..."
+    # Try to set root password (may fail if already secured differently)
+    mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';" 2>/dev/null || true
+
+    # Test if it worked
+    if ! mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; then
+      error "Could not secure MariaDB with provided credentials"
+      error "If MariaDB was previously configured with a different password, set MYSQL_ROOT_PASSWORD environment variable"
+      exit 1
+    fi
+
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.user WHERE User='';" 2>/dev/null || true
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" 2>/dev/null || true
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS test;" 2>/dev/null || true
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';" 2>/dev/null || true
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+  fi
 
   # Save credentials
   mkdir -p /root/.config/pyrodactyl
   echo "root:${MYSQL_ROOT_PASSWORD}" > /root/.config/pyrodactyl/db-credentials
   chmod 600 /root/.config/pyrodactyl/db-credentials
 
-  # Create panel database
+  # Create panel database and user
   output "Creating panel database..."
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME};"
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASSWORD}';"
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_HOST}';"
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME};" 2>/dev/null || true
+
+  # Check if user exists, create or update password
+  local user_exists
+  user_exists=$(mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -N -B -e "SELECT COUNT(*) FROM mysql.user WHERE user='${DB_USER}' AND host='${DB_HOST}';" 2>/dev/null || echo "0")
+
+  if [ "$user_exists" == "0" ]; then
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASSWORD}';" 2>/dev/null || true
+  else
+    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "ALTER USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASSWORD}';" 2>/dev/null || true
+  fi
+
+  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_HOST}';" 2>/dev/null || true
+  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
 
   success "MariaDB configured"
 }
