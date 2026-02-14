@@ -1225,7 +1225,8 @@ setup_database_host() {
   
   cd "$INSTALL_DIR" || return 1
   
-  php artisan tinker --execute="
+  local tinker_output
+  tinker_output=$(php artisan tinker --execute="
 use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
 try {
     app(HostCreationService::class)->handle([
@@ -1239,11 +1240,15 @@ try {
 } catch (\\Exception \$e) {
     echo 'Error: ' . \$e->getMessage();
 }
-" 2>/dev/null | grep -q "Database host created successfully" && {
+" 2>&1)
+  
+  if echo "$tinker_output" | grep -q "Database host created successfully"; then
     success "Database host '${db_host_name}' configured successfully"
-} || {
-    warning "Could not create database host (may already exist or service unavailable)"
-}
+  else
+    error "Could not create database host"
+    output "Error output: $tinker_output"
+    warning "You may need to create the database host manually in the panel"
+  fi
 }
 
 php_fpm_conf() {

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Clean up any cached files from previous runs
+rm -f /tmp/pyrodactyl-lib.sh /tmp/pyrodactyl-*.sh 2>/dev/null || true
+
 set -e
 
 ######################################################################################

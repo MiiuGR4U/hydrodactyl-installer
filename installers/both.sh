@@ -702,7 +702,9 @@ configure_firewall() {
     output "  • 30120-30130 (FiveM/GTA)"
     output "  • ${GAME_PORT_START}-${GAME_PORT_END} (Additional range)"
 
-    local ports="22 80 443 8080 2022"
+    # Note: Port 3306 (MySQL/MariaDB) is only needed if Wings nodes are on different servers
+    # Port 8081 is for phpMyAdmin access
+    local ports="22 80 443 8080 2022 3306 8081"
     ports="$ports 25565:25665 27015:27150 7777:8000 28015:28025 2456:2466 30120:30130"
     ports="$ports ${GAME_PORT_START}:${GAME_PORT_END}"
 

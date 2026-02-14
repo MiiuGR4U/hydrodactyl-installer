@@ -487,7 +487,9 @@ configure_firewall() {
 
   install_firewall
 
-  local ports="22 80"
+  # Note: Port 3306 (MySQL/MariaDB) is only needed if Wings nodes are on different servers
+  # The database is secured with user permissions and only accepts connections from authorized hosts
+  local ports="22 80 8081 3306"
   [ "$CONFIGURE_LETSENCRYPT" == true ] || [ -n "$SSL_CERT_PATH" ] && ports="$ports 443"
 
   firewall_allow_ports "$ports"
