@@ -2106,6 +2106,20 @@ create_node_via_api() {
     disk_mb=${disk_mb:-32768}
   fi
 
+  # Validate location_id is numeric
+  if ! [[ "$location_id" =~ ^[0-9]+$ ]]; then
+    error "Invalid location_id: '${location_id}' (must be a number)"
+    return 1
+  fi
+
+  # Sanitize node_name - remove characters that would break JSON
+  node_name=$(echo "$node_name" | sed 's/["\\]//g')
+  
+  # Ensure node_name is not empty
+  if [ -z "$node_name" ]; then
+    node_name="Elytra-Node-$(hostname -s)"
+  fi
+
   # Get server FQDN and sanitize it
   local fqdn
   fqdn=$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "localhost")
@@ -2118,9 +2132,11 @@ create_node_via_api() {
   local current_date
   current_date=$(date +%Y-%m-%d)
 
+  output "DEBUG: Creating node with name='${node_name}', location_id=${location_id}, memory=${memory_mb}, disk=${disk_mb}"
+
   if cmd_exists jq; then
     # Use jq for proper JSON construction
-    jq -n \
+    if ! jq -n \
       --arg name "$node_name" \
       --arg desc "Elytra node auto-created on $current_date" \
       --argjson location_id "$location_id" \
@@ -2128,7 +2144,12 @@ create_node_via_api() {
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "http", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false}' > "$json_file"
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "http", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false}' > "$json_file" 2>&1; then
+      error "Failed to build JSON with jq"
+      error "jq error: $(cat "$json_file")"
+      rm -f "$json_file"
+      return 1
+    fi
   else
     # Fallback: write JSON directly to file
     printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"http","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false}' \
@@ -2136,7 +2157,8 @@ create_node_via_api() {
   fi
 
   output "DEBUG: POST ${panel_url}/api/application/nodes"
-  output "DEBUG: Request JSON: $(cat "$json_file")"
+  output "DEBUG: Request JSON:"
+  cat "$json_file"
 
   local create_response
   local create_http_code
