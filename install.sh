@@ -245,13 +245,17 @@ show_welcome() {
     if [ -f "/var/www/pyrodactyl/config/app.php" ]; then
       panel_version=$(grep "'version'" /var/www/pyrodactyl/config/app.php 2>/dev/null | head -1 | cut -d"'" -f4 || echo "unknown")
     fi
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${panel_version:+ (v$panel_version)}"
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${panel_version:+ ($panel_version)}"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel not installed"
   fi
 
   if [ -f "/usr/local/bin/elytra" ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Elytra installed"
+    local elytra_version=""
+    if [ -f "/etc/pyrodactyl/elytra-version" ]; then
+      elytra_version=$(cat "/etc/pyrodactyl/elytra-version" 2>/dev/null || echo "")
+    fi
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Elytra installed${elytra_version:+ ($elytra_version)}"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Elytra not installed"
   fi
@@ -375,11 +379,28 @@ run_both_updates() {
   run_elytra_update
 }
 
+# Check what's installed
+check_installations() {
+  PANEL_INSTALLED=false
+  ELYTRA_INSTALLED=false
+
+  if [ -d "/var/www/pyrodactyl" ]; then
+    PANEL_INSTALLED=true
+  fi
+
+  if [ -f "/usr/local/bin/elytra" ]; then
+    ELYTRA_INSTALLED=true
+  fi
+}
+
 # Show main menu
 show_menu() {
   local choice=""
 
   while true; do
+    # Check installations before showing menu
+    check_installations
+
     echo ""
     output "${COLOR_ORANGE}What would you like to do?${COLOR_NC}"
     echo ""
@@ -387,9 +408,27 @@ show_menu() {
     output "[${COLOR_ORANGE}1${COLOR_NC}] Install Elytra Daemon"
     output "[${COLOR_ORANGE}2${COLOR_NC}] Install both Panel and Elytra (same machine)"
     echo ""
-    output "[${COLOR_ORANGE}3${COLOR_NC}] Update Pyrodactyl Panel"
-    output "[${COLOR_ORANGE}4${COLOR_NC}] Update Elytra Daemon"
-    output "[${COLOR_ORANGE}5${COLOR_NC}] Update both Panel and Elytra"
+
+    # Update options - gray out if not installed
+    local COLOR_DARK_GRAY='\033[90m'
+    if [ "$PANEL_INSTALLED" == true ]; then
+      output "[${COLOR_ORANGE}3${COLOR_NC}] Update Pyrodactyl Panel"
+    else
+      echo -e "* [3] ${COLOR_DARK_GRAY}Update Pyrodactyl Panel (not installed)${COLOR_NC}"
+    fi
+
+    if [ "$ELYTRA_INSTALLED" == true ]; then
+      output "[${COLOR_ORANGE}4${COLOR_NC}] Update Elytra Daemon"
+    else
+      echo -e "* [4] ${COLOR_DARK_GRAY}Update Elytra Daemon (not installed)${COLOR_NC}"
+    fi
+
+    if [ "$PANEL_INSTALLED" == true ] && [ "$ELYTRA_INSTALLED" == true ]; then
+      output "[${COLOR_ORANGE}5${COLOR_NC}] Update both Panel and Elytra"
+    else
+      echo -e "* [5] ${COLOR_DARK_GRAY}Update both Panel and Elytra (not available)${COLOR_NC}"
+    fi
+
     echo ""
     output "[${COLOR_ORANGE}6${COLOR_NC}] Auto Updater Management"
     echo ""
@@ -415,14 +454,29 @@ show_menu() {
         break
         ;;
       3)
+        if [ "$PANEL_INSTALLED" == false ]; then
+          error "Pyrodactyl Panel is not installed"
+          sleep 2
+          continue
+        fi
         run_panel_update
         break
         ;;
       4)
+        if [ "$ELYTRA_INSTALLED" == false ]; then
+          error "Elytra Daemon is not installed"
+          sleep 2
+          continue
+        fi
         run_elytra_update
         break
         ;;
       5)
+        if [ "$PANEL_INSTALLED" == false ] || [ "$ELYTRA_INSTALLED" == false ]; then
+          error "Both Panel and Elytra must be installed to use this option"
+          sleep 2
+          continue
+        fi
         run_both_updates
         break
         ;;
