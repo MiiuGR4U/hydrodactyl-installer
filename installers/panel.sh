@@ -120,7 +120,7 @@ install_dependencies() {
   esac
 
   # Install common packages
-  install_packages "nginx mariadb-server redis-server curl tar unzip git"
+  install_packages "nginx mariadb-server redis-server curl tar unzip git jq"
 
   if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
     install_packages "certbot python3-certbot-nginx"
@@ -203,6 +203,12 @@ setup_database() {
 
 install_panel_release() {
   print_flame "Installing Panel from Release"
+
+  # Ensure jq is installed for JSON parsing
+  if ! cmd_exists jq; then
+    output "Installing jq for JSON parsing..."
+    install_packages "jq" true
+  fi
 
   # Only require token for private repos
   if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -z "$GITHUB_TOKEN" ]; then

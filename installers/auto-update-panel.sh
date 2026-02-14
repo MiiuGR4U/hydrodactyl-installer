@@ -160,6 +160,12 @@ get_current_version() {
 }
 
 get_latest_release() {
+  # Ensure jq is available
+  if ! command -v jq >/dev/null 2>&1; then
+    log "ERROR: jq is required but not installed"
+    return 1
+  fi
+
   local curl_opts="-sL --max-time 30"
 
   if [ -n "$GITHUB_TOKEN" ]; then

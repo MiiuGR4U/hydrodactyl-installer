@@ -478,6 +478,13 @@ get_release_asset_url() {
   local asset_name="$2"
   local token="${3:-$GITHUB_TOKEN}"
 
+  # Ensure jq is installed
+  if ! cmd_exists jq; then
+    error "jq is required but not installed"
+    error "Please install jq first"
+    return 1
+  fi
+
   local release_json
   if [ -n "$token" ]; then
     release_json=$(curl -sS \
