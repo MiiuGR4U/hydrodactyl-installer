@@ -443,15 +443,15 @@ show_menu() {
     case "$choice" in
       0)
         execute_ui "panel"
-        break
+        continue
         ;;
       1)
         execute_ui "elytra"
-        break
+        continue
         ;;
       2)
         execute_ui "both"
-        break
+        continue
         ;;
       3)
         if [ "$PANEL_INSTALLED" == false ]; then
@@ -460,7 +460,7 @@ show_menu() {
           continue
         fi
         run_panel_update
-        break
+        continue
         ;;
       4)
         if [ "$ELYTRA_INSTALLED" == false ]; then
@@ -469,7 +469,7 @@ show_menu() {
           continue
         fi
         run_elytra_update
-        break
+        continue
         ;;
       5)
         if [ "$PANEL_INSTALLED" == false ] || [ "$ELYTRA_INSTALLED" == false ]; then
@@ -478,15 +478,15 @@ show_menu() {
           continue
         fi
         run_both_updates
-        break
+        continue
         ;;
       6)
         execute_ui "auto-updater-menu"
-        break
+        continue
         ;;
       7)
         execute_ui "uninstall"
-        break
+        continue
         ;;
       8)
         output "Exiting..."
