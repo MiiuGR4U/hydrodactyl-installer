@@ -1962,11 +1962,12 @@ create_minecraft_server() {
 generate_api_key() {
   local install_dir="${1:-$INSTALL_DIR}"
 
-  output "Generating Application API Key..."
+  output "Generating Application API Key..." >&2
 
   cd "$install_dir" || return 1
 
   # Use a heredoc for cleaner PHP code without escaping hell
+  # Capture only stdout (the key), stderr goes to terminal for debugging
   local api_key_result
   api_key_result=$(php artisan tinker --execute='
     use Pterodactyl\Models\ApiKey;
@@ -2010,31 +2011,29 @@ generate_api_key() {
 
     // Output only the key for easy capture (no newlines, no extra output)
     echo $apiKey->identifier . decrypt($apiKey->token);
-  ' 2>&1)
+  ')
 
   local exit_code=$?
 
   output "DEBUG: PHP exit code: $exit_code" >&2
-  output "DEBUG: Raw output preview: $(echo "$api_key_result" | head -c 200)" >&2
+  output "DEBUG: Raw key result length: ${#api_key_result}" >&2
 
   if [ $exit_code -ne 0 ]; then
-    warning "Failed to generate API key: $api_key_result"
+    warning "Failed to generate API key" >&2
     return 1
   fi
 
-  # Extract the API key - get the last match (the full key, not the debug output)
-  local api_key
-  api_key=$(echo "$api_key_result" | grep -oE 'pyro_[a-zA-Z0-9_]{43,}' | tail -1)
+  # The API key should be the only thing in stdout (48 chars: pyro_ + identifier + token)
+  local api_key="$api_key_result"
 
-  output "DEBUG: Extracted key length: ${#api_key}" >&2
-  output "DEBUG: Key prefix: ${api_key:0:20}..." >&2
+  output "DEBUG: Key length: ${#api_key}" >&2
 
   if [ -n "$api_key" ] && [ "${#api_key}" -eq 48 ]; then
-    success "API Key generated successfully"
+    success "API Key generated successfully" >&2
     echo "$api_key"
     return 0
   else
-    warning "Failed to generate API key (invalid format or length ${#api_key})"
+    warning "Failed to generate API key (invalid format or length ${#api_key})" >&2
     return 1
   fi
 }
