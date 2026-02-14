@@ -280,6 +280,14 @@ install_panel_release() {
 
   cp .env.example .env
 
+  # Install composer and dependencies
+  install_composer
+
+  [ "$OS" == "rocky" ] || [ "$OS" == "almalinux" ] && export PATH=/usr/local/bin:$PATH
+
+  output "Installing composer dependencies..."
+  COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+
   success "Panel downloaded to $INSTALL_DIR"
 }
 
