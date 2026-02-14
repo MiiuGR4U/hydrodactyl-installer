@@ -217,10 +217,10 @@ configure_database() {
   print_header
   print_flame "Database Configuration"
 
-  local use_remote_db=""
-  bool_input use_remote_db "Use remote database?" "n"
+  local use_local_db=""
+  bool_input use_local_db "Use local database?" "y"
 
-  if [ "$use_remote_db" == "y" ]; then
+  if [ "$use_local_db" == "n" ]; then
     required_input DB_HOST "Database host: " "Host is required"
     required_input DB_PORT "Database port [3306]: " "" "3306"
   fi

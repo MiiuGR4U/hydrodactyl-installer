@@ -547,6 +547,7 @@ main() {
   configure_panel
   setup_services
   install_phpmyadmin
+  configure_mariadb_tcp
   setup_database_host "$PANEL_FQDN"
   configure_firewall
   setup_auto_updater

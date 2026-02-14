@@ -1219,8 +1219,10 @@ install_phpmyadmin() {
 
   output "Creating phpMyAdmin database user..."
   mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
+    CREATE USER IF NOT EXISTS 'phpmyadmin'@'localhost' IDENTIFIED BY '${PHPMYADMIN_PASSWORD}';
     CREATE USER IF NOT EXISTS 'phpmyadmin'@'127.0.0.1' IDENTIFIED BY '${PHPMYADMIN_PASSWORD}';
     CREATE USER IF NOT EXISTS 'phpmyadmin'@'%' IDENTIFIED BY '${PHPMYADMIN_PASSWORD}';
+    GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'localhost' WITH GRANT OPTION;
     GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'127.0.0.1' WITH GRANT OPTION;
     GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'%' WITH GRANT OPTION;
     FLUSH PRIVILEGES;

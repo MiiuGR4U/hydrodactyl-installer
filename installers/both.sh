@@ -768,6 +768,9 @@ main() {
   # Create node in panel
   create_node_in_panel
 
+  # Configure MariaDB for TCP connections
+  configure_mariadb_tcp
+
   # Setup database host for the panel
   setup_database_host "$PANEL_FQDN"
 
