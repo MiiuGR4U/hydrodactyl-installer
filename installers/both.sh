@@ -791,7 +791,7 @@ main() {
   output "Panel URL: ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
   output "Admin Email: ${COLOR_ORANGE}${PANEL_ADMIN_EMAIL}${COLOR_NC}"
   output "Admin Username: ${COLOR_ORANGE}${PANEL_ADMIN_USERNAME}${COLOR_NC}"
-  output "Admin Password: ${COLOR_ORANGE}${PANEL_ADMIN_PASSWORD}${COLOR_NC}"
+  output "Admin Password: ${COLOR_ORANGE}**hidden** (hope you remember it!)${COLOR_NC}"
   echo ""
   output "Node Information:"
   output "  Name: ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}"
