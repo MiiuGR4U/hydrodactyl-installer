@@ -111,10 +111,21 @@ patch_pyrodactyl_node_api() {
   if grep -q "'daemonBase'" "$target_file"; then
     # Add daemonType and backupDisk after daemonBase
     sed -i "/'daemonBase',/a\\        'daemonType',\\n        'backupDisk'," "$target_file"
-    output "Added daemonType and backupDisk to StoreNodeRequest"
+    output "Added daemonType and backupDisk to only() array"
   else
     warning "Could not find 'daemonBase' in file - patch may fail"
     return 1
+  fi
+
+  # Add transformation in validated() method
+  if grep -q "unset(\$response\['daemon_base'\]" "$target_file"; then
+    # Add daemonType and backupDisk transformations before the unset line
+    sed -i "/unset(\$response\['daemon_base'\]/i\\        \$response['daemonType'] = \$response['daemon_type'] ?? 'elytra';\\n        \$response['backupDisk'] = \$response['backup_disk'] ?? 'rustic_local';" "$target_file"
+    # Update the unset line to also remove daemon_type and backup_disk
+    sed -i "s/unset(\$response\['daemon_base'\], \$response\['daemon_listen'\], \$response\['daemon_sftp'\]);/unset(\$response['daemon_base'], \$response['daemon_listen'], \$response['daemon_sftp'], \$response['daemon_type'], \$response['backup_disk']);/" "$target_file"
+    output "Added daemonType and backupDisk transformations to validated() method"
+  else
+    warning "Could not find unset line in validated() method - patch may be incomplete"
   fi
 
   # Verify the patch was applied
@@ -1969,14 +1980,14 @@ generate_api_key() {
         exit(1);
     }
 
-    echo "DEBUG: Using admin user ID: " . $user->id . " (root_admin: " . $user->root_admin . ")\n";
+    fwrite(STDERR, "DEBUG: Using admin user ID: " . $user->id . " (root_admin: " . $user->root_admin . ")\n");
 
     // Delete existing key with same memo
     $deleted = ApiKey::query()
         ->where("user_id", $user->id)
         ->where("memo", "Installer API Key")
         ->delete();
-    echo "DEBUG: Deleted existing keys: " . $deleted . "\n";
+    fwrite(STDERR, "DEBUG: Deleted existing keys: " . $deleted . "\n");
 
     $service = app(KeyCreationService::class);
     $apiKey = $service->setKeyType(ApiKey::TYPE_APPLICATION)->handle([
@@ -1995,7 +2006,7 @@ generate_api_key() {
         "r_server_databases" => 3,
     ]);
 
-    echo "DEBUG: API Key created - Identifier: " . $apiKey->identifier . ", Key Type: " . $apiKey->key_type . "\n";
+    fwrite(STDERR, "DEBUG: API Key created - Identifier: " . $apiKey->identifier . ", Key Type: " . $apiKey->key_type . "\n");
 
     // Output only the key for easy capture (no newlines, no extra output)
     echo $apiKey->identifier . decrypt($apiKey->token);
@@ -2003,8 +2014,8 @@ generate_api_key() {
 
   local exit_code=$?
 
-  output "DEBUG: PHP exit code: $exit_code"
-  output "DEBUG: Raw output preview: $(echo "$api_key_result" | head -c 200)"
+  output "DEBUG: PHP exit code: $exit_code" >&2
+  output "DEBUG: Raw output preview: $(echo "$api_key_result" | head -c 200)" >&2
 
   if [ $exit_code -ne 0 ]; then
     warning "Failed to generate API key: $api_key_result"
@@ -2015,8 +2026,8 @@ generate_api_key() {
   local api_key
   api_key=$(echo "$api_key_result" | grep -oE 'pyro_[a-zA-Z0-9_]{43,}' | tail -1)
 
-  output "DEBUG: Extracted key length: ${#api_key}"
-  output "DEBUG: Key prefix: ${api_key:0:20}..."
+  output "DEBUG: Extracted key length: ${#api_key}" >&2
+  output "DEBUG: Key prefix: ${api_key:0:20}..." >&2
 
   if [ -n "$api_key" ] && [ "${#api_key}" -eq 48 ]; then
     success "API Key generated successfully"
@@ -2245,7 +2256,7 @@ create_node_via_api() {
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "http", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemonType: "elytra", backupDisk: "rustic_local"}' > "$json_file" 2>&1; then
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "http", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "elytra", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
       error "Failed to build JSON with jq"
       error "jq error: $(cat "$json_file")"
       rm -f "$json_file"
@@ -2253,7 +2264,7 @@ create_node_via_api() {
     fi
   else
     # Fallback: write JSON directly to file
-    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"http","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemonType":"elytra","backupDisk":"rustic_local"}' \
+    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"http","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"elytra","backup_disk":"rustic_local"}' \
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
