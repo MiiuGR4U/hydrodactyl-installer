@@ -486,9 +486,72 @@ setup_panel_services() {
 # ---------------- Node Creation ---------------- #
 
 create_node_in_panel() {
-  print_flame "Creating Node in Panel"
+  print_flame "Creating Node in Panel via API"
 
+  # Check if we have API key for API-based creation
+  if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_FQDN" ]; then
+    local panel_url="https://${PANEL_FQDN}"
+    [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && panel_url="http://${PANEL_FQDN}"
+    
+    # Step 1: Detect country and get/create location
+    output "Detecting server location..."
+    local country_code
+    country_code=$(get_server_country_code)
+    info "Detected country code: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
+    
+    local location_id
+    if ! location_id=$(get_or_create_location "$PANEL_API_KEY" "$panel_url" "$country_code"); then
+      error "Failed to set up location via API, falling back to manual method"
+      # Fall through to manual method below
+    else
+      # Step 2: Create node via API
+      output "Creating node via API: ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}"
+      local memory_mb
+      local disk_mb
+      memory_mb=$(get_system_memory)
+      disk_mb=$(df -m / | awk 'NR==2 {print $2}')
+      
+      if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY"); then
+        error "Failed to create node via API, falling back to manual method"
+        # Fall through to manual method below
+      else
+        # Step 3: Create allocations via API
+        output "Creating allocations via API..."
+        create_node_allocations "$PANEL_API_KEY" "$panel_url" "$NODE_ID" "$GAME_PORT_START" "$GAME_PORT_END" || true
+        
+        # Step 4: Get node configuration
+        output "Retrieving node configuration..."
+        local config_result
+        if config_result=$(get_node_configuration "$PANEL_API_KEY" "$panel_url" "$NODE_ID"); then
+          NODE_TOKEN=$(echo "$config_result" | cut -d'|' -f1)
+          success "Node configured successfully via API"
+          info "Node ID: ${NODE_ID}"
+          return 0
+        else
+          error "Failed to get node configuration, falling back to manual method"
+          # Fall through to manual method below
+        fi
+      fi
+    fi
+  fi
+
+  # Fallback: Manual creation using artisan/MySQL
+  output "Using manual node creation method..."
   cd "$INSTALL_DIR"
+
+  # Detect system specs
+  output "Detecting system specifications..."
+  local system_memory
+  local system_disk
+  system_memory=$(get_system_memory)
+  system_disk=$(df -m / | awk 'NR==2 {print $2}')
+
+  # Use detected values or defaults if detection failed
+  local max_memory="${system_memory:-8192}"
+  local max_disk="${system_disk:-32768}"
+
+  info "Detected Memory: ${max_memory} MB"
+  info "Detected Disk: ${max_disk} MB"
 
   # Create location first
   output "Creating location..."
@@ -498,7 +561,7 @@ create_node_in_panel() {
   local location_id
   location_id=$(mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -D panel -N -B -e "SELECT id FROM locations WHERE short='local' LIMIT 1;" 2>/dev/null || echo "1")
 
-  # Create node
+  # Create node with actual system specs
   output "Creating node: $NODE_NAME..."
   php artisan p:node:make \
     --name="$NODE_NAME" \
@@ -508,9 +571,9 @@ create_node_in_panel() {
     --public=1 \
     --scheme=http \
     --proxy=$([ "$BEHIND_PROXY" == "true" ] && echo "yes" || echo "no") \
-    --maxMemory=0 \
+    --maxMemory="$max_memory" \
     --overallocateMemory=0 \
-    --maxDisk=0 \
+    --maxDisk="$max_disk" \
     --overallocateDisk=0 \
     --uploadSize=100 2>/dev/null || true
 
@@ -547,36 +610,8 @@ create_node_in_panel() {
 install_elytra_daemon() {
   print_flame "Installing Elytra Daemon"
 
-  # Check if Docker is installed
-  if ! cmd_exists docker; then
-    output "Installing Docker..."
-
-    case "$OS" in
-      ubuntu|debian)
-        apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
-        install_packages "apt-transport-https ca-certificates curl gnupg lsb-release"
-        mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/$OS/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-        update_repos true
-        install_packages "docker-ce docker-ce-cli containerd.io docker-compose-plugin"
-        ;;
-
-      rocky|almalinux)
-        install_packages "yum-utils"
-        yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-        install_packages "docker-ce docker-ce-cli containerd.io docker-compose-plugin"
-        ;;
-    esac
-
-    systemctl start docker
-    systemctl enable docker
-
-    # Check virtualization
-    check_virt
-  else
-    output "Docker is already installed"
-  fi
+  # Install Docker using shared function from lib.sh
+  install_docker
 
   # Create directories
   mkdir -p "$ELYTRA_DIR"
@@ -625,11 +660,15 @@ install_elytra_daemon() {
     exit 1
   fi
 
+  # Determine panel URL based on SSL configuration
+  local panel_url="https://${PANEL_FQDN}"
+  [ "$ASSUME_SSL" != "true" ] && [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && panel_url="http://${PANEL_FQDN}"
+
   # Replace placeholders
   sed -i "s|<UUID>|${uuid}|g" "${ELYTRA_DIR}/config.yml"
   sed -i "s|<TOKEN_ID>|${NODE_ID}|g" "${ELYTRA_DIR}/config.yml"
   sed -i "s|<TOKEN>|${NODE_TOKEN}|g" "${ELYTRA_DIR}/config.yml"
-  sed -i "s|<REMOTE>|http://localhost|g" "${ELYTRA_DIR}/config.yml"
+  sed -i "s|<REMOTE>|${panel_url}|g" "${ELYTRA_DIR}/config.yml"
 
   if [ "$BEHIND_PROXY" == "true" ]; then
     sed -i "s|<TRUSTED_PROXIES>|[\"0.0.0.0/0\"]|g" "${ELYTRA_DIR}/config.yml"
@@ -640,23 +679,8 @@ install_elytra_daemon() {
   # Copy config to pyrodactyl directory
   cp "${ELYTRA_DIR}/config.yml" "${PANEL_CONFIG_DIR}/config.yml" 2>/dev/null || true
 
-  # Install rustic
-  if ! cmd_exists rustic; then
-    output "Installing rustic backup tool..."
-    local rustic_arch
-    rustic_arch=$(uname -m)
-    [[ $rustic_arch == x86_64 ]] && rustic_arch=x86_64 || rustic_arch=aarch64
-
-    curl -fsSL -o /tmp/rustic.tar.gz "https://github.com/rustic-rs/rustic/releases/latest/download/rustic-${rustic_arch}-unknown-linux-gnu.tar.gz" || {
-      warning "Failed to download rustic"
-    }
-
-    if [ -f /tmp/rustic.tar.gz ]; then
-      tar -xzf /tmp/rustic.tar.gz -C /usr/local/bin rustic
-      chmod +x /usr/local/bin/rustic
-      rm -f /tmp/rustic.tar.gz
-    fi
-  fi
+  # Install rustic using shared function from lib.sh
+  install_rustic
 
   # Download systemd service
   output "Downloading Elytra service..."
@@ -774,8 +798,46 @@ main() {
   # Setup database host for the panel
   setup_database_host "$PANEL_FQDN"
 
+  # Generate API key for automated operations
+  output "Generating Application API Key..."
+  PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" || echo "")
+  if [ -n "$PANEL_API_KEY" ]; then
+    success "API Key generated successfully"
+    # Save API key to credentials file for later use
+    mkdir -p /root/.config/pyrodactyl
+    echo "api_key:${PANEL_API_KEY}" >> /root/.config/pyrodactyl/db-credentials
+    chmod 600 /root/.config/pyrodactyl/db-credentials
+  else
+    warning "Failed to generate API key - automated server creation will be skipped"
+  fi
+
   # Elytra installation
   install_elytra_daemon
+
+  # Create Minecraft server if requested and API key is available
+  if [ "$CREATE_MINECRAFT_SERVER" == "true" ] && [ -n "$PANEL_API_KEY" ]; then
+    print_flame "Creating Minecraft Server"
+
+    # Get the first allocation for this node
+    ALLOCATION_ID=$(mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -D panel -N -B -e "SELECT id FROM allocations WHERE node_id=${NODE_ID} LIMIT 1;" 2>/dev/null || echo "")
+
+    if [ -n "$ALLOCATION_ID" ]; then
+      # Determine panel URL
+      PANEL_URL="https://${PANEL_FQDN}"
+      [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && PANEL_URL="http://${PANEL_FQDN}"
+
+      # Create the server
+      if create_minecraft_server "$PANEL_URL" "$PANEL_API_KEY" "$NODE_ID" "$LOCATION_ID" "$ALLOCATION_ID"; then
+        CREATED_SERVER_ID=$CREATED_SERVER_ID
+        CREATED_SERVER_UUID=$CREATED_SERVER_UUID
+        success "Minecraft server created successfully"
+      else
+        warning "Failed to create Minecraft server automatically"
+      fi
+    else
+      warning "No allocations found for node, skipping server creation"
+    fi
+  fi
 
   # Firewall
   configure_firewall
@@ -789,21 +851,46 @@ main() {
   echo ""
   output "🎉 Pyrodactyl Panel and Elytra have been successfully installed!"
   echo ""
-  output "Panel URL: ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
-  output "Admin Email: ${COLOR_ORANGE}${PANEL_ADMIN_EMAIL}${COLOR_NC}"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  Panel Information"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "Panel URL:      ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
+  output "Admin Email:    ${COLOR_ORANGE}${PANEL_ADMIN_EMAIL}${COLOR_NC}"
   output "Admin Username: ${COLOR_ORANGE}${PANEL_ADMIN_USERNAME}${COLOR_NC}"
-  output "Admin Password: ${COLOR_ORANGE}**hidden** (hope you remember it!)${COLOR_NC}"
+  output "Admin Password: ${COLOR_ORANGE}${PANEL_ADMIN_PASSWORD}${COLOR_NC}"
   echo ""
-  output "phpMyAdmin Access:"
-  output "  URL: ${COLOR_ORANGE}http://${PANEL_FQDN}:8081${COLOR_NC}"
-  output "  Username: ${COLOR_ORANGE}phpmyadmin${COLOR_NC}"
-  output "  Password: ${COLOR_ORANGE}${PHPMYADMIN_PASSWORD}${COLOR_NC}"
+  if [ -n "$PANEL_API_KEY" ]; then
+    output "API Key:        ${COLOR_ORANGE}${PANEL_API_KEY}${COLOR_NC}"
+    echo ""
+  fi
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  phpMyAdmin Database Access"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "URL:      ${COLOR_ORANGE}http://${PANEL_FQDN}:8081${COLOR_NC}"
+  output "Username: ${COLOR_ORANGE}phpmyadmin${COLOR_NC}"
+  output "Password: ${COLOR_ORANGE}${PHPMYADMIN_PASSWORD}${COLOR_NC}"
+  output "Alternative Logins:"
+  output "  - root / ${MYSQL_ROOT_PASSWORD}"
+  output "  - ${DB_USER} / ${DB_PASSWORD}"
   echo ""
-  output "Node Information:"
-  output "  Name: ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}"
-  output "  ID: ${COLOR_ORANGE}${NODE_ID}${COLOR_NC}"
-  output "  Description: ${COLOR_ORANGE}${NODE_DESCRIPTION}${COLOR_NC}"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  Node & Database Host Information"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "Node Name:        ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}"
+  output "Node ID:          ${COLOR_ORANGE}${NODE_ID}${COLOR_NC}"
+  output "Node Description: ${COLOR_ORANGE}${NODE_DESCRIPTION}${COLOR_NC}"
+  output "Database Host:    ${COLOR_ORANGE}${PANEL_FQDN}:3306${COLOR_NC}"
+  output "Database User:    ${COLOR_ORANGE}dbhost${COLOR_NC}"
   echo ""
+  if [ -n "$CREATED_SERVER_ID" ]; then
+    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    output "  Created Minecraft Server"
+    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    output "Server ID:    ${COLOR_ORANGE}${CREATED_SERVER_ID}${COLOR_NC}"
+    output "Server UUID:  ${COLOR_ORANGE}${CREATED_SERVER_UUID}${COLOR_NC}"
+    output "Name:         ${COLOR_ORANGE}Minecraft Vanilla Server${COLOR_NC}"
+    echo ""
+  fi
   output "Game Server Ports Configured (TCP & UDP):"
   output "  • 25565-25665: Minecraft"
   output "  • 27015-27150: Source Engine (CS:GO, TF2, GMod)"

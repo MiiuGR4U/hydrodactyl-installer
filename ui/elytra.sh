@@ -102,11 +102,53 @@ configure_github_repository() {
   success "Found release: ${latest_release}"
 }
 
+# ------------------ API Key Configuration ----------------- #
+
+configure_api_key() {
+  print_header
+  print_flame "API Key Configuration"
+
+  output "Do you have an API key from your panel installation?"
+  output "The API key would have been displayed at the end of the panel setup."
+  output "Using an API key allows automatic node configuration without manual token/ID entry."
+  echo ""
+
+  local has_api_key=""
+  bool_input has_api_key "Do you have an API key?" "n"
+
+  if [ "$has_api_key" == "y" ]; then
+    password_input PANEL_API_KEY "Enter your API key: " "API key is required"
+
+    output ""
+    output "Enter your panel URL"
+    output "Example: ${COLOR_ORANGE}https://panel.example.com${COLOR_NC}"
+    required_input PANEL_URL "Panel URL: " "Panel URL is required"
+    PANEL_URL="${PANEL_URL%/}"  # Remove trailing slash
+
+    output ""
+    output "Enter a name for this node"
+    output "This will be used to identify the node in the panel"
+    required_input NODE_NAME "Node name [Elytra-Node]: " "" "Elytra-Node"
+    
+    success "API key configured - automatic setup will be used"
+    USE_API_KEY=true
+  else
+    output "No API key provided - manual configuration will be required"
+    USE_API_KEY=false
+  fi
+}
+
 # ------------------ Panel Connection ----------------- #
 
 configure_panel_connection() {
   print_header
   print_flame "Panel Connection Configuration"
+
+  # Skip if using API key
+  if [ "$USE_API_KEY" == "true" ]; then
+    output "Using API key for automatic configuration - manual connection details not required"
+    return 0
+  fi
 
   output "Enter the URL of your Pyrodactyl Panel"
   output "Example: ${COLOR_ORANGE}https://panel.example.com${COLOR_NC}"
@@ -177,7 +219,14 @@ show_summary() {
   echo ""
   echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${ELYTRA_REPO} $([ "$ELYTRA_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
   echo -e "  ${COLOR_ORANGE}Panel URL:${COLOR_NC}         ${PANEL_URL}"
-  echo -e "  ${COLOR_ORANGE}Node ID:${COLOR_NC}           ${NODE_ID}"
+  if [ "$USE_API_KEY" == "true" ]; then
+    echo -e "  ${COLOR_ORANGE}Setup Method:${COLOR_NC}      Automatic (via API key)"
+    echo -e "  ${COLOR_ORANGE}Node Name:${COLOR_NC}         ${NODE_NAME}"
+    echo -e "  ${COLOR_ORANGE}API Key:${COLOR_NC}         ${PANEL_API_KEY:0:20}..."
+  else
+    echo -e "  ${COLOR_ORANGE}Setup Method:${COLOR_NC}      Manual"
+    echo -e "  ${COLOR_ORANGE}Node ID:${COLOR_NC}           ${NODE_ID}"
+  fi
   echo -e "  ${COLOR_ORANGE}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
   echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER" == "true" ] && echo 'Yes' || echo 'No')"
   echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Yes' || echo 'No')"
@@ -199,6 +248,8 @@ export_variables() {
   export ELYTRA_REPO_PRIVATE
   export GITHUB_TOKEN
   export PANEL_URL
+  export PANEL_API_KEY
+  export NODE_NAME
   export NODE_TOKEN
   export NODE_ID
   export CONFIGURE_FIREWALL
@@ -215,6 +266,7 @@ main() {
   print_flame "Welcome to the Elytra Daemon Installer"
 
   configure_github_repository
+  configure_api_key
   configure_panel_connection
   configure_network
   configure_auto_updater

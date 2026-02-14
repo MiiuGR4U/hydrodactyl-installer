@@ -469,7 +469,7 @@ setup_services() {
 
   # Ensure PHP 8.4 is the default (in case other packages changed it)
   ensure_php_default true
-  
+
   # Reload nginx to apply any config changes
   systemctl reload nginx 2>/dev/null || true
 
@@ -549,6 +549,21 @@ main() {
   install_phpmyadmin
   configure_mariadb_tcp
   setup_database_host "$PANEL_FQDN"
+
+  # Generate API key for Elytra setup
+  output "Generating Application API Key for node automation..."
+  PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" 2>/dev/null || echo "")
+  if [ -n "$PANEL_API_KEY" ]; then
+    success "API Key generated successfully"
+    # Save API key to credentials file for later use
+    mkdir -p /root/.config/pyrodactyl
+    echo "api_key:${PANEL_API_KEY}" >> /root/.config/pyrodactyl/db-credentials
+    chmod 600 /root/.config/pyrodactyl/db-credentials
+  else
+    warning "Failed to generate API key - you will need to create one manually for Elytra setup"
+    warning "You can create one in Admin > API Keys after installation"
+  fi
+
   configure_firewall
   setup_auto_updater
 
@@ -571,6 +586,17 @@ main() {
   output "  Username: ${COLOR_ORANGE}phpmyadmin${COLOR_NC}"
   output "  Password: ${COLOR_ORANGE}${PHPMYADMIN_PASSWORD}${COLOR_NC}"
   echo ""
+  if [ -n "$PANEL_API_KEY" ]; then
+    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    output "  API Key for Elytra Setup"
+    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    output "API Key: ${COLOR_ORANGE}${PANEL_API_KEY}${COLOR_NC}"
+    echo ""
+    output "Save this API key! You can use it to automatically configure"
+    output "Elytra without manually entering node ID and token."
+    output "When running elytra.sh, enter this API key when prompted."
+    echo ""
+  fi
 
   if [ "$INSTALL_AUTO_UPDATER" == true ]; then
     output "✅ Auto-updater is enabled and will check for updates hourly."

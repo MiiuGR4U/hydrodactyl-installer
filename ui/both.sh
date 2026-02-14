@@ -216,11 +216,12 @@ configure_panel_settings() {
       error "Passwords do not match. Please try again."
     fi
   done
+
 }
 
-# ------------------ Elytra Repository ----------------- #
+# ------------------ Elytra Configuration ----------------- #
 
-configure_elytra_repository() {
+configure_elytra_settings() {
   print_header
   print_flame "Elytra Repository Configuration"
 
@@ -287,12 +288,40 @@ configure_elytra_repository() {
   success "Found release: ${latest_release}"
 
   echo ""
+  print_flame "Elytra Node Configuration"
+  echo ""
+
+  output "Configuring Elytra to connect to the panel at: ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
+  output "(This will be set automatically - no panel URL input needed)"
+  echo ""
+
   required_input NODE_NAME "Node name [local]: " "" "local"
   required_input NODE_DESCRIPTION "Node description [Local Node]: " "" "Local Node"
 
   local behind_proxy_input=""
   bool_input behind_proxy_input "Is this node behind a proxy (e.g., Cloudflare)?" "n"
   BEHIND_PROXY=$([ "$behind_proxy_input" == "y" ] && echo "true" || echo "false")
+}
+
+# ------------------ Minecraft Server Setup ----------------- #
+
+configure_minecraft_server() {
+  print_header
+  print_flame "Minecraft Server Setup"
+
+  output "Would you like to automatically create a Minecraft server on this node?"
+  output "This will create a vanilla Minecraft server with 4GB RAM allocation."
+  echo ""
+
+  local create_server=""
+  bool_input create_server "Create Minecraft server automatically?" "n"
+  CREATE_MINECRAFT_SERVER=$([ "$create_server" == "y" ] && echo "true" || echo "false")
+
+  if [ "$CREATE_MINECRAFT_SERVER" == "true" ]; then
+    output "A Minecraft server will be created automatically after installation."
+  else
+    output "No server will be created. You can create one manually later."
+  fi
 }
 
 # ------------------ Auto-Updaters ----------------- #
@@ -325,7 +354,9 @@ show_summary() {
   print_header
   print_flame "Installation Summary"
 
-  output "Panel Configuration:"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  Panel Configuration"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${PANEL_REPO} $([ "$PANEL_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
   echo -e "  ${COLOR_ORANGE}Install Method:${COLOR_NC}    ${PANEL_INSTALL_METHOD}"
   echo -e "  ${COLOR_ORANGE}Domain:${COLOR_NC}            ${PANEL_FQDN}"
@@ -335,23 +366,38 @@ show_summary() {
   echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_PANEL" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
-  output "Elytra Configuration:"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  Elytra Configuration"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${ELYTRA_REPO} $([ "$ELYTRA_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_ORANGE}Panel URL:${COLOR_NC}         https://${PANEL_FQDN} (auto-configured)"
   echo -e "  ${COLOR_ORANGE}Node Name:${COLOR_NC}         ${NODE_NAME}"
   echo -e "  ${COLOR_ORANGE}Node Description:${COLOR_NC}  ${NODE_DESCRIPTION}"
   echo -e "  ${COLOR_ORANGE}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
   echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_ELYTRA" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
-  output "General:"
-  echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Yes' || echo 'No')"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  Minecraft Server"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo -e "  ${COLOR_ORANGE}Auto-Create:${COLOR_NC}       $([ "$CREATE_MINECRAFT_SERVER" == "true" ] && echo 'Yes' || echo 'No')"
+  if [ "$CREATE_MINECRAFT_SERVER" == "true" ]; then
+    echo -e "  ${COLOR_ORANGE}Server Type:${COLOR_NC}       Vanilla Minecraft Java"
+    echo -e "  ${COLOR_ORANGE}Memory:${COLOR_NC}            4GB"
+    echo -e "  ${COLOR_ORANGE}Disk:${COLOR_NC}              32GB"
+  fi
+  echo ""
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  General Settings"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Enabled' || echo 'Disabled')"
   if [ "$CONFIGURE_FIREWALL" == "true" ]; then
-    echo -e "  ${COLOR_ORANGE}Supported Games:${COLOR_NC} Minecraft, CS:GO/TF2, ARK, Rust, Valheim, FiveM, and more."
+    echo -e "  ${COLOR_ORANGE}Game Support:${COLOR_NC}      Minecraft, CS:GO/TF2/GMod, ARK, Rust, Valheim, FiveM"
   fi
   echo ""
 
   local confirm=""
-  bool_input confirm "Proceed with installation?" "y"
+  bool_input confirm "Proceed with installation of both Panel and Elytra?" "y"
 
   if [ "$confirm" != "y" ]; then
     error "Installation aborted"
@@ -395,6 +441,9 @@ export_variables() {
   export NODE_DESCRIPTION
   export BEHIND_PROXY
 
+  # Minecraft server setup
+  export CREATE_MINECRAFT_SERVER
+
   # Combined installation flag
   export BOTH_INSTALL=true
 }
@@ -406,8 +455,9 @@ main() {
 
   configure_panel_repository
   configure_panel_settings
-  configure_elytra_repository
+  configure_elytra_settings
   configure_auto_updaters
+  configure_minecraft_server
   configure_firewall_settings
   show_summary
 

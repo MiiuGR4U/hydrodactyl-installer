@@ -32,6 +32,9 @@ PANEL_URL="${PANEL_URL:-}"
 NODE_TOKEN="${NODE_TOKEN:-}"
 NODE_ID="${NODE_ID:-}"
 
+# API Key for automatic configuration (alternative to manual token/ID)
+PANEL_API_KEY="${PANEL_API_KEY:-}"
+
 # Network
 BEHIND_PROXY="${BEHIND_PROXY:-false}"
 FQDN="${FQDN:-}"
@@ -48,22 +51,25 @@ INSTALL_AUTO_UPDATER="${INSTALL_AUTO_UPDATER:-false}"
 ELYTRA_REPO_PRIVATE="${ELYTRA_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
-# Validation
+# Validation - either API key OR manual credentials required
 missing=()
 
-for var in PANEL_URL NODE_TOKEN NODE_ID; do
-  if [[ -z "${!var}" ]]; then
-    missing+=("$var")
-  fi
-done
-
-if (( ${#missing[@]} > 0 )); then
-  print_header
-  print_flame "Missing Required Variables"
-  for m in "${missing[@]}"; do
-    error "${m} is required"
+if [[ -z "$PANEL_API_KEY" ]]; then
+  # No API key, require manual credentials
+  for var in PANEL_URL NODE_TOKEN NODE_ID; do
+    if [[ -z "${!var}" ]]; then
+      missing+=("$var")
+    fi
   done
-  exit 1
+  
+  if (( ${#missing[@]} > 0 )); then
+    print_header
+    print_flame "Missing Required Variables"
+    for m in "${missing[@]}"; do
+      error "${m} is required (or provide PANEL_API_KEY for automatic setup)"
+    done
+    exit 1
+  fi
 fi
 
 # ---------------- Installation Functions ---------------- #
@@ -81,53 +87,7 @@ check_existing() {
   fi
 }
 
-install_docker() {
-  print_flame "Installing Docker"
 
-  if cmd_exists docker; then
-    output "Docker is already installed, skipping..."
-    return 0
-  fi
-
-  output "Installing Docker CE..."
-
-  case "$OS" in
-    ubuntu|debian)
-      # Remove old versions
-      apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
-
-      # Install prerequisites
-      install_packages "apt-transport-https ca-certificates curl gnupg lsb-release"
-
-      # Add Docker GPG key
-      mkdir -p /etc/apt/keyrings
-      curl -fsSL https://download.docker.com/linux/$OS/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-
-      # Add repository
-      echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS \
-        $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-      update_repos true
-      install_packages "docker-ce docker-ce-cli containerd.io docker-compose-plugin"
-      ;;
-
-    rocky|almalinux)
-      install_packages "yum-utils"
-      yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-      install_packages "docker-ce docker-ce-cli containerd.io docker-compose-plugin"
-      ;;
-  esac
-
-  # Start Docker
-  systemctl start docker
-  systemctl enable docker
-
-  # Check virtualization
-  check_virt
-
-  success "Docker installed and started"
-}
 
 install_elytra() {
   print_flame "Installing Elytra"
@@ -170,6 +130,80 @@ install_elytra() {
   success "Elytra installed to /usr/local/bin/elytra"
 }
 
+# Auto-configure Elytra using API key
+auto_configure_elytra() {
+  print_flame "Auto-Configuring Elytra via API"
+
+  local api_key="$1"
+  local panel_url="$2"
+  local node_name="${3:-Elytra-Node-$(hostname -s)}"
+
+  output "Starting automatic Elytra configuration..."
+  output "Node name: ${COLOR_ORANGE}${node_name}${COLOR_NC}"
+
+  # Step 1: Detect country and get/create location
+  output ""
+  output "Step 1: Setting up location..."
+  local country_code
+  country_code=$(get_server_country_code)
+  info "Detected country code: ${country_code}"
+  
+  local location_id
+  if ! location_id=$(get_or_create_location "$api_key" "$panel_url" "$country_code"); then
+    error "Failed to set up location"
+    return 1
+  fi
+  
+  # Step 2: Create node
+  output ""
+  output "Step 2: Creating node..."
+  local memory_mb
+  local disk_mb
+  memory_mb=$(get_system_memory)
+  disk_mb=$(df -m / | awk 'NR==2 {print $2}')
+  
+  if ! NODE_ID=$(create_node_via_api "$api_key" "$panel_url" "$location_id" "$node_name" "$memory_mb" "$disk_mb"); then
+    error "Failed to create node"
+    return 1
+  fi
+  
+  # Step 3: Create allocations
+  output ""
+  output "Step 3: Creating allocations..."
+  create_node_allocations "$api_key" "$panel_url" "$NODE_ID"
+  
+  # Step 4: Get node configuration
+  output ""
+  output "Step 4: Generating node configuration..."
+  local config_result
+  if ! config_result=$(get_node_configuration "$api_key" "$panel_url" "$NODE_ID"); then
+    error "Failed to get node configuration"
+    return 1
+  fi
+  
+  # Parse token and UUID from result (format: token|uuid)
+  NODE_TOKEN=$(echo "$config_result" | cut -d'|' -f1)
+  local node_uuid
+  node_uuid=$(echo "$config_result" | cut -d'|' -f2)
+  
+  if [ -z "$NODE_TOKEN" ] || [ "$NODE_TOKEN" == "null" ]; then
+    error "Failed to extract node token from configuration"
+    return 1
+  fi
+  
+  success "Node configuration retrieved successfully"
+  info "Node ID: ${NODE_ID}"
+  info "UUID: ${node_uuid}"
+  
+  # Step 5: Configure Elytra
+  output ""
+  output "Step 5: Configuring Elytra..."
+  configure_elytra
+  
+  success "Elytra auto-configuration complete!"
+  return 0
+}
+
 configure_elytra() {
   print_flame "Configuring Elytra"
 
@@ -203,33 +237,7 @@ configure_elytra() {
   success "Elytra configured"
 }
 
-install_rustic() {
-  print_flame "Installing Rustic"
 
-  if cmd_exists rustic; then
-    output "Rustic is already installed, skipping..."
-    return 0
-  fi
-
-  output "Installing rustic backup tool..."
-
-  local arch
-  arch=$(uname -m)
-  [[ $arch == x86_64 ]] && arch=x86_64 || arch=aarch64
-
-  local rustic_url="https://github.com/rustic-rs/rustic/releases/latest/download/rustic-${arch}-unknown-linux-gnu.tar.gz"
-
-  curl -fsSL -o /tmp/rustic.tar.gz "$rustic_url" || {
-    error "Failed to download rustic"
-    return 1
-  }
-
-  tar -xzf /tmp/rustic.tar.gz -C /usr/local/bin rustic
-  chmod +x /usr/local/bin/rustic
-  rm -f /tmp/rustic.tar.gz
-
-  success "Rustic installed"
-}
 
 setup_systemd_service() {
   print_flame "Setting up Systemd Service"
@@ -343,7 +351,19 @@ main() {
   check_existing
   install_docker
   install_elytra
-  configure_elytra
+  
+  # Check if we should use API-based auto-configuration
+  if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_URL" ]; then
+    if auto_configure_elytra "$PANEL_API_KEY" "$PANEL_URL" "${NODE_NAME:-Elytra-Node-$(hostname -s)}"; then
+      success "Elytra auto-configured via API"
+    else
+      error "Auto-configuration failed. Please provide manual credentials (NODE_ID, NODE_TOKEN) and try again."
+      exit 1
+    fi
+  else
+    configure_elytra
+  fi
+  
   install_rustic
   setup_systemd_service
   start_elytra
@@ -357,8 +377,16 @@ main() {
   echo ""
   output "🎉 Elytra has been installed successfully!"
   echo ""
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  Connection Details"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   output "Panel URL: ${COLOR_ORANGE}${PANEL_URL}${COLOR_NC}"
   output "Node ID: ${COLOR_ORANGE}${NODE_ID}${COLOR_NC}"
+  if [ -n "$PANEL_API_KEY" ]; then
+    output "Setup Method: ${COLOR_ORANGE}Automatic (via API)${COLOR_NC}"
+  else
+    output "Setup Method: ${COLOR_ORANGE}Manual${COLOR_NC}"
+  fi
   output "Configuration: ${COLOR_ORANGE}${INSTALL_DIR}/config.yml${COLOR_NC}"
   echo ""
 
