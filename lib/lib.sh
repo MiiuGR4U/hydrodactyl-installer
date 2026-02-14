@@ -2184,6 +2184,11 @@ create_node_via_api() {
   output "DEBUG: POST ${panel_url}/api/application/nodes"
   output "DEBUG: Request JSON:"
   cat "$json_file"
+  output "DEBUG: JSON file size: $(wc -c < "$json_file") bytes"
+  output "DEBUG: JSON content validation:"
+  if cmd_exists python3; then
+    python3 -m json.tool "$json_file" > /dev/null 2>&1 && output "DEBUG: JSON is valid" || output "DEBUG: JSON is INVALID"
+  fi
 
   local create_response
   local create_http_code
