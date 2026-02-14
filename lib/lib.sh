@@ -2011,9 +2011,9 @@ generate_api_key() {
     return 1
   fi
 
-  # Extract the API key - remove whitespace and validate format
+  # Extract the API key - get the last match (the full key, not the debug output)
   local api_key
-  api_key=$(echo "$api_key_result" | tr -d '[:space:]' | grep -oE 'pyro_[a-zA-Z0-9_]{40,}' | tail -c 48)
+  api_key=$(echo "$api_key_result" | grep -oE 'pyro_[a-zA-Z0-9_]{43,}' | tail -1)
 
   output "DEBUG: Extracted key length: ${#api_key}"
   output "DEBUG: Key prefix: ${api_key:0:20}..."
@@ -2088,11 +2088,31 @@ get_or_create_location() {
 
   # Get all locations
   output "DEBUG: Fetching locations from ${panel_url}/api/application/locations" >&2
+  output "DEBUG: panel_url='${panel_url}'" >&2
+  output "DEBUG: api_key='${api_key}'" >&2
+  output "DEBUG: api_key length='${#api_key}'" >&2
+  output "DEBUG: country_code='${country_code}'" >&2
+
+  # Validate inputs before making request
+  if [ -z "$api_key" ]; then
+    error "API key is empty!" >&2
+    return 1
+  fi
+
+  if [ -z "$panel_url" ]; then
+    error "Panel URL is empty!" >&2
+    return 1
+  fi
+
   local locations_response
   local http_code
-  locations_response=$(curl -s -L -w "\n%{http_code}" -H "Authorization: Bearer $api_key" \
+  output "DEBUG: Executing curl..." >&2
+
+  locations_response=$(curl -s -w "\n%{http_code}" \
+    -H "Authorization: Bearer ${api_key}" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
-    "${panel_url}/api/application/locations" 2>/dev/null || echo "")
+    -H "Content-Type: application/json" \
+    "${panel_url}/api/application/locations" 2>&1)
 
   http_code=$(echo "$locations_response" | tail -n1)
   locations_response=$(echo "$locations_response" | sed '$d')

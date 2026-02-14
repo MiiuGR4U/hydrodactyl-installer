@@ -719,9 +719,12 @@ install_elytra_daemon() {
   head -10 "${ELYTRA_DIR}/config.yml"
 
   # Replace placeholders
+  # Escape special characters for sed (& has special meaning in replacement)
+  local escaped_token
+  escaped_token=$(printf '%s' "$NODE_TOKEN" | sed 's/[&/\]/\\&/g')
   sed -i "s|<UUID>|${uuid}|g" "${ELYTRA_DIR}/config.yml"
   sed -i "s|<TOKEN_ID>|${NODE_ID}|g" "${ELYTRA_DIR}/config.yml"
-  sed -i "s|<TOKEN>|${NODE_TOKEN}|g" "${ELYTRA_DIR}/config.yml"
+  sed -i "s|<TOKEN>|${escaped_token}|g" "${ELYTRA_DIR}/config.yml"
   sed -i "s|<REMOTE>|${panel_url}|g" "${ELYTRA_DIR}/config.yml"
 
   # Debug: Show resulting config
