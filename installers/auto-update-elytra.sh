@@ -25,14 +25,14 @@ if [ -f /etc/pyrodactyl/auto-update-elytra.env ]; then
   source /etc/pyrodactyl/auto-update-elytra.env
 fi
 
-# Default config (can be overridden by /etc/pyrodactyl/auto-update-elytra.conf)
+# Default config (can be overridden by /etc/pyrodactyl/auto-update-elytra.env)
 ELYTRA_REPO="${ELYTRA_REPO:-pyrohost/elytra}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 INSTALL_DIR="${INSTALL_DIR:-/etc/elytra}"
 LOG_FILE="${LOG_FILE:-/var/log/pyrodactyl-elytra-auto-update.log}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/elytra}"
 LOCK_FILE="${LOCK_FILE:-/var/run/pyrodactyl-elytra-update.lock}"
-CONFIG_FILE="${CONFIG_FILE:-/etc/pyrodactyl/auto-update-elytra.conf}"
+CONFIG_FILE="${CONFIG_FILE:-/etc/pyrodactyl/auto-update-elytra.env}"
 KEEP_BACKUPS="${KEEP_BACKUPS:-5}"
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
@@ -363,18 +363,33 @@ download_binary() {
 verify_binary() {
   local binary_path="$1"
 
-  # Check if binary is executable and can show version
+  # Check if binary exists and is non-empty
+  if [ ! -s "$binary_path" ]; then
+    error "Binary file is empty or does not exist"
+    return 1
+  fi
+
+  # Check if binary is executable and can show help
   if ! chmod +x "$binary_path" 2>/dev/null; then
     error "Cannot make binary executable"
     return 1
   fi
 
-  if ! "$binary_path" --version >/dev/null 2>&1; then
+  # Try --help first, then --version, then just check if it runs
+  if "$binary_path" --help >/dev/null 2>&1; then
+    return 0
+  elif "$binary_path" --version >/dev/null 2>&1; then
+    return 0
+  elif "$binary_path" -h >/dev/null 2>&1; then
+    return 0
+  else
+    # Last resort: check if it's a valid ELF binary
+    if file "$binary_path" 2>/dev/null | grep -q "ELF"; then
+      return 0
+    fi
     error "Binary does not appear to be valid"
     return 1
   fi
-
-  return 0
 }
 
 perform_update() {

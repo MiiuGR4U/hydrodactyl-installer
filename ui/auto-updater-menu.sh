@@ -299,6 +299,96 @@ show_remove_menu() {
   done
 }
 
+# ------------------ Trigger Update Functions ----------------- #
+
+trigger_panel_update() {
+  print_header
+  print_flame "Trigger Panel Update"
+
+  if [ ! -f /usr/local/bin/pyrodactyl-auto-update-panel.sh ]; then
+    error "Panel auto-updater is not installed"
+    output "Install it first from the main menu"
+    echo ""
+    output "Press Enter to continue..."
+    read -r
+    return
+  fi
+
+  output "Running Panel auto-updater now..."
+  echo ""
+
+  /usr/local/bin/pyrodactyl-auto-update-panel.sh
+
+  echo ""
+  output "Press Enter to continue..."
+  read -r
+}
+
+trigger_elytra_update() {
+  print_header
+  print_flame "Trigger Elytra Update"
+
+  if [ ! -f /usr/local/bin/pyrodactyl-auto-update-elytra.sh ]; then
+    error "Elytra auto-updater is not installed"
+    output "Install it first from the main menu"
+    echo ""
+    output "Press Enter to continue..."
+    read -r
+    return
+  fi
+
+  output "Running Elytra auto-updater now..."
+  echo ""
+
+  /usr/local/bin/pyrodactyl-auto-update-elytra.sh
+
+  echo ""
+  output "Press Enter to continue..."
+  read -r
+}
+
+trigger_both_updates() {
+  print_header
+  print_flame "Trigger Both Updates"
+
+  local panel_installed=false
+  local elytra_installed=false
+
+  if [ -f /usr/local/bin/pyrodactyl-auto-update-panel.sh ]; then
+    panel_installed=true
+  fi
+
+  if [ -f /usr/local/bin/pyrodactyl-auto-update-elytra.sh ]; then
+    elytra_installed=true
+  fi
+
+  if [ "$panel_installed" == false ] && [ "$elytra_installed" == false ]; then
+    error "No auto-updaters are installed"
+    output "Install them first from the main menu"
+    echo ""
+    output "Press Enter to continue..."
+    read -r
+    return
+  fi
+
+  if [ "$panel_installed" == true ]; then
+    output "Running Panel auto-updater..."
+    echo ""
+    /usr/local/bin/pyrodactyl-auto-update-panel.sh
+    echo ""
+  fi
+
+  if [ "$elytra_installed" == true ]; then
+    output "Running Elytra auto-updater..."
+    echo ""
+    /usr/local/bin/pyrodactyl-auto-update-elytra.sh
+    echo ""
+  fi
+
+  output "Press Enter to continue..."
+  read -r
+}
+
 # ------------------ Main Menu ----------------- #
 
 show_main_menu() {
@@ -313,11 +403,15 @@ show_main_menu() {
     output "[${COLOR_ORANGE}2${COLOR_NC}] Install both auto-updaters"
     echo ""
     output "[${COLOR_ORANGE}3${COLOR_NC}] Remove auto-updaters"
-    output "[${COLOR_ORANGE}4${COLOR_NC}] Return to main menu"
+    output "[${COLOR_ORANGE}4${COLOR_NC}] Trigger Panel update now"
+    output "[${COLOR_ORANGE}5${COLOR_NC}] Trigger Elytra update now"
+    output "[${COLOR_ORANGE}6${COLOR_NC}] Trigger both updates now"
+    echo ""
+    output "[${COLOR_ORANGE}7${COLOR_NC}] Return to main menu"
     echo ""
 
     local choice=""
-    echo -n "* Select [0-4]: "
+    echo -n "* Select [0-7]: "
     read -r choice
 
     case "$choice" in
@@ -343,11 +437,20 @@ show_main_menu() {
         show_remove_menu
         ;;
       4)
+        trigger_panel_update
+        ;;
+      5)
+        trigger_elytra_update
+        ;;
+      6)
+        trigger_both_updates
+        ;;
+      7)
         output "Returning to main menu..."
         exit 0
         ;;
       *)
-        error "Invalid option. Please select 0-4."
+        error "Invalid option. Please select 0-7."
         sleep 2
         ;;
     esac

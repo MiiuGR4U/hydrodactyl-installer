@@ -1565,9 +1565,9 @@ install_auto_updater_panel() {
   chmod +x /usr/local/bin/pyrodactyl-auto-update-panel.sh
 
   # Create config
-  echo "PANEL_REPO=\"${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}\"" > /etc/pyrodactyl/auto-update-panel.conf
-  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-panel.conf
-  chmod 600 /etc/pyrodactyl/auto-update-panel.conf
+  echo "PANEL_REPO=\"${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}\"" > /etc/pyrodactyl/auto-update-panel.env
+  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-panel.env
+  chmod 600 /etc/pyrodactyl/auto-update-panel.env
 
   # Download systemd service from configs
   if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-panel-auto-update.service "$GITHUB_URL/configs/auto-update-panel.service" 2>/dev/null; then
@@ -1600,9 +1600,9 @@ install_auto_updater_elytra() {
   chmod +x /usr/local/bin/pyrodactyl-auto-update-elytra.sh
 
   # Create config
-  echo "ELYTRA_REPO=\"${ELYTRA_REPO:-pyrohost/elytra}\"" > /etc/pyrodactyl/auto-update-elytra.conf
-  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-elytra.conf
-  chmod 600 /etc/pyrodactyl/auto-update-elytra.conf
+  echo "ELYTRA_REPO=\"${ELYTRA_REPO:-pyrohost/elytra}\"" > /etc/pyrodactyl/auto-update-elytra.env
+  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-elytra.env
+  chmod 600 /etc/pyrodactyl/auto-update-elytra.env
 
   # Download systemd service from configs
   if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-elytra-auto-update.service "$GITHUB_URL/configs/auto-update-elytra.service" 2>/dev/null; then
@@ -1632,6 +1632,7 @@ remove_auto_updater_panel() {
   rm -f /etc/systemd/system/pyrodactyl-panel-auto-update.timer
   rm -f /usr/local/bin/pyrodactyl-auto-update-panel.sh
   rm -f /etc/pyrodactyl/auto-update-panel.conf
+  rm -f /etc/pyrodactyl/auto-update-panel.env
 
   systemctl daemon-reload
 
@@ -1648,6 +1649,7 @@ remove_auto_updater_elytra() {
   rm -f /etc/systemd/system/pyrodactyl-elytra-auto-update.timer
   rm -f /usr/local/bin/pyrodactyl-auto-update-elytra.sh
   rm -f /etc/pyrodactyl/auto-update-elytra.conf
+  rm -f /etc/pyrodactyl/auto-update-elytra.env
 
   systemctl daemon-reload
 

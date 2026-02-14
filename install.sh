@@ -290,15 +290,14 @@ show_menu() {
     output "[${COLOR_ORANGE}4${COLOR_NC}] Update Elytra Daemon"
     output "[${COLOR_ORANGE}5${COLOR_NC}] Update both Panel and Elytra"
     echo ""
-    output "[${COLOR_ORANGE}6${COLOR_NC}] Install Auto-Updaters"
-    output "[${COLOR_ORANGE}7${COLOR_NC}] Remove Auto-Updaters"
+    output "[${COLOR_ORANGE}6${COLOR_NC}] Auto Updater Management"
     echo ""
-    output "[${COLOR_ORANGE}8${COLOR_NC}] Uninstall Pyrodactyl / Elytra"
+    output "[${COLOR_ORANGE}7${COLOR_NC}] Uninstall Pyrodactyl / Elytra"
     echo ""
-    output "[${COLOR_ORANGE}9${COLOR_NC}] Exit"
+    output "[${COLOR_ORANGE}8${COLOR_NC}] Exit"
     echo ""
 
-    echo -n "* Select an option [0-9]: "
+    echo -n "* Select an option [0-8]: "
     read -r choice
 
     case "$choice" in
@@ -331,19 +330,15 @@ show_menu() {
         break
         ;;
       7)
-        execute_ui "remove-auto-updaters"
-        break
-        ;;
-      8)
         execute_ui "uninstall"
         break
         ;;
-      9)
+      8)
         output "Exiting..."
         exit 0
         ;;
       *)
-        error "Invalid option. Please select 0-9."
+        error "Invalid option. Please select 0-8."
         ;;
     esac
   done

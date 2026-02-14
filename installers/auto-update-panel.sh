@@ -25,14 +25,14 @@ if [ -f /etc/pyrodactyl/auto-update-panel.env ]; then
   source /etc/pyrodactyl/auto-update-panel.env
 fi
 
-# Default config (can be overridden by /etc/pyrodactyl/auto-update-panel.conf)
+# Default config (can be overridden by /etc/pyrodactyl/auto-update-panel.env)
 PANEL_REPO="${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 INSTALL_DIR="${INSTALL_DIR:-/var/www/pyrodactyl}"
 LOG_FILE="${LOG_FILE:-/var/log/pyrodactyl-panel-auto-update.log}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/pyrodactyl}"
 LOCK_FILE="${LOCK_FILE:-/var/run/pyrodactyl-panel-update.lock}"
-CONFIG_FILE="${CONFIG_FILE:-/etc/pyrodactyl/auto-update-panel.conf}"
+CONFIG_FILE="${CONFIG_FILE:-/etc/pyrodactyl/auto-update-panel.env}"
 KEEP_BACKUPS="${KEEP_BACKUPS:-5}"
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
