@@ -274,6 +274,107 @@ show_welcome() {
   echo ""
 }
 
+# ------------------ Direct Update Functions ----------------- #
+
+run_panel_update() {
+  print_header
+  print_flame "Update Pyrodactyl Panel"
+
+  if [ ! -d "/var/www/pyrodactyl" ]; then
+    error "Panel is not installed at /var/www/pyrodactyl"
+    return 1
+  fi
+
+  # Check if auto-updater env file exists
+  if [ -f "/etc/pyrodactyl/auto-update-panel.env" ]; then
+    output "Using existing auto-updater configuration..."
+  else
+    # Create temporary env file with defaults
+    mkdir -p /etc/pyrodactyl
+    echo "PANEL_REPO=\"pyrodactyl-oss/pyrodactyl\"" > /etc/pyrodactyl/auto-update-panel.env
+    echo "GITHUB_TOKEN=\"\"" >> /etc/pyrodactyl/auto-update-panel.env
+    chmod 600 /etc/pyrodactyl/auto-update-panel.env
+  fi
+
+  output "Downloading and running panel auto-updater..."
+  echo ""
+
+  # Download and run the auto-update script
+  local temp_script
+  temp_script=$(mktemp)
+  if ! curl -fsSL -o "$temp_script" "$GITHUB_BASE_URL/$GITHUB_SOURCE/installers/auto-update-panel.sh"; then
+    error "Failed to download update script"
+    rm -f "$temp_script"
+    return 1
+  fi
+
+  chmod +x "$temp_script"
+  "$temp_script" || {
+    error "Update failed"
+    rm -f "$temp_script"
+    return 1
+  }
+
+  rm -f "$temp_script"
+  echo ""
+  output "Press Enter to continue..."
+  read -r
+}
+
+run_elytra_update() {
+  print_header
+  print_flame "Update Elytra Daemon"
+
+  if [ ! -f "/usr/local/bin/elytra" ]; then
+    error "Elytra is not installed at /usr/local/bin/elytra"
+    return 1
+  fi
+
+  # Check if auto-updater env file exists
+  if [ -f "/etc/pyrodactyl/auto-update-elytra.env" ]; then
+    output "Using existing auto-updater configuration..."
+  else
+    # Create temporary env file with defaults
+    mkdir -p /etc/pyrodactyl
+    echo "ELYTRA_REPO=\"pyrohost/elytra\"" > /etc/pyrodactyl/auto-update-elytra.env
+    echo "GITHUB_TOKEN=\"\"" >> /etc/pyrodactyl/auto-update-elytra.env
+    chmod 600 /etc/pyrodactyl/auto-update-elytra.env
+  fi
+
+  output "Downloading and running Elytra auto-updater..."
+  echo ""
+
+  # Download and run the auto-update script
+  local temp_script
+  temp_script=$(mktemp)
+  if ! curl -fsSL -o "$temp_script" "$GITHUB_BASE_URL/$GITHUB_SOURCE/installers/auto-update-elytra.sh"; then
+    error "Failed to download update script"
+    rm -f "$temp_script"
+    return 1
+  fi
+
+  chmod +x "$temp_script"
+  "$temp_script" || {
+    error "Update failed"
+    rm -f "$temp_script"
+    return 1
+  }
+
+  rm -f "$temp_script"
+  echo ""
+  output "Press Enter to continue..."
+  read -r
+}
+
+run_both_updates() {
+  print_header
+  print_flame "Update Both Panel and Elytra"
+
+  run_panel_update
+  echo ""
+  run_elytra_update
+}
+
 # Show main menu
 show_menu() {
   local choice=""
@@ -314,15 +415,15 @@ show_menu() {
         break
         ;;
       3)
-        execute_ui "update-panel"
+        run_panel_update
         break
         ;;
       4)
-        execute_ui "update-elytra"
+        run_elytra_update
         break
         ;;
       5)
-        execute_ui "update-both"
+        run_both_updates
         break
         ;;
       6)
