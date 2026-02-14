@@ -249,7 +249,7 @@ show_remove_menu() {
         if [ "$panel_updater_installed" == true ]; then
           warning "This will remove the Panel auto-updater"
           local confirm=""
-          bool_input confirm "Are you sure? [y/N]: " "n"
+          bool_input confirm "Are you sure?" "n"
           if [ "$confirm" == "y" ]; then
             remove_auto_updater_panel
             success "Panel auto-updater removed"
@@ -263,7 +263,7 @@ show_remove_menu() {
         if [ "$elytra_updater_installed" == true ]; then
           warning "This will remove the Elytra auto-updater"
           local confirm=""
-          bool_input confirm "Are you sure? [y/N]: " "n"
+          bool_input confirm "Are you sure?" "n"
           if [ "$confirm" == "y" ]; then
             remove_auto_updater_elytra
             success "Elytra auto-updater removed"
@@ -277,7 +277,7 @@ show_remove_menu() {
         if [ "$panel_updater_installed" == true ] && [ "$elytra_updater_installed" == true ]; then
           warning "This will remove both auto-updaters"
           local confirm=""
-          bool_input confirm "Are you sure? [y/N]: " "n"
+          bool_input confirm "Are you sure?" "n"
           if [ "$confirm" == "y" ]; then
             remove_auto_updater_panel
             remove_auto_updater_elytra

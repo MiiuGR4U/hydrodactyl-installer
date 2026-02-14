@@ -193,6 +193,12 @@ execute_ui() {
   local next_script="${2:-}"
 
   run_ui "$script_name" 2>&1 | tee -a "$LOG_PATH"
+  local exit_code=${PIPESTATUS[0]}
+
+  # Exit if the installation failed
+  if [ $exit_code -ne 0 ]; then
+    exit $exit_code
+  fi
 
   if [[ -n "$next_script" ]]; then
     echo ""

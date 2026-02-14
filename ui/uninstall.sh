@@ -173,11 +173,11 @@ confirm_uninstall() {
     echo ""
 
     local remove_db=""
-    bool_input remove_db "Also remove the panel database? [y/N]: " "n"
+    bool_input remove_db "Also remove the panel database?" "n"
     [ "$remove_db" == "y" ] && REMOVE_DATABASE=true
 
     local remove_data=""
-    bool_input remove_data "Also remove all server data and backups? [y/N]: " "n"
+    bool_input remove_data "Also remove all server data and backups?" "n"
     [ "$remove_data" == "y" ] && REMOVE_DATA=true
   fi
 
@@ -204,7 +204,7 @@ confirm_uninstall() {
   warning "This action cannot be undone!"
   echo ""
   local confirm=""
-  bool_input confirm "Are you sure you want to proceed? [y/N]: " "n"
+  bool_input confirm "Are you sure you want to proceed?" "n"
 
   if [ "$confirm" != "y" ]; then
     output "Uninstall cancelled"

@@ -1051,6 +1051,84 @@ install_composer() {
   fi
 }
 
+install_nodejs() {
+  if cmd_exists node; then
+    output "Node.js is already installed ($(node --version))"
+    return 0
+  fi
+
+  output "Installing Node.js..."
+  
+  case "$OS" in
+    ubuntu|debian)
+      curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+      install_packages "nodejs"
+      ;;
+    rocky|almalinux|fedora|rhel|centos)
+      # Install Node.js from NodeSource on RHEL-based systems
+      curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+      install_packages "nodejs"
+      ;;
+    *)
+      error "Unsupported OS for Node.js installation"
+      return 1
+      ;;
+  esac
+
+  if cmd_exists node; then
+    success "Node.js installed ($(node --version))"
+  else
+    error "Failed to install Node.js"
+    return 1
+  fi
+}
+
+install_pnpm() {
+  if cmd_exists pnpm; then
+    output "pnpm is already installed ($(pnpm --version))"
+    return 0
+  fi
+
+  output "Installing pnpm..."
+  
+  # Install pnpm globally using npm
+  npm install -g pnpm
+
+  if cmd_exists pnpm; then
+    success "pnpm installed ($(pnpm --version))"
+  else
+    error "Failed to install pnpm"
+    return 1
+  fi
+}
+
+build_panel_assets() {
+  local install_dir="${1:-$INSTALL_DIR}"
+  
+  if [ -z "$install_dir" ]; then
+    error "Install directory not specified for asset building"
+    return 1
+  fi
+
+  cd "$install_dir" || return 1
+
+  # Install Node.js if needed
+  install_nodejs
+
+  # Install pnpm if needed
+  install_pnpm
+
+  # Install JavaScript dependencies
+  output "Installing JavaScript dependencies..."
+  pnpm install
+
+  # Build frontend assets
+  output "Building frontend assets..."
+  pnpm build
+
+  success "Frontend assets built successfully"
+}
+
 php_fpm_conf() {
   output "Configuring PHP-FPM..."
 

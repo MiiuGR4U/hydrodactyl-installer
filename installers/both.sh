@@ -300,6 +300,9 @@ install_panel_release() {
   output "Installing composer dependencies..."
   COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 
+  # Build frontend assets
+  build_panel_assets "$INSTALL_DIR"
+
   success "Panel downloaded to $INSTALL_DIR"
 }
 
@@ -330,6 +333,9 @@ install_panel_clone() {
 
   output "Installing composer dependencies..."
   COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+
+  # Build frontend assets
+  build_panel_assets "$INSTALL_DIR"
 
   success "Panel cloned to $INSTALL_DIR"
 }

@@ -151,7 +151,7 @@ cleanup_packages() {
     output "Warning: This may affect other services on your system."
 
     local remove_packages=""
-    bool_input remove_packages "Remove packages? [y/N]: " "n"
+    bool_input remove_packages "Remove packages?" "n"
 
     if [ "$remove_packages" == "y" ]; then
         output "Removing packages..."

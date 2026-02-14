@@ -333,6 +333,9 @@ install_panel_release() {
   output "Installing composer dependencies..."
   COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 
+  # Build frontend assets
+  build_panel_assets "$INSTALL_DIR"
+
   success "Panel downloaded to $INSTALL_DIR"
 }
 
@@ -367,6 +370,9 @@ install_panel_clone() {
 
   output "Installing composer dependencies..."
   COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
+
+  # Build frontend assets
+  build_panel_assets "$INSTALL_DIR"
 
   success "Panel cloned to $INSTALL_DIR"
 }
@@ -520,7 +526,9 @@ main() {
   # Check for existing installation
   if check_existing_installation "panel"; then
     warning "Existing panel installation detected"
-    if ! bool_input "Continue and overwrite existing installation? [y/N]: " "n"; then
+    local confirm_overwrite=""
+    bool_input confirm_overwrite "Continue and overwrite existing installation?" "n"
+    if [ "$confirm_overwrite" != "y" ]; then
       error "Installation aborted"
       exit 1
     fi
