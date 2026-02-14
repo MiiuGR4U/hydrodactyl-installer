@@ -15,7 +15,7 @@ set -e
 ######################################################################################
 
 export GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
-export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.0.0}"
+export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.1.0}"
 export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer}"
 
 LOG_PATH="/var/log/pyrodactyl-installer.log"
@@ -353,10 +353,15 @@ main() {
   load_library
   log_execution
   show_welcome
-  show_menu
 
-  print_header
-  print_flame "Thank you for using Pyrodactyl Installer!"
+  # Run menu/installation
+  if show_menu; then
+    echo ""
+    print_flame "Thank you for using Pyrodactyl Installer!"
+  fi
+
+  # Always show log location at the end
+  echo ""
   output "Installation log saved to: ${COLOR_ORANGE}$LOG_PATH${COLOR_NC}"
   echo ""
 }
