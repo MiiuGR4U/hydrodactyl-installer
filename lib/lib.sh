@@ -110,7 +110,33 @@ patch_pyrodactyl_node_api() {
   # Use sed to add the missing fields after 'daemonBase'
   if grep -q "'daemonBase'" "$target_file"; then
     # Add daemonType and backupDisk after daemonBase
-    sed -i "/'daemonBase',/a\\        'daemonType',Visual Functions ----------------- #
+    sed -i "/'daemonBase',/a\\        'daemonType',\\n        'backupDisk'," "$target_file"
+    output "Added daemonType and backupDisk to StoreNodeRequest"
+  else
+    warning "Could not find 'daemonBase' in file - patch may fail"
+    return 1
+  fi
+
+  # Verify the patch was applied
+  if grep -q "'daemonType'" "$target_file" && grep -q "'backupDisk'" "$target_file"; then
+    success "Pyrodactyl API patch applied successfully"
+
+    # Clear caches to apply changes
+    if [ -f "$install_dir/artisan" ]; then
+      output "Clearing Laravel caches..."
+      cd "$install_dir"
+      php artisan config:clear 2>/dev/null || true
+      php artisan cache:clear 2>/dev/null || true
+    fi
+
+    return 0
+  else
+    warning "Patch verification failed - please check $target_file manually"
+    return 1
+  fi
+}
+
+# ------------------ Visual Functions ----------------- #
 
 output() {
   echo -e "* $1"
@@ -176,7 +202,7 @@ print_flame() {
 }
 
 hyperlink() {
-  echo -e "\e]8;;${1}\a${1}\e]8;;\a"
+  echo -e "\033]8;;${1}\033\\${1}\033]8;;\033\\"
 }
 
 welcome() {
