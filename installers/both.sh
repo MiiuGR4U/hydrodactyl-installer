@@ -700,17 +700,11 @@ install_elytra_daemon() {
 
   chmod +x /usr/local/bin/elytra
 
-  # Generate UUID
-  local uuid
-  uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "$(date +%s)-$(hostname)-$$")
+  # Create Elytra config directory
+  mkdir -p "${ELYTRA_DIR}"
 
-  # Download configuration template
-  output "Downloading Elytra configuration template..."
-
-  if ! curl -fsSL -o "${ELYTRA_DIR}/config.yml" "$GITHUB_URL/configs/elytra-config.yml" 2>/dev/null; then
-    error "Failed to download Elytra configuration template"
-    exit 1
-  fi
+  # Determine panel URL - always use HTTPS for API
+  local panel_url="https://${PANEL_FQDN}"
 
   # Debug output
   output "DEBUG: Elytra configuration values:"
@@ -719,45 +713,16 @@ install_elytra_daemon() {
   output "DEBUG: PANEL_FQDN=${PANEL_FQDN}"
   output "DEBUG: ELYTRA_DIR=${ELYTRA_DIR}"
 
-  # Determine panel URL - always use HTTPS for API
-  local panel_url="https://${PANEL_FQDN}"
+  # Configure Elytra using the official configure command
+  output "Configuring Elytra using 'elytra configure' command..."
+  cd "${ELYTRA_DIR}" && elytra configure --panel-url "${panel_url}" --token "${NODE_TOKEN}" --node "${NODE_ID}"
 
-  # Debug: Show template before replacements
-  output "DEBUG: Elytra config template before sed:"
-  head -10 "${ELYTRA_DIR}/config.yml"
-
-  # Replace placeholders
-  # Escape special characters for sed (& has special meaning in replacement)
-  local escaped_token
-  escaped_token=$(printf '%s' "$NODE_TOKEN" | sed 's/[&/\]/\\&/g')
-  sed -i "s|<UUID>|${uuid}|g" "${ELYTRA_DIR}/config.yml"
-  sed -i "s|<TOKEN_ID>|${NODE_ID}|g" "${ELYTRA_DIR}/config.yml"
-  sed -i "s|<TOKEN>|${escaped_token}|g" "${ELYTRA_DIR}/config.yml"
-  sed -i "s|<REMOTE>|${panel_url}|g" "${ELYTRA_DIR}/config.yml"
-
-  # Debug: Show resulting config
-  output "DEBUG: Elytra config after sed replacements (first 15 lines):"
-  head -15 "${ELYTRA_DIR}/config.yml"
-  
-  # Validate YAML syntax if yamllint or python is available
-  if cmd_exists python3; then
-    if ! python3 -c "import yaml; yaml.safe_load(open('${ELYTRA_DIR}/config.yml'))" 2>/dev/null; then
-      error "DEBUG: YAML syntax validation failed!"
-      error "DEBUG: Config file content:"
-      cat "${ELYTRA_DIR}/config.yml"
-    else
-      output "DEBUG: YAML syntax is valid"
-    fi
+  if [ $? -ne 0 ]; then
+    error "Failed to configure Elytra"
+    exit 1
   fi
 
-  if [ "$BEHIND_PROXY" == "true" ]; then
-    sed -i "s|<TRUSTED_PROXIES>|[\"0.0.0.0/0\"]|g" "${ELYTRA_DIR}/config.yml"
-  else
-    sed -i "s|<TRUSTED_PROXIES>|[]|g" "${ELYTRA_DIR}/config.yml"
-  fi
-
-  # Copy config to pyrodactyl directory
-  cp "${ELYTRA_DIR}/config.yml" "${PANEL_CONFIG_DIR}/config.yml" 2>/dev/null || true
+  output "DEBUG: Elytra configured successfully"
 
   # Install rustic using shared function from lib.sh
   install_rustic

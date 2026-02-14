@@ -207,32 +207,18 @@ auto_configure_elytra() {
 configure_elytra() {
   print_flame "Configuring Elytra"
 
-  # Generate UUID
-  local uuid
-  uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "$(date +%s)-$(hostname)-$$")
+  # Create Elytra config directory
+  mkdir -p "${INSTALL_DIR}"
 
-  output "Downloading configuration template..."
+  output "Configuring Elytra using 'elytra configure' command..."
 
-  # Download config template from GitHub
-  if ! curl -fsSL -o "${INSTALL_DIR}/config.yml" "$GITHUB_URL/configs/elytra-config.yml" 2>/dev/null; then
-    error "Failed to download Elytra configuration template"
+  # Configure Elytra using the official configure command
+  cd "${INSTALL_DIR}" && elytra configure --panel-url "${PANEL_URL}" --token "${NODE_TOKEN}" --node "${NODE_ID}"
+
+  if [ $? -ne 0 ]; then
+    error "Failed to configure Elytra"
     exit 1
   fi
-
-  # Replace placeholders
-  sed -i "s|<UUID>|${uuid}|g" "${INSTALL_DIR}/config.yml"
-  sed -i "s|<TOKEN_ID>|${NODE_ID}|g" "${INSTALL_DIR}/config.yml"
-  sed -i "s|<TOKEN>|${NODE_TOKEN}|g" "${INSTALL_DIR}/config.yml"
-  sed -i "s|<REMOTE>|${PANEL_URL}|g" "${INSTALL_DIR}/config.yml"
-
-  if [ "$BEHIND_PROXY" == "true" ]; then
-    sed -i "s|<TRUSTED_PROXIES>|[\"0.0.0.0/0\"]|g" "${INSTALL_DIR}/config.yml"
-  else
-    sed -i "s|<TRUSTED_PROXIES>|[]|g" "${INSTALL_DIR}/config.yml"
-  fi
-
-  # Copy config to pyrodactyl directory for compatibility
-  cp "${INSTALL_DIR}/config.yml" "${PANEL_CONFIG_DIR}/config.yml" 2>/dev/null || true
 
   success "Elytra configured"
 }

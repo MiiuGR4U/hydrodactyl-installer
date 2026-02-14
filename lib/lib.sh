@@ -1805,7 +1805,7 @@ create_minecraft_server() {
       --arg name "Minecraft Vanilla Server" \
       --arg desc "Automatically created Minecraft Vanilla Server" \
       --argjson user 1 \
-      --argjson egg 8 \
+      --argjson egg 6 \
       --arg docker_image "ghcr.io/pterodactyl/yolks:java_17" \
       --arg startup 'java -Xms128M -Xmx4096M -jar {{SERVER_JARFILE}}' \
       --argjson allocation_id "$allocation_id" \
@@ -1845,7 +1845,7 @@ create_minecraft_server() {
       --arg name "Minecraft Vanilla Server" \
       --arg desc "Automatically created Minecraft Vanilla Server" \
       --argjson user 1 \
-      --argjson egg 8 \
+      --argjson egg 6 \
       --arg docker_image "ghcr.io/pterodactyl/yolks:java_17" \
       --arg startup 'java -Xms128M -Xmx4096M -jar {{SERVER_JARFILE}}' \
       --argjson location_id "$location_id" \
@@ -2297,7 +2297,7 @@ create_node_via_api() {
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"node"'; then
     local node_id
     node_id=$(echo "$create_response" | jq -r '.attributes.id' 2>/dev/null)
-    success "Created node: ${node_name} (ID: ${node_id})"
+    success "Created node: ${node_name} (ID: ${node_id})" >&2
     echo "$node_id"
     return 0
   else
