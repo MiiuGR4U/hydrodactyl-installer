@@ -558,7 +558,7 @@ create_node_in_panel() {
       memory_mb=$(get_system_memory)
       disk_mb=$(df -m / | awk 'NR==2 {print $2}')
 
-      if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY"); then
+      if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY" "$PANEL_FQDN"); then
         error "Failed to create node via API, falling back to manual method"
         # Fall through to manual method below
       else
@@ -689,6 +689,18 @@ install_elytra_daemon() {
   fi
 
   output "DEBUG: Elytra configured successfully"
+
+  # Configure SSL for Elytra using Let's Encrypt certificates
+  output "Configuring SSL for Elytra..."
+  if [ -f "/etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${PANEL_FQDN}/privkey.pem" ]; then
+    # Enable SSL and set certificate paths
+    sed -i 's/enabled: false/enabled: true/' "${ELYTRA_DIR}/config.yml"
+    sed -i "s|cert: .*|cert: /etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem|" "${ELYTRA_DIR}/config.yml"
+    sed -i "s|key: .*|key: /etc/letsencrypt/live/${PANEL_FQDN}/privkey.pem|" "${ELYTRA_DIR}/config.yml"
+    success "SSL configured for Elytra using Let's Encrypt certificates"
+  else
+    warning "Let's Encrypt certificates not found, SSL may need manual configuration"
+  fi
 
   # Step 4: Create allocations via API (after Elytra configure)
   output "Creating allocations via API..."
