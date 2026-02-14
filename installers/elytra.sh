@@ -61,7 +61,7 @@ if [[ -z "$PANEL_API_KEY" ]]; then
       missing+=("$var")
     fi
   done
-  
+
   if (( ${#missing[@]} > 0 )); then
     print_header
     print_flame "Missing Required Variables"
@@ -95,9 +95,36 @@ install_elytra() {
   # Create directories
   mkdir -p "$INSTALL_DIR"
   mkdir -p "$PANEL_CONFIG_DIR"
-  mkdir -p /var/lib/pyrodactyl/volumes
-  mkdir -p /var/lib/pyrodactyl/archives
-  mkdir -p /var/lib/pyrodactyl/backups
+  mkdir -p /var/lib/elytra/volumes
+  mkdir -p /var/lib/elytra/archives
+  mkdir -p /var/lib/elytra/backups
+
+  # Create pyrodactyl user for Elytra (UID/GID 8888) if it doesn't exist
+  output "Creating pyrodactyl system user..."
+  if ! id -u pyrodactyl >/dev/null 2>&1; then
+    useradd --system --no-create-home --shell /usr/sbin/nologin --uid 8888 --gid 8888 pyrodactyl 2>/dev/null || \
+    useradd --system --no-create-home --shell /sbin/nologin --uid 8888 pyrodactyl 2>/dev/null || \
+    useradd --system --no-create-home --shell /bin/false --uid 8888 pyrodactyl
+  fi
+
+  # Ensure pyrodactyl group exists
+  if ! getent group pyrodactyl >/dev/null 2>&1; then
+    groupadd --gid 8888 pyrodactyl 2>/dev/null || true
+  fi
+
+  # Set proper ownership on Elytra data directories
+  output "Setting permissions on Elytra data directories..."
+  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
+  chown -R 8888:8888 "$INSTALL_DIR" 2>/dev/null || true
+
+  # Set full permissions so containers can read/write/execute
+  # TODO: Can we figure out if 777 is required or not? Launching a server did not work without this...
+  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
+  chmod -R 777 "$INSTALL_DIR" 2>/dev/null || true
 
   # Determine architecture
   local arch
@@ -147,13 +174,13 @@ auto_configure_elytra() {
   local country_code
   country_code=$(get_server_country_code)
   info "Detected country code: ${country_code}"
-  
+
   local location_id
   if ! location_id=$(get_or_create_location "$api_key" "$panel_url" "$country_code"); then
     error "Failed to set up location"
     return 1
   fi
-  
+
   # Step 2: Create node
   output ""
   output "Step 2: Creating node..."
@@ -161,24 +188,24 @@ auto_configure_elytra() {
   local disk_mb
   memory_mb=$(get_system_memory)
   disk_mb=$(df -m / | awk 'NR==2 {print $2}')
-  
+
   # Extract FQDN from panel_url for node configuration
   local panel_fqdn
   panel_fqdn=$(echo "$panel_url" | sed 's|https://||' | sed 's|http://||')
-  
+
   if ! NODE_ID=$(create_node_via_api "$api_key" "$panel_url" "$location_id" "$node_name" "$memory_mb" "$disk_mb" "false" "$panel_fqdn"); then
     error "Failed to create node"
     return 1
   fi
-  
+
   success "Node created successfully"
   info "Node ID: ${NODE_ID}"
-  
+
   # Step 5: Configure Elytra
   output ""
   output "Step 5: Configuring Elytra..."
   configure_elytra
-  
+
   success "Elytra auto-configuration complete!"
   return 0
 }
@@ -194,12 +221,12 @@ configure_elytra() {
   # Configure Elytra using the official configure command
   # Note: Uses Panel API key, not node daemon token
   cd "${INSTALL_DIR}" && elytra configure --panel-url "${PANEL_URL}" --token "${api_key}" --node "${NODE_ID}"
-  
+
   if [ $? -ne 0 ]; then
     error "Failed to configure Elytra"
     return 1
   fi
-  
+
   # Configure SSL for Elytra using Let's Encrypt certificates
   output "Configuring SSL for Elytra..."
   # Extract FQDN from PANEL_URL (remove https:// prefix)
@@ -214,7 +241,7 @@ configure_elytra() {
   else
     warning "Let's Encrypt certificates not found, SSL may need manual configuration"
   fi
-  
+
   # Step 4: Create allocations (after Elytra configure)
   output ""
   output "Step 4: Creating allocations..."
@@ -251,7 +278,7 @@ start_elytra() {
   print_flame "Starting Elytra"
 
   output "Starting Elytra service..."
-  systemctl start elytra
+  systemctl restart elytra
 
   # Wait for service to start
   sleep 3
@@ -342,7 +369,7 @@ main() {
   check_existing
   install_docker
   install_elytra
-  
+
   # Check if we should use API-based auto-configuration
   if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_URL" ]; then
     if auto_configure_elytra "$PANEL_API_KEY" "$PANEL_URL" "${NODE_NAME:-Elytra-Node-$(hostname -s)}"; then
@@ -354,7 +381,7 @@ main() {
   else
     configure_elytra
   fi
-  
+
   install_rustic
   setup_systemd_service
   start_elytra

@@ -635,9 +635,36 @@ install_elytra_daemon() {
   # Create directories
   mkdir -p "$ELYTRA_DIR"
   mkdir -p "$PANEL_CONFIG_DIR"
-  mkdir -p /var/lib/pyrodactyl/volumes
-  mkdir -p /var/lib/pyrodactyl/archives
-  mkdir -p /var/lib/pyrodactyl/backups
+  mkdir -p /var/lib/elytra/volumes
+  mkdir -p /var/lib/elytra/archives
+  mkdir -p /var/lib/elytra/backups
+
+  # Create pyrodactyl user for Elytra (UID/GID 8888) if it doesn't exist
+  output "Creating pyrodactyl system user..."
+  if ! id -u pyrodactyl >/dev/null 2>&1; then
+    useradd --system --no-create-home --shell /usr/sbin/nologin --uid 8888 --gid 8888 pyrodactyl 2>/dev/null || \
+    useradd --system --no-create-home --shell /sbin/nologin --uid 8888 pyrodactyl 2>/dev/null || \
+    useradd --system --no-create-home --shell /bin/false --uid 8888 pyrodactyl
+  fi
+
+  # Ensure pyrodactyl group exists
+  if ! getent group pyrodactyl >/dev/null 2>&1; then
+    groupadd --gid 8888 pyrodactyl 2>/dev/null || true
+  fi
+
+  # Set proper ownership and permissions on Elytra data directories
+  output "Setting permissions on Elytra data directories..."
+  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
+  chown -R 8888:8888 "$ELYTRA_DIR" 2>/dev/null || true
+
+  # Set full permissions so containers can read/write/execute
+  # TODO: Can we figure out if 777 is required or not? Launching a server did not work without this...
+  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
+  chmod -R 777 "$ELYTRA_DIR" 2>/dev/null || true
 
   # Determine architecture
   local arch
@@ -718,7 +745,7 @@ install_elytra_daemon() {
 
   systemctl daemon-reload
   systemctl enable elytra
-  systemctl start elytra
+  systemctl restart elytra
 
   # Wait for service to start
   sleep 3

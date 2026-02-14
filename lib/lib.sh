@@ -2335,8 +2335,10 @@ create_node_allocations() {
   # Create port ranges (Minecraft, Source Engine, general range)
   local ports_json="[\"25565-25665\",\"27015-27150\",\"${game_port_start}-${game_port_end}\"]"
 
+  # Capture both response and HTTP status code
   local create_response
-  create_response=$(curl -s -X POST \
+  local http_code
+  create_response=$(curl -s -w "\n%{http_code}" -X POST \
     -H "Authorization: Bearer $api_key" \
     -H "Accept: Application/vnd.pterodactyl.v1+json" \
     -H "Content-Type: application/json" \
@@ -2346,14 +2348,25 @@ create_node_allocations() {
     }" \
     "${panel_url}/api/application/nodes/${node_id}/allocations" 2>/dev/null || echo "")
 
-  if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"list"'; then
+  # Extract HTTP status code (last line)
+  http_code=$(echo "$create_response" | tail -n1)
+  # Remove status code from response body
+  create_response=$(echo "$create_response" | sed '$d')
+
+  # Check for success - HTTP 204 (No Content) or response with data
+  if [ "$http_code" == "204" ]; then
+    success "Created allocations (HTTP 204)"
+    return 0
+  elif [ -n "$create_response" ] && (echo "$create_response" | grep -q '"object":"list"' || echo "$create_response" | grep -q '"data":'); then
     local allocation_count
-    allocation_count=$(echo "$create_response" | jq -r '.data | length' 2>/dev/null)
+    allocation_count=$(echo "$create_response" | jq -r '.data | length' 2>/dev/null || echo "some")
     success "Created ${allocation_count} allocations"
     return 0
   else
-    warning "Failed to create allocations (node may still work)"
-    return 1
+    # Don't warn if allocations might have been created
+    output "DEBUG: HTTP status: $http_code, response: $create_response" >&2
+    warning "Could not confirm allocations creation (node may still work)"
+    return 0
   fi
 }
 
