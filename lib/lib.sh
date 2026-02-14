@@ -2198,7 +2198,7 @@ create_node_via_api() {
   local disk_mb="$6"
   local behind_proxy="${7:-false}"
 
-  output "Creating node: ${COLOR_ORANGE}${node_name}${COLOR_NC}"
+  output "Creating node: ${COLOR_ORANGE}${node_name}${COLOR_NC}" >&2
 
   # Convert bash boolean to JSON boolean
   local json_behind_proxy="false"
@@ -2243,7 +2243,7 @@ create_node_via_api() {
   local current_date
   current_date=$(date +%Y-%m-%d)
 
-  output "DEBUG: Creating node with name='${node_name}', location_id=${location_id}, memory=${memory_mb}, disk=${disk_mb}"
+  output "DEBUG: Creating node with name='${node_name}', location_id=${location_id}, memory=${memory_mb}, disk=${disk_mb}" >&2
 
   if cmd_exists jq; then
     # Use jq for proper JSON construction
@@ -2267,13 +2267,13 @@ create_node_via_api() {
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
-  output "DEBUG: POST ${panel_url}/api/application/nodes"
-  output "DEBUG: Request JSON:"
-  cat "$json_file"
-  output "DEBUG: JSON file size: $(wc -c < "$json_file") bytes"
-  output "DEBUG: JSON content validation:"
+  output "DEBUG: POST ${panel_url}/api/application/nodes" >&2
+  output "DEBUG: Request JSON:" >&2
+  cat "$json_file" >&2
+  output "DEBUG: JSON file size: $(wc -c < "$json_file") bytes" >&2
+  output "DEBUG: JSON content validation:" >&2
   if cmd_exists python3; then
-    python3 -m json.tool "$json_file" > /dev/null 2>&1 && output "DEBUG: JSON is valid" || output "DEBUG: JSON is INVALID"
+    python3 -m json.tool "$json_file" > /dev/null 2>&1 && output "DEBUG: JSON is valid" >&2 || output "DEBUG: JSON is INVALID" >&2
   fi
 
   local create_response
@@ -2291,8 +2291,8 @@ create_node_via_api() {
   # Clean up temp file
   rm -f "$json_file"
 
-  output "DEBUG: Create node HTTP status: $create_http_code"
-  output "DEBUG: Create node response preview: $(echo "$create_response" | head -c 300)"
+  output "DEBUG: Create node HTTP status: $create_http_code" >&2
+  output "DEBUG: Create node response preview: $(echo "$create_response" | head -c 300)" >&2
 
   if [ -n "$create_response" ] && echo "$create_response" | grep -q '"object":"node"'; then
     local node_id
