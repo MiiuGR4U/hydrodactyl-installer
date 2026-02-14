@@ -856,6 +856,10 @@ main() {
     install_panel_clone
   fi
 
+  # Apply Pyrodactyl API patch for daemonType and backupDisk fields
+  # This fixes the "daemon type field is required" API error
+  patch_pyrodactyl_node_api "$INSTALL_DIR"
+
   configure_panel_environment
   setup_panel_services
   install_phpmyadmin

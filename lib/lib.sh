@@ -80,7 +80,37 @@ lib_loaded() {
   return 0
 }
 
-# ------------------ Visual Functions ----------------- #
+# ------------------ Pyrodactyl API Patch ----------------- #
+
+# Patch Pyrodactyl StoreNodeRequest to include daemonType and backupDisk fields
+# This fixes the "The daemon type field is required" API error
+patch_pyrodactyl_node_api() {
+  local install_dir="${1:-$INSTALL_DIR}"
+  local target_file="$install_dir/app/Http/Requests/Api/Application/Nodes/StoreNodeRequest.php"
+
+  output "Checking Pyrodactyl API patch..."
+
+  # Check if file exists
+  if [ ! -f "$target_file" ]; then
+    warning "Target file not found: $target_file"
+    return 0
+  fi
+
+  # Check if patch has already been applied (look for daemonType in the only() array)
+  if grep -q "'daemonType'" "$target_file"; then
+    info "Pyrodactyl API patch already applied"
+    return 0
+  fi
+
+  output "Applying Pyrodactyl API patch..."
+
+  # Create a backup
+  cp "$target_file" "$target_file.backup.$(date +%Y%m%d%H%M%S)"
+
+  # Use sed to add the missing fields after 'daemonBase'
+  if grep -q "'daemonBase'" "$target_file"; then
+    # Add daemonType and backupDisk after daemonBase
+    sed -i "/'daemonBase',/a\\        'daemonType',Visual Functions ----------------- #
 
 output() {
   echo -e "* $1"

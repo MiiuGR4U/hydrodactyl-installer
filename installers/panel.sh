@@ -544,6 +544,9 @@ main() {
     install_panel_clone
   fi
 
+  # Apply Pyrodactyl API patch for daemonType and backupDisk fields
+  patch_pyrodactyl_node_api "$INSTALL_DIR"
+
   configure_panel
   setup_services
   install_phpmyadmin
