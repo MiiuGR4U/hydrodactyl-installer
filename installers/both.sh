@@ -603,6 +603,7 @@ create_node_in_panel() {
 
   # Create node with actual system specs
   output "Creating node: $NODE_NAME..."
+  output "DEBUG: Manual node creation with NODE_TOKEN=${NODE_TOKEN:0:20}..."
   php artisan p:node:make -n \
     --name="$NODE_NAME" \
     --description="$NODE_DESCRIPTION" \
@@ -700,6 +701,13 @@ install_elytra_daemon() {
     exit 1
   fi
 
+  # Debug output
+  output "DEBUG: Elytra configuration values:"
+  output "DEBUG: NODE_ID=${NODE_ID}"
+  output "DEBUG: NODE_TOKEN=${NODE_TOKEN:0:20}... (truncated)"
+  output "DEBUG: PANEL_FQDN=${PANEL_FQDN}"
+  output "DEBUG: ELYTRA_DIR=${ELYTRA_DIR}"
+
   # Determine panel URL based on SSL configuration
   local panel_url="https://${PANEL_FQDN}"
   [ "$ASSUME_SSL" != "true" ] && [ "$CONFIGURE_LETSENCRYPT" != "true" ] && [ -z "$SSL_CERT_PATH" ] && panel_url="http://${PANEL_FQDN}"
@@ -709,6 +717,10 @@ install_elytra_daemon() {
   sed -i "s|<TOKEN_ID>|${NODE_ID}|g" "${ELYTRA_DIR}/config.yml"
   sed -i "s|<TOKEN>|${NODE_TOKEN}|g" "${ELYTRA_DIR}/config.yml"
   sed -i "s|<REMOTE>|${panel_url}|g" "${ELYTRA_DIR}/config.yml"
+
+  # Debug: Show resulting config
+  output "DEBUG: Elytra config after sed replacements:"
+  grep -E "^(uuid:|token_id:|token:|remote:)" "${ELYTRA_DIR}/config.yml" || output "DEBUG: (config lines not found as expected)"
 
   if [ "$BEHIND_PROXY" == "true" ]; then
     sed -i "s|<TRUSTED_PROXIES>|[\"0.0.0.0/0\"]|g" "${ELYTRA_DIR}/config.yml"
