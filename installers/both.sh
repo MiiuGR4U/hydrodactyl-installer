@@ -84,6 +84,34 @@ for var in PANEL_FQDN PANEL_ADMIN_EMAIL PANEL_ADMIN_USERNAME PANEL_ADMIN_FIRSTNA
   fi
 done
 
+validate_configuration() {
+  print_flame "Validating Configuration"
+
+  local missing=()
+
+  [ -z "$PANEL_FQDN" ] && missing+=("PANEL_FQDN")
+  [ -z "$PANEL_ADMIN_EMAIL" ] && missing+=("PANEL_ADMIN_EMAIL")
+  [ -z "$PANEL_ADMIN_USERNAME" ] && missing+=("PANEL_ADMIN_USERNAME")
+  [ -z "$PANEL_ADMIN_FIRSTNAME" ] && missing+=("PANEL_ADMIN_FIRSTNAME")
+  [ -z "$PANEL_ADMIN_LASTNAME" ] && missing+=("PANEL_ADMIN_LASTNAME")
+
+  if [ ${#missing[@]} -gt 0 ]; then
+    error "Missing required configuration variables:"
+    for var in "${missing[@]}"; do
+      output "  - $var"
+    done
+    exit 1
+  fi
+
+  if ! check_fqdn "$PANEL_FQDN"; then
+    error "Invalid FQDN: $PANEL_FQDN"
+    exit 1
+  fi
+
+  success "Configuration valid"
+}
+
+# Inline validation for backwards compatibility
 if (( ${#missing[@]} > 0 )); then
   print_header
   print_flame "Missing Required Variables"
@@ -227,10 +255,11 @@ install_panel_release() {
   release_tag=$(echo "$release_data" | jq -r '.tag_name')
   info "Latest release: $release_tag"
 
-  output "Downloading panel.tar.gz..."
-
+  output "Creating installation directory..."
   mkdir -p "$INSTALL_DIR"
   cd "$INSTALL_DIR"
+
+  output "Downloading panel.tar.gz..."
 
   # Build download headers - token optional for public repos
   local download_headers=(
@@ -333,32 +362,43 @@ install_panel_clone() {
 }
 
 configure_mariadb() {
-  print_flame "Configuring MariaDB"
+  print_flame "Setting up MariaDB"
 
-  output "Starting MariaDB..."
+  output "Starting MariaDB service..."
   systemctl start mariadb
   systemctl enable mariadb
 
-  # Check if MariaDB is already secured with our credentials
+  # Check if MariaDB is accessible with current credentials
   if mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; then
-    output "MariaDB already secured with existing credentials"
-  else
-    output "Securing MariaDB..."
+    output "MariaDB connection successful with existing credentials"
+  # Check if MariaDB has no root password set (fresh install)
+  elif mysql -u root -e "SELECT 1" >/dev/null 2>&1; then
+    output "Securing MariaDB with new credentials..."
     # Try to set root password (may fail if already secured differently)
     mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';" 2>/dev/null || true
 
-    # Test if it worked
+    # Verify the new password works
     if ! mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1; then
-      error "Could not secure MariaDB with provided credentials"
-      error "If MariaDB was previously configured with a different password, set MYSQL_ROOT_PASSWORD environment variable"
+      error "Failed to set MariaDB root password"
       exit 1
     fi
+
+    # Remove anonymous users and test database
 
     mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.user WHERE User='';" 2>/dev/null || true
     mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');" 2>/dev/null || true
     mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS test;" 2>/dev/null || true
     mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';" 2>/dev/null || true
     mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+else
+    # Cannot connect - MariaDB is secured with unknown password
+    error "Cannot connect to MariaDB"
+    error "MariaDB appears to be secured with a password that doesn't match our records"
+    error "Please either:"
+    error "  1. Set MYSQL_ROOT_PASSWORD environment variable to the correct password"
+    error "  2. Reset MariaDB root password manually"
+    error "  3. Remove /root/.config/pyrodactyl/db-credentials if you want to start fresh"
+    exit 1
   fi
 
   # Save credentials
@@ -772,6 +812,8 @@ main() {
   print_flame "Starting Combined Installation"
   output "This will install Pyrodactyl Panel and Elytra on the same machine."
   echo ""
+
+  validate_configuration
 
   check_existing
 
