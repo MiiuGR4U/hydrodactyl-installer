@@ -167,33 +167,8 @@ auto_configure_elytra() {
     return 1
   fi
   
-  # Step 3: Create allocations
-  output ""
-  output "Step 3: Creating allocations..."
-  create_node_allocations "$api_key" "$panel_url" "$NODE_ID"
-  
-  # Step 4: Get node configuration
-  output ""
-  output "Step 4: Generating node configuration..."
-  local config_result
-  if ! config_result=$(get_node_configuration "$api_key" "$panel_url" "$NODE_ID"); then
-    error "Failed to get node configuration"
-    return 1
-  fi
-  
-  # Parse token and UUID from result (format: token|uuid)
-  NODE_TOKEN=$(echo "$config_result" | cut -d'|' -f1)
-  local node_uuid
-  node_uuid=$(echo "$config_result" | cut -d'|' -f2)
-  
-  if [ -z "$NODE_TOKEN" ] || [ "$NODE_TOKEN" == "null" ]; then
-    error "Failed to extract node token from configuration"
-    return 1
-  fi
-  
-  success "Node configuration retrieved successfully"
+  success "Node created successfully"
   info "Node ID: ${NODE_ID}"
-  info "UUID: ${node_uuid}"
   
   # Step 5: Configure Elytra
   output ""
@@ -213,7 +188,18 @@ configure_elytra() {
   output "Configuring Elytra using 'elytra configure' command..."
 
   # Configure Elytra using the official configure command
-  cd "${INSTALL_DIR}" && elytra configure --panel-url "${PANEL_URL}" --token "${NODE_TOKEN}" --node "${NODE_ID}"
+  # Note: Uses Panel API key, not node daemon token
+  cd "${INSTALL_DIR}" && elytra configure --panel-url "${PANEL_URL}" --token "${api_key}" --node "${NODE_ID}"
+  
+  if [ $? -ne 0 ]; then
+    error "Failed to configure Elytra"
+    return 1
+  fi
+  
+  # Step 4: Create allocations (after Elytra configure)
+  output ""
+  output "Step 4: Creating allocations..."
+  create_node_allocations "$api_key" "$panel_url" "$NODE_ID"
 
   if [ $? -ne 0 ]; then
     error "Failed to configure Elytra"

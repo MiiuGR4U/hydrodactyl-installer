@@ -552,7 +552,7 @@ create_node_in_panel() {
       # Fall through to manual method below
     else
       # Step 2: Create node via API
-      output "Creating node via API: ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}"
+      output "Creating node via API: ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}" >&2
       local memory_mb
       local disk_mb
       memory_mb=$(get_system_memory)
@@ -563,24 +563,9 @@ create_node_in_panel() {
         # Fall through to manual method below
       else
         output "DEBUG: Node created via API with NODE_ID=${NODE_ID}"
-        
-        # Step 3: Create allocations via API
-        output "Creating allocations via API..."
-        create_node_allocations "$PANEL_API_KEY" "$panel_url" "$NODE_ID" "$GAME_PORT_START" "$GAME_PORT_END" || true
-
-        # Step 4: Get node configuration
-        output "Retrieving node configuration..."
-        output "DEBUG: Calling get_node_configuration with NODE_ID=${NODE_ID}"
-        local config_result
-        if config_result=$(get_node_configuration "$PANEL_API_KEY" "$panel_url" "$NODE_ID"); then
-          NODE_TOKEN=$(echo "$config_result" | cut -d'|' -f1)
-          success "Node configured successfully via API"
-          info "Node ID: ${NODE_ID}"
-          return 0
-        else
-          error "Failed to get node configuration, falling back to manual method"
-          # Fall through to manual method below
-        fi
+        success "Node created successfully via API"
+        info "Node ID: ${NODE_ID}"
+        return 0
       fi
     fi
   fi
@@ -613,7 +598,6 @@ create_node_in_panel() {
 
   # Create node with actual system specs
   output "Creating node: $NODE_NAME..."
-  output "DEBUG: Manual node creation with NODE_TOKEN=${NODE_TOKEN:0:20}..."
   php artisan p:node:make -n \
     --name="$NODE_NAME" \
     --description="$NODE_DESCRIPTION" \
@@ -636,23 +620,6 @@ create_node_in_panel() {
   fi
 
   output "Node ID: $NODE_ID"
-
-  # Create allocations
-  output "Creating allocations (ports $GAME_PORT_START-$GAME_PORT_END)..."
-  output "This range supports: Minecraft, CS:GO/TF2/GMod, ARK, Satisfactory, Rust, Valheim, FiveM"
-  for i in $(seq "$GAME_PORT_START" "$GAME_PORT_END"); do
-    mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "INSERT IGNORE INTO panel.allocations (node_id, ip, port) VALUES (${NODE_ID}, '0.0.0.0', ${i})" 2>/dev/null || true
-  done
-
-  # Update node with daemon token
-  output "DEBUG: Updating node ${NODE_ID} with daemon token"
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
-    UPDATE panel.nodes SET
-      daemon_token = '${NODE_TOKEN}',
-      daemonListen = 8080,
-      daemonSFTP = 2022
-    WHERE id = ${NODE_ID}
-  " 2>/dev/null || true
 
   success "Node created in panel (ID: ${NODE_ID})"
 }
@@ -709,13 +676,12 @@ install_elytra_daemon() {
   # Debug output
   output "DEBUG: Elytra configuration values:"
   output "DEBUG: NODE_ID=${NODE_ID}"
-  output "DEBUG: NODE_TOKEN=${NODE_TOKEN:0:20}... (truncated)"
   output "DEBUG: PANEL_FQDN=${PANEL_FQDN}"
   output "DEBUG: ELYTRA_DIR=${ELYTRA_DIR}"
 
   # Configure Elytra using the official configure command
   output "Configuring Elytra using 'elytra configure' command..."
-  cd "${ELYTRA_DIR}" && elytra configure --panel-url "${panel_url}" --token "${NODE_TOKEN}" --node "${NODE_ID}"
+  cd "${ELYTRA_DIR}" && elytra configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
 
   if [ $? -ne 0 ]; then
     error "Failed to configure Elytra"
@@ -723,6 +689,10 @@ install_elytra_daemon() {
   fi
 
   output "DEBUG: Elytra configured successfully"
+
+  # Step 4: Create allocations via API (after Elytra configure)
+  output "Creating allocations via API..."
+  create_node_allocations "$PANEL_API_KEY" "$panel_url" "$NODE_ID" "$GAME_PORT_START" "$GAME_PORT_END" || true
 
   # Install rustic using shared function from lib.sh
   install_rustic
