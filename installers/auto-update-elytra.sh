@@ -33,6 +33,7 @@ LOG_FILE="${LOG_FILE:-/var/log/pyrodactyl-elytra-auto-update.log}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/elytra}"
 LOCK_FILE="${LOCK_FILE:-/var/run/pyrodactyl-elytra-update.lock}"
 CONFIG_FILE="${CONFIG_FILE:-/etc/pyrodactyl/auto-update-elytra.env}"
+VERSION_FILE="${VERSION_FILE:-/etc/pyrodactyl/elytra-version}"
 KEEP_BACKUPS="${KEEP_BACKUPS:-5}"
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
@@ -150,12 +151,29 @@ load_config() {
 # ------------------ Version Functions ----------------- #
 
 get_current_version() {
-  if [ -x "/usr/local/bin/elytra" ]; then
-    # Try to get version from binary
-    /usr/local/bin/elytra --version 2>/dev/null || echo "unknown"
-  else
-    echo "unknown"
+  # First check version file
+  if [ -f "$VERSION_FILE" ]; then
+    cat "$VERSION_FILE" 2>/dev/null
+    return 0
   fi
+
+  # Fall back to binary --version (for backwards compatibility)
+  if [ -x "/usr/local/bin/elytra" ]; then
+    local binary_version
+    binary_version=$(/usr/local/bin/elytra --version 2>/dev/null)
+    if [ -n "$binary_version" ] && [ "$binary_version" != "unknown" ]; then
+      echo "$binary_version"
+      return 0
+    fi
+  fi
+
+  echo "unknown"
+}
+
+save_current_version() {
+  local version="$1"
+  echo "$version" > "$VERSION_FILE"
+  chmod 644 "$VERSION_FILE"
 }
 
 get_latest_release() {
@@ -462,8 +480,11 @@ perform_update() {
     return $EXIT_UPDATE_FAILED
   fi
 
+  # Save current version
+  save_current_version "$new_version"
+
   # Log update
-  echo "[$(date)] Updated from $(get_current_version) to ${new_version}" >> "${BACKUP_DIR}/update-history.log"
+  echo "[$(date)] Updated to ${new_version}" >> "${BACKUP_DIR}/update-history.log"
 
   success "Update to $new_version completed successfully!"
   return 0

@@ -680,6 +680,10 @@ install_elytra_daemon() {
 
   chmod +x /usr/local/bin/elytra
 
+  # Save version for auto-updater
+  mkdir -p /etc/pyrodactyl
+  echo "$latest_release" > /etc/pyrodactyl/elytra-version
+
   # Create Elytra config directory
   mkdir -p "${ELYTRA_DIR}"
 
