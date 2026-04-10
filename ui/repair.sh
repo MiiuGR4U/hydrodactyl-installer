@@ -29,6 +29,17 @@ if ! fn_exists lib_loaded; then
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
+# ------------------ Root Check ----------------- #
+
+check_root() {
+  if [[ $EUID -ne 0 ]]; then
+    error "This script must be executed with root privileges."
+    exit 1
+  fi
+}
+
+check_root
+
 # ------------------ Detection Functions ----------------- #
 
 detect_panel_location() {
@@ -135,6 +146,9 @@ fix_elytra_permissions() {
   output "Setting binary permissions..."
   chmod +x "$elytra_binary"
 
+  output "Creating Elytra data directories if needed..."
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+  
   output "Setting ownership on Elytra data directories..."
   chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
   chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
@@ -142,10 +156,11 @@ fix_elytra_permissions() {
   chown -R 8888:8888 "$elytra_dir" 2>/dev/null || true
 
   output "Setting permissions on Elytra data directories..."
+  # Note: 777 is required for containerized game servers to access these directories
   chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
   chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
   chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
-  chmod -R 777 "$elytra_dir" 2>/dev/null || true
+  chmod -R 755 "$elytra_dir" 2>/dev/null || true
 
   success "Elytra permissions fixed"
   return 0
@@ -211,6 +226,98 @@ restart_services() {
 
   success "Services restarted"
   return 0
+}
+
+setup_swap_menu() {
+  print_flame "Setup Swap File"
+
+  local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
+  
+  if [ "$swap_mb" -gt 0 ]; then
+    local swap_human=$(free -h 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
+    info "Swap is already configured: $swap_human"
+    output "Current swap size: $swap_human"
+    
+    echo ""
+    output "Would you like to recreate the swap file? [y/N]: "
+    read -r recreate_swap
+    recreate_swap=$(echo "$recreate_swap" | tr '[:upper:]' '[:lower:]')
+    
+    if [ "$recreate_swap" != "y" ]; then
+      return 0
+    fi
+    
+    # Remove existing swap
+    output "Removing existing swap..."
+    swapoff /swapfile 2>/dev/null || true
+    sed -i '/\/swapfile/d' /etc/fstab
+    rm -f /swapfile
+  fi
+
+  echo ""
+  output "Select swap size:"
+  output "[${COLOR_ORANGE}1${COLOR_NC}] 1GB"
+  output "[${COLOR_ORANGE}2${COLOR_NC}] 2GB (recommended)"
+  output "[${COLOR_ORANGE}3${COLOR_NC}] 4GB"
+  output "[${COLOR_ORANGE}4${COLOR_NC}] Custom"
+  echo ""
+  echo -n "* Select an option [1-4]: "
+  read -r swap_choice
+
+  # Calculate recommended swap size based on RAM
+  local ram_mb=$(free -m 2>/dev/null | awk '/^Mem:/{print $2}' || echo "0")
+  local recommended_swap=""
+  local recommended_text=""
+  
+  if [ "$ram_mb" -lt 2048 ]; then
+    # Less than 2GB RAM: 2x RAM
+    recommended_swap="${ram_mb}M"
+    recommended_text="2x RAM (current RAM: $(free -h | awk '/^Mem:/{print $2}'))"
+  elif [ "$ram_mb" -lt 8192 ]; then
+    # 2-8GB RAM: same as RAM
+    local ram_gb=$((ram_mb / 1024))
+    recommended_swap="${ram_gb}G"
+    recommended_text="Same as RAM (${recommended_swap})"
+  else
+    # More than 8GB RAM: at least 4GB
+    recommended_swap="4G"
+    recommended_text="4GB (minimum recommended for systems with >8GB RAM)"
+  fi
+  
+  output ""
+  output "System RAM: $(free -h 2>/dev/null | awk '/^Mem:/{print $2}')"
+  output "Recommended swap: ${recommended_text}"
+  output ""
+
+  local swap_size=""
+  case "$swap_choice" in
+    1) swap_size="1G" ;;
+    2) swap_size="2G" ;;
+    3) swap_size="4G" ;;
+    4) 
+      echo -n "* Enter swap size (e.g., 512M, 2G) [recommended: ${recommended_swap}]: "
+      read -r swap_size
+      if [ -z "$swap_size" ]; then
+        swap_size="$recommended_swap"
+        output "Using recommended size: ${recommended_swap}"
+      fi
+      ;;
+    *) 
+      warning "Invalid option. Using recommended size: ${recommended_swap}"
+      swap_size="$recommended_swap"
+      ;;
+  esac
+
+  # Call the setup function from lib
+  setup_swap "$swap_size"
+  
+  # Show results
+  echo ""
+  output "Updated swap status:"
+  free -h | grep -E "(Mem|Swap):"
+  
+  output "Press Enter to continue..."
+  read -r
 }
 
 fix_database_permissions() {
@@ -295,6 +402,13 @@ show_repair_menu() {
     print_header
     print_flame "Repair Tool"
 
+    # Check swap status
+    local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
+    local swap_status=""
+    if [ "$swap_mb" -eq 0 ]; then
+      swap_status=" ${COLOR_RED}[No swap]${COLOR_NC}"
+    fi
+
     echo ""
     output "${COLOR_ORANGE}What would you like to repair?${COLOR_NC}"
     echo ""
@@ -304,11 +418,12 @@ show_repair_menu() {
     output "[${COLOR_ORANGE}3${COLOR_NC}] Restart All Services"
     output "[${COLOR_ORANGE}4${COLOR_NC}] Fix Database Permissions"
     output "[${COLOR_ORANGE}5${COLOR_NC}] Run All Fixes (Recommended)"
+    output "[${COLOR_ORANGE}6${COLOR_NC}] Setup Swap File${swap_status}"
     echo ""
-    output "[${COLOR_ORANGE}6${COLOR_NC}] Back to Main Menu"
+    output "[${COLOR_ORANGE}7${COLOR_NC}] Back to Main Menu"
     echo ""
 
-    echo -n "* Select an option [0-6]: "
+    echo -n "* Select an option [0-7]: "
     read -r choice
 
     case "$choice" in
@@ -347,10 +462,14 @@ show_repair_menu() {
         continue
         ;;
       6)
+        setup_swap_menu
+        continue
+        ;;
+      7)
         return 0
         ;;
       *)
-        error "Invalid option. Please select 0-6."
+        error "Invalid option. Please select 0-7."
         sleep 1
         ;;
     esac

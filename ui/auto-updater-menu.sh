@@ -25,6 +25,17 @@ if ! fn_exists lib_loaded; then
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
+# ------------------ Root Check ----------------- #
+
+check_root() {
+  if [[ $EUID -ne 0 ]]; then
+    error "This script must be executed with root privileges."
+    exit 1
+  fi
+}
+
+check_root
+
 # ------------------ State Variables ----------------- #
 
 PANEL_REPO=""
@@ -91,17 +102,35 @@ configure_panel_auto_updater() {
     PANEL_REPO_PRIVATE="false"
   fi
 
-  output "Checking for releases in repository..."
-  if ! check_releases_exist "$PANEL_REPO" "$GITHUB_TOKEN_PANEL"; then
-    echo ""
-    error "No releases found in repository: ${PANEL_REPO}"
-    warning "You must publish a release before using the auto-updater."
-    exit 1
-  fi
+  # Auto-detect update method based on existing installation
+  if [ -d "/var/www/pyrodactyl/.git" ]; then
+    output "Detected git-based panel installation - will use git for updates"
+    output "Verifying git repository access..."
+    
+    local git_url="https://github.com/${PANEL_REPO}.git"
+    if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN_PANEL" ]; then
+      git_url="https://${GITHUB_TOKEN_PANEL}@github.com/${PANEL_REPO}.git"
+    fi
+    
+    if ! git ls-remote --exit-code "$git_url" HEAD &>/dev/null; then
+      error "Cannot access git repository. Please verify the repository exists and your token is valid (if private)."
+      exit 1
+    fi
+    success "Git repository access verified"
+  else
+    output "Detected release-based panel installation - will check GitHub releases"
+    output "Checking for releases in repository..."
+    if ! check_releases_exist "$PANEL_REPO" "$GITHUB_TOKEN_PANEL"; then
+      echo ""
+      error "No releases found in repository: ${PANEL_REPO}"
+      warning "You must publish a release before using the auto-updater."
+      exit 1
+    fi
 
-  local latest_release
-  latest_release=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN_PANEL")
-  success "Found release: ${latest_release}"
+    local latest_release
+    latest_release=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN_PANEL")
+    success "Found release: ${latest_release}"
+  fi
 
   export PANEL_REPO
   export PANEL_REPO_PRIVATE
@@ -167,6 +196,7 @@ configure_elytra_auto_updater() {
     ELYTRA_REPO_PRIVATE="false"
   fi
 
+  # Elytra always uses release-based updates
   output "Checking for releases in repository..."
   if ! check_releases_exist "$ELYTRA_REPO" "$GITHUB_TOKEN_ELYTRA"; then
     echo ""
@@ -309,9 +339,90 @@ show_remove_menu() {
 
 # ------------------ Trigger Update Functions ----------------- #
 
+trigger_panel_update() {
+  print_header
+  print_flame "Trigger Panel Update"
+
+  if ! systemctl is-enabled --quiet pyrodactyl-panel-auto-update.timer 2>/dev/null; then
+    error "Panel auto-updater is not installed."
+    echo ""
+    output "Please install the auto-updater first."
+    return
+  fi
+
+  output "This will manually trigger the panel update check."
+  output "Update method: $([ -d "/var/www/pyrodactyl/.git" ] && echo "git-based" || echo "release-based")"
+  echo ""
+
+  local confirm=""
+  bool_input confirm "Run update check now?" "y"
+
+  if [ "$confirm" == "y" ]; then
+    echo ""
+    output "Running panel auto-updater..."
+    echo ""
+
+    if /usr/local/bin/pyrodactyl-auto-update-panel.sh --verbose; then
+      success "Panel update check completed successfully"
+    else
+      warning "Panel update check finished with issues (see output above)"
+    fi
+
+    echo ""
+    output "Press Enter to continue..."
+    read -r
+  fi
+}
+
+trigger_elytra_update() {
+  print_header
+  print_flame "Trigger Elytra Update"
+
+  if ! systemctl is-enabled --quiet pyrodactyl-elytra-auto-update.timer 2>/dev/null; then
+    error "Elytra auto-updater is not installed."
+    echo ""
+    output "Please install the auto-updater first."
+    return
+  fi
+
+  output "This will manually trigger the Elytra update check."
+  echo ""
+
+  local confirm=""
+  bool_input confirm "Run update check now?" "y"
+
+  if [ "$confirm" == "y" ]; then
+    echo ""
+    output "Running Elytra auto-updater..."
+    echo ""
+
+    if /usr/local/bin/pyrodactyl-auto-update-elytra.sh --verbose; then
+      success "Elytra update check completed successfully"
+    else
+      warning "Elytra update check finished with issues (see output above)"
+    fi
+
+    echo ""
+    output "Press Enter to continue..."
+    read -r
+  fi
+}
+
 # ------------------ Main Menu ----------------- #
 
 show_main_menu() {
+  # Check what's installed for menu display
+  local panel_updater_installed=false
+  local elytra_updater_installed=false
+
+  if systemctl is-enabled --quiet pyrodactyl-panel-auto-update.timer 2>/dev/null; then
+    panel_updater_installed=true
+  fi
+
+  if systemctl is-enabled --quiet pyrodactyl-elytra-auto-update.timer 2>/dev/null; then
+    elytra_updater_installed=true
+  fi
+
   while true; do
     print_header
     print_flame "Auto-Updater Management"
@@ -322,43 +433,74 @@ show_main_menu() {
     output "[${COLOR_ORANGE}1${COLOR_NC}] Install Elytra auto-updater"
     output "[${COLOR_ORANGE}2${COLOR_NC}] Install both auto-updaters"
     echo ""
-    output "[${COLOR_ORANGE}3${COLOR_NC}] Remove auto-updaters"
+
+    if [ "$panel_updater_installed" == true ]; then
+      output "[${COLOR_ORANGE}3${COLOR_NC}] Trigger Panel update check now"
+    else
+      output "[${COLOR_GRAY}3${COLOR_NC}] Trigger Panel update check now (not installed)"
+    fi
+
+    if [ "$elytra_updater_installed" == true ]; then
+      output "[${COLOR_ORANGE}4${COLOR_NC}] Trigger Elytra update check now"
+    else
+      output "[${COLOR_GRAY}4${COLOR_NC}] Trigger Elytra update check now (not installed)"
+    fi
+
     echo ""
-    output "[${COLOR_ORANGE}4${COLOR_NC}] Return to main menu"
+    output "[${COLOR_ORANGE}5${COLOR_NC}] Remove auto-updaters"
+    echo ""
+    output "[${COLOR_ORANGE}6${COLOR_NC}] Return to main menu"
     echo ""
 
     local choice=""
-    echo -n "* Select [0-4]: "
+    echo -n "* Select [0-6]: "
     read -r choice
 
     case "$choice" in
       0)
         configure_panel_auto_updater
+        panel_updater_installed=true
         echo ""
         output "Press Enter to continue..."
         read -r
         ;;
       1)
         configure_elytra_auto_updater
+        elytra_updater_installed=true
         echo ""
         output "Press Enter to continue..."
         read -r
         ;;
       2)
         configure_both_auto_updaters
+        panel_updater_installed=true
+        elytra_updater_installed=true
         echo ""
         output "Press Enter to continue..."
         read -r
         ;;
       3)
-        show_remove_menu
+        trigger_panel_update
         ;;
       4)
+        trigger_elytra_update
+        ;;
+      5)
+        show_remove_menu
+        # Refresh status after potential removal
+        if ! systemctl is-enabled --quiet pyrodactyl-panel-auto-update.timer 2>/dev/null; then
+          panel_updater_installed=false
+        fi
+        if ! systemctl is-enabled --quiet pyrodactyl-elytra-auto-update.timer 2>/dev/null; then
+          elytra_updater_installed=false
+        fi
+        ;;
+      6)
         output "Returning to main menu..."
         exit 0
         ;;
       *)
-        error "Invalid option. Please select 0-4."
+        error "Invalid option. Please select 0-6."
         sleep 2
         ;;
     esac

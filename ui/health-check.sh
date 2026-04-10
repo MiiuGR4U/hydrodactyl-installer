@@ -29,6 +29,85 @@ if ! fn_exists lib_loaded; then
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
+# ------------------ Root Check ----------------- #
+
+check_root() {
+  if [[ $EUID -ne 0 ]]; then
+    error "This script must be executed with root privileges."
+    exit 1
+  fi
+}
+
+check_root
+
+# ------------------ System Resources Check ----------------- #
+
+check_system_resources_health() {
+  echo ""
+  output "${COLOR_ORANGE}System Resources Check${COLOR_NC}"
+  echo ""
+  
+  local cpu_cores=$(get_cpu_cores)
+  local ram_mb=$(get_ram_mb)
+  local disk_gb=$(get_disk_gb)
+  local swap_mb=$(get_swap_mb)
+  local has_warnings=false
+  
+  output "CPU Cores:        $cpu_cores"
+  if [ "$cpu_cores" -lt "$MIN_CPU_CORES" ]; then
+    warning "  CPU cores below minimum ($MIN_CPU_CORES)"
+    has_warnings=true
+  elif [ "$cpu_cores" -lt "$REC_CPU_CORES" ]; then
+    info "  CPU cores below recommended ($REC_CPU_CORES)"
+  else
+    output "  ✓ CPU meets recommended requirements"
+  fi
+  
+  output "RAM:              $(get_ram_human) (${ram_mb}MB)"
+  if [ "$ram_mb" -lt "$MIN_RAM_MB" ]; then
+    warning "  RAM below minimum (${MIN_RAM_MB}MB / 2GB)"
+    has_warnings=true
+  elif [ "$ram_mb" -lt "$REC_RAM_MB" ]; then
+    info "  RAM below recommended (${REC_RAM_MB}MB / 4GB)"
+  else
+    output "  ✓ RAM meets recommended requirements"
+  fi
+  
+  output "Disk (root):      $(get_disk_human) (${disk_gb}GB)"
+  if [ "$disk_gb" -lt "$MIN_DISK_GB" ]; then
+    warning "  Disk below minimum (${MIN_DISK_GB}GB)"
+    has_warnings=true
+  elif [ "$disk_gb" -lt "$REC_DISK_GB" ]; then
+    info "  Disk below recommended (${REC_DISK_GB}GB)"
+  else
+    output "  ✓ Disk meets recommended requirements"
+  fi
+  
+  output "Swap:             $(get_swap_human)"
+  if [ "$swap_mb" -eq 0 ]; then
+    warning "  No swap configured - recommended for system stability"
+    has_warnings=true
+  else
+    output "  ✓ Swap is configured"
+  fi
+  
+  # Check Docker compatibility for Elytra
+  echo ""
+  output "Docker Compatibility:"
+  if ! check_docker_compatibility; then
+    has_warnings=true
+  fi
+  
+  echo ""
+  if [ "$has_warnings" == true ]; then
+    warning "System resources check completed with warnings"
+  else
+    success "System resources check passed!"
+  fi
+  
+  return 0
+}
+
 # ------------------ Detection Functions ----------------- #
 
 detect_panel_location() {
@@ -87,11 +166,12 @@ show_health_menu() {
     output "[${COLOR_ORANGE}0${COLOR_NC}] Check Panel Health"
     output "[${COLOR_ORANGE}1${COLOR_NC}] Check Elytra Health"
     output "[${COLOR_ORANGE}2${COLOR_NC}] Check Both"
+    output "[${COLOR_ORANGE}3${COLOR_NC}] Check System Resources"
     echo ""
-    output "[${COLOR_ORANGE}3${COLOR_NC}] Back to Main Menu"
+    output "[${COLOR_ORANGE}4${COLOR_NC}] Back to Main Menu"
     echo ""
 
-    echo -n "* Select an option [0-3]: "
+    echo -n "* Select an option [0-4]: "
     read -r choice
 
     case "$choice" in
@@ -148,10 +228,16 @@ show_health_menu() {
         continue
         ;;
       3)
+        check_system_resources_health
+        output "Press Enter to return to the menu..."
+        read -r
+        continue
+        ;;
+      4)
         return 0
         ;;
       *)
-        error "Invalid option. Please select 0-3."
+        error "Invalid option. Please select 0-4."
         sleep 1
         ;;
     esac

@@ -25,6 +25,17 @@ if ! fn_exists lib_loaded; then
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
+# ------------------ Root Check ----------------- #
+
+check_root() {
+  if [[ $EUID -ne 0 ]]; then
+    echo "* ERROR: This script must be executed with root privileges."
+    exit 1
+  fi
+}
+
+check_root
+
 # ------------------ Configuration Variables ----------------- #
 
 REMOVE_PANEL=false

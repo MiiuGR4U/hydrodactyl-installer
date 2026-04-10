@@ -545,17 +545,19 @@ main() {
   start_elytra
 
   # Set proper ownership on Elytra data directories (after service starts)
+  output "Ensuring Elytra data directories exist..."
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+
   output "Setting final permissions on Elytra data directories..."
-  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
-  chown -R 8888:8888 "$INSTALL_DIR" 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$INSTALL_DIR" 2>/dev/null || true
 
   # Set full permissions so containers can read/write/execute
-  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
-  chmod -R 777 "$INSTALL_DIR" 2>/dev/null || true
+  # Note: 777 is required for containerized game servers to access these directories
+  chmod -R 777 /var/lib/elytra/volumes
+  chmod -R 777 /var/lib/elytra/archives
+  chmod -R 777 /var/lib/elytra/backups
+  chmod -R 755 "$INSTALL_DIR" 2>/dev/null || true
+  [ -f "$INSTALL_DIR/config.yml" ] && chmod 640 "$INSTALL_DIR/config.yml" 2>/dev/null || true
 
   configure_firewall
   install_auto_updater_if_requested

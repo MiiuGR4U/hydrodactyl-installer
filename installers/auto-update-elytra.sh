@@ -37,6 +37,9 @@ VERSION_FILE="${VERSION_FILE:-/etc/pyrodactyl/elytra-version}"
 KEEP_BACKUPS="${KEEP_BACKUPS:-5}"
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
+# Elytra is always updated via releases (distributed as binary)
+UPDATE_METHOD="releases"
+ELYTRA_REPO_PRIVATE="${ELYTRA_REPO_PRIVATE:-false}"
 
 # ------------------ Runtime Flags ----------------- #
 
@@ -183,14 +186,14 @@ get_latest_release() {
     return 1
   fi
 
-  local curl_opts="-sL --max-time 30"
+  local curl_opts=("-sL" "--max-time" "30")
 
   if [ -n "$GITHUB_TOKEN" ]; then
-    curl_opts="$curl_opts -H \"Authorization: Bearer $GITHUB_TOKEN\""
+    curl_opts+=("-H" "Authorization: Bearer $GITHUB_TOKEN")
   fi
 
   local release_json
-  release_json=$(eval curl $curl_opts \
+  release_json=$(curl "${curl_opts[@]}" \
     "https://api.github.com/repos/$ELYTRA_REPO/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message":"Not Found"'; then
@@ -202,13 +205,13 @@ get_latest_release() {
 
 get_release_asset_info() {
   local version="$1"
-  local curl_opts="-sL --max-time 30"
+  local curl_opts=("-sL" "--max-time" "30")
 
   if [ -n "$GITHUB_TOKEN" ]; then
-    curl_opts="$curl_opts -H \"Authorization: Bearer $GITHUB_TOKEN\""
+    curl_opts+=("-H" "Authorization: Bearer $GITHUB_TOKEN")
   fi
 
-  eval curl $curl_opts \
+  curl "${curl_opts[@]}" \
     "https://api.github.com/repos/$ELYTRA_REPO/releases/tags/$version" 2>/dev/null
 }
 
@@ -360,17 +363,17 @@ download_binary() {
     return 1
   fi
 
-  local curl_opts="-fsSL --max-time 300"
-  curl_opts="$curl_opts -H \"Accept: application/octet-stream\""
+  local curl_opts=("-fsSL" "--max-time" "300")
+  curl_opts+=("-H" "Accept: application/octet-stream")
 
   if [ -n "$GITHUB_TOKEN" ]; then
-    curl_opts="$curl_opts -H \"Authorization: Bearer $GITHUB_TOKEN\""
-    curl_opts="$curl_opts -H \"X-GitHub-Api-Version: 2022-11-28\""
+    curl_opts+=("-H" "Authorization: Bearer $GITHUB_TOKEN")
+    curl_opts+=("-H" "X-GitHub-Api-Version: 2022-11-28")
   fi
 
   debug "Downloading from: $asset_url"
 
-  if ! eval curl $curl_opts -o "$output_file" "$asset_url" 2>/dev/null; then
+  if ! curl "${curl_opts[@]}" -o "$output_file" "$asset_url" 2>/dev/null; then
     error "Failed to download binary"
     return 1
   fi
@@ -488,12 +491,12 @@ perform_update() {
   if ! post_update_health_check; then
     warning "Health check detected issues, attempting auto-fix..."
     auto_fix_elytra_issues
-    
+
     # Run second health check after auto-fix
     info "Running second health check after auto-fix..."
     if ! post_update_health_check; then
       error "Auto-fix failed to resolve all issues"
-      
+
       # Log failure information
       mkdir -p "$INSTALL_DIR"
       cat > "$INSTALL_DIR/update-health-check-failure.log" << EOF
@@ -503,37 +506,37 @@ Status: Auto-fix applied but issues persist
 
 Failed Checks:
 EOF
-      
+
       # Append specific failed checks to log
       if [ ! -f "/usr/local/bin/elytra" ]; then
         echo "- Elytra binary not found" >> "$INSTALL_DIR/update-health-check-failure.log"
       elif [ ! -x "/usr/local/bin/elytra" ]; then
         echo "- Elytra binary is not executable" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
-      
+
       if [ ! -f "/etc/elytra/config.yml" ]; then
         echo "- Elytra config file not found" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
-      
+
       for dir in /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups; do
         if [ ! -d "$dir" ]; then
           echo "- Data directory missing: $dir" >> "$INSTALL_DIR/update-health-check-failure.log"
         fi
       done
-      
+
       if ! systemctl is-active --quiet docker 2>/dev/null; then
         echo "- Docker is not running" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
-      
+
       if ! systemctl is-active --quiet elytra 2>/dev/null; then
         echo "- Elytra service is not running" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
-      
+
       echo "" >> "$INSTALL_DIR/update-health-check-failure.log"
       echo "Please run the Repair Tool or check manually:" >> "$INSTALL_DIR/update-health-check-failure.log"
       echo "bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)" >> "$INSTALL_DIR/update-health-check-failure.log"
       echo "And select option [7] Repair / Fix Common Issues" >> "$INSTALL_DIR/update-health-check-failure.log"
-      
+
       error "Update completed but health check failed. See: $INSTALL_DIR/update-health-check-failure.log"
       return $EXIT_UPDATE_FAILED
     fi
@@ -550,24 +553,24 @@ EOF
 
 post_update_health_check() {
   local has_errors=false
-  
+
   debug "Checking Elytra binary..."
   if [ ! -f "/usr/local/bin/elytra" ]; then
     error "Elytra binary not found"
     return 1
   fi
-  
+
   if [ ! -x "/usr/local/bin/elytra" ]; then
     warning "Elytra binary is not executable"
     has_errors=true
   fi
-  
+
   debug "Checking Elytra config..."
   if [ ! -f "/etc/elytra/config.yml" ]; then
     warning "Elytra config file not found"
     has_errors=true
   fi
-  
+
   debug "Checking data directories..."
   for dir in /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups; do
     if [ ! -d "$dir" ]; then
@@ -575,55 +578,68 @@ post_update_health_check() {
       has_errors=true
     fi
   done
-  
+
   debug "Checking Docker status..."
   if ! systemctl is-active --quiet docker 2>/dev/null; then
     warning "Docker is not running"
     has_errors=true
   fi
-  
+
   debug "Checking Elytra service..."
   if ! systemctl is-active --quiet elytra 2>/dev/null; then
     warning "Elytra service is not running"
     has_errors=true
   fi
-  
+
   if [ "$has_errors" == true ]; then
     return 1
   fi
-  
+
   info "Health check passed"
   return 0
 }
 
 auto_fix_elytra_issues() {
   info "Attempting to auto-fix issues..."
-  
+
   # Fix binary permissions
   if [ -f "/usr/local/bin/elytra" ]; then
     info "Fixing binary permissions..."
     chmod +x /usr/local/bin/elytra
   fi
-  
+
   # Fix data directory permissions
   info "Fixing data directory permissions..."
   mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
-  
+
   chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
   chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
   chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
   chown -R 8888:8888 /etc/elytra 2>/dev/null || true
+
+  # Fix permissions
+  info "Fixing Elytra permissions..."
   
-  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
-  chmod -R 777 /etc/elytra 2>/dev/null || true
+  # Create directories if they don't exist
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
   
-  # Restart services
-  info "Restarting services..."
-  systemctl restart docker 2>/dev/null || true
+  # Set secure permissions - directories 755, files 644
+  find /var/lib/elytra/volumes -type d -exec chmod 755 {} \; 2>/dev/null || true
+  find /var/lib/elytra/volumes -type f -exec chmod 644 {} \; 2>/dev/null || true
+  find /var/lib/elytra/archives -type d -exec chmod 755 {} \; 2>/dev/null || true
+  find /var/lib/elytra/archives -type f -exec chmod 644 {} \; 2>/dev/null || true
+  find /var/lib/elytra/backups -type d -exec chmod 755 {} \; 2>/dev/null || true
+  find /var/lib/elytra/backups -type f -exec chmod 644 {} \; 2>/dev/null || true
+  
+  # Elytra config directory - create if needed and set more restrictive permissions
+  mkdir -p /etc/elytra
+  find /etc/elytra -type d -exec chmod 755 {} \; 2>/dev/null || true
+  find /etc/elytra -type f -exec chmod 640 {} \; 2>/dev/null || true
+
+  # Restart Elytra service
+  info "Restarting Elytra service..."
   systemctl restart elytra 2>/dev/null || true
-  
+
   # Verify Elytra started
   sleep 3
   if systemctl is-active --quiet elytra 2>/dev/null; then
@@ -631,7 +647,7 @@ auto_fix_elytra_issues() {
   else
     warning "Elytra may still have issues - manual intervention may be required"
   fi
-  
+
   success "Auto-fix completed"
 }
 

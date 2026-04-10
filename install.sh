@@ -565,6 +565,36 @@ main() {
   log_execution
   show_welcome
 
+  # Pre-flight system resource check
+  echo ""
+  output "${COLOR_ORANGE}Running system requirements check...${COLOR_NC}"
+  if ! check_system_resources; then
+    echo ""
+    warning "Your system is below minimum requirements!"
+    output "You may experience performance issues or installation failures."
+    echo ""
+    local continue_anyway=""
+    while [[ "$continue_anyway" != "y" && "$continue_anyway" != "n" ]]; do
+      echo -n "* Continue anyway? [y/N]: "
+      read -r continue_anyway
+      continue_anyway=$(echo "$continue_anyway" | tr '[:upper:]' '[:lower:]')
+      [ -z "$continue_anyway" ] && continue_anyway="n"
+
+      if [[ "$continue_anyway" != "y" && "$continue_anyway" != "n" ]]; then
+        error "Invalid input. Please enter 'y' or 'n'."
+      fi
+    done
+
+    if [[ "$continue_anyway" == "n" ]]; then
+      exit 1
+    fi
+  fi
+
+  # Check Docker compatibility for Elytra installations
+  echo ""
+  output "${COLOR_ORANGE}Checking Docker compatibility...${COLOR_NC}"
+  check_docker_compatibility || true
+
   # Run menu/installation
   if show_menu; then
     echo ""

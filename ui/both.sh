@@ -342,11 +342,11 @@ configure_auto_updaters() {
   print_flame "Auto-Updater Configuration"
 
   local install_panel_au=""
-  bool_input install_panel_au "Install auto-updater for the panel?" "y"
+  bool_input install_panel_au "Install auto-updater for the panel?" "n"
   [ "$install_panel_au" == "y" ] && INSTALL_AUTO_UPDATER_PANEL=true
 
   local install_elytra_au=""
-  bool_input install_elytra_au "Install auto-updater for Elytra?" "y"
+  bool_input install_elytra_au "Install auto-updater for Elytra?" "n"
   [ "$install_elytra_au" == "y" ] && INSTALL_AUTO_UPDATER_ELYTRA=true
 }
 

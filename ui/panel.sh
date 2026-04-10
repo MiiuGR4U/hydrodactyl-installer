@@ -287,8 +287,12 @@ configure_auto_updater() {
   print_header
   print_flame "Auto-Updater Configuration"
 
+  output "Auto-updaters allow automatic updates but may cause unexpected downtime."
+  output "You can always install them later from the installer menu."
+  echo ""
+
   local install_auto_update=""
-  bool_input install_auto_update "Install auto-updater for the panel?" "y"
+  bool_input install_auto_update "Install auto-updater for the panel?" "n"
 
   if [ "$install_auto_update" == "y" ]; then
     INSTALL_AUTO_UPDATER=true
