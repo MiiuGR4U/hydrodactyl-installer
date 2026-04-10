@@ -358,11 +358,14 @@ install_panel_clone() {
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
   local git_url="https://github.com/${PANEL_REPO}.git"
+  
+  # Clone with http.extraHeader for private repos to avoid persisting token
+  local git_clone_cmd="git clone"
   if [ -n "$GITHUB_TOKEN" ] && [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
+    git_clone_cmd="git -c http.extraHeader=\"Authorization: Bearer ${GITHUB_TOKEN}\" clone"
   fi
 
-  if ! git clone "$git_url" "$INSTALL_DIR"; then
+  if ! $git_clone_cmd "$git_url" "$INSTALL_DIR"; then
     error "Failed to clone repository"
     exit 1
   fi

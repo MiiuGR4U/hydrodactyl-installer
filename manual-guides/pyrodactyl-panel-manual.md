@@ -341,8 +341,21 @@ server {
 
 ### Enable the Site
 
+**Debian/Ubuntu:**
 ```bash
 ln -s /etc/nginx/sites-available/pyrodactyl /etc/nginx/sites-enabled/
+nginx -t
+systemctl restart nginx
+```
+
+**Rocky Linux/AlmaLinux/RHEL:**
+On RHEL-family distributions, nginx uses `/etc/nginx/conf.d/` instead of `sites-available`/`sites-enabled`:
+
+```bash
+# Copy the config to conf.d (sites-enabled pattern doesn't exist)
+cp /etc/nginx/sites-available/pyrodactyl /etc/nginx/conf.d/pyrodactyl.conf
+# Remove the default server block if it conflicts
+rm -f /etc/nginx/conf.d/default.conf
 nginx -t
 systemctl restart nginx
 ```

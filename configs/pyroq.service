@@ -28,7 +28,6 @@ OOMScoreAdjust=-100
 
 # Graceful shutdown handling
 ExecStop=/bin/kill -TERM $MAINPID
-TimeoutStopSec=120
 SendSIGKILL=yes
 
 # Resource limits to prevent excessive resource usage

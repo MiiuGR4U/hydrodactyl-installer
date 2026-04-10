@@ -751,7 +751,10 @@ Create a weekly update check:
 cat > /etc/cron.weekly/pyrodactyl-update << 'EOF'
 #!/bin/bash
 # Update check script
-cd /var/www/pyrodactyl && git fetch origin
+# Only run git fetch if this is a git installation
+if [ -d /var/www/pyrodactyl/.git ]; then
+  cd /var/www/pyrodactyl && git fetch origin
+fi
 /usr/local/bin/elytra --version
 EOF
 

@@ -355,7 +355,7 @@ install_panel_clone() {
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
   if [ -n "$GITHUB_TOKEN" ] && [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    git clone "https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
+    git -c http.extraHeader="Authorization: Bearer $GITHUB_TOKEN" clone "https://github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
   else
     git clone "https://github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
   fi

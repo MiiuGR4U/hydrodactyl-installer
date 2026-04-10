@@ -191,15 +191,14 @@ get_latest_release() {
 # ------------------ Git-based Update Functions ----------------- #
 
 get_remote_commit_hash() {
-  local git_url="https://github.com/${PANEL_REPO}.git"
-
-  # If private repo and token provided, use authenticated URL
+  # Use http.extraHeader for auth to avoid persisting token in .git/config
+  local git_cmd="git"
   if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-    git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
+    git_cmd="git -c http.extraHeader=\"Authorization: Bearer $GITHUB_TOKEN\""
   fi
 
   local remote_hash
-  remote_hash=$(git ls-remote --exit-code "$git_url" HEAD 2>/dev/null | awk '{print $1}')
+  remote_hash=$($git_cmd ls-remote --exit-code "https://github.com/${PANEL_REPO}.git" HEAD 2>/dev/null | awk '{print $1}')
 
   if [ -z "$remote_hash" ]; then
     error "Failed to fetch remote commit hash"
@@ -524,10 +523,19 @@ perform_update() {
     cp "${temp_dir}/.env.backup" "$INSTALL_DIR/.env"
   fi
 
-  # Restore storage directory
+  # Restore storage directory (atomic copy-then-swap to prevent data loss)
   if [ -d "${temp_dir}/storage.backup" ]; then
-    rm -rf "$INSTALL_DIR/storage"
-    cp -a "${temp_dir}/storage.backup" "$INSTALL_DIR/storage"
+    # Copy to temporary location first, then swap atomically
+    if cp -a "${temp_dir}/storage.backup" "$INSTALL_DIR/storage.new"; then
+      # Only remove original after successful copy
+      rm -rf "$INSTALL_DIR/storage"
+      mv "$INSTALL_DIR/storage.new" "$INSTALL_DIR/storage"
+    else
+      error "Failed to restore storage directory - original preserved"
+      php artisan up 2>/dev/null || true
+      rm -rf "$temp_dir"
+      return $EXIT_UPDATE_FAILED
+    fi
   fi
 
   # Install composer dependencies
@@ -707,16 +715,16 @@ perform_update_git() {
     cd "$INSTALL_DIR"
     git init
 
-    # Add remote
+    # Add remote (tokenless URL - auth via http.extraHeader)
     local git_url="https://github.com/${PANEL_REPO}.git"
-    if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-      git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
-    fi
-
     git remote add origin "$git_url"
 
-    # Fetch and checkout
-    git fetch origin
+    # Fetch and checkout (use http.extraHeader for private repos)
+    local git_fetch_cmd="git"
+    if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
+      git_fetch_cmd="git -c http.extraHeader=\"Authorization: Bearer $GITHUB_TOKEN\""
+    fi
+    $git_fetch_cmd fetch origin
     git checkout -f -B main origin/HEAD || git checkout -f -B master origin/HEAD || {
       error "Failed to checkout from git repository"
       php artisan up 2>/dev/null || true
@@ -731,14 +739,13 @@ perform_update_git() {
     git stash push -m "auto-update-stash-$(date +%Y%m%d-%H%M%S)" 2>/dev/null || true
 
     # Fetch and pull
-    local git_url="https://github.com/${PANEL_REPO}.git"
+    # Use http.extraHeader for private repos to avoid persisting token in .git/config
+    local git_fetch_cmd="git"
     if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-      # Update remote URL with token for private repo
-      git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
-      git remote set-url origin "$git_url" 2>/dev/null || true
+      git_fetch_cmd="git -c http.extraHeader=\"Authorization: Bearer $GITHUB_TOKEN\""
     fi
 
-    if ! git fetch origin; then
+    if ! $git_fetch_cmd fetch origin; then
       error "Failed to fetch from git repository"
       php artisan up 2>/dev/null || true
       return $EXIT_UPDATE_FAILED
@@ -977,7 +984,16 @@ auto_fix_panel_issues() {
   info "Fixing file permissions..."
   chown -R www-data:www-data "$INSTALL_DIR" 2>/dev/null || \
   chown -R nginx:nginx "$INSTALL_DIR" 2>/dev/null || true
-  chmod -R 755 "$INSTALL_DIR"/storage/* "$INSTALL_DIR"/bootstrap/cache/* 2>/dev/null || true
+  
+  # Apply correct permissions: 755 for directories, 644 for files
+  if [ -d "$INSTALL_DIR/storage" ]; then
+    find "$INSTALL_DIR/storage" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$INSTALL_DIR/storage" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
+  if [ -d "$INSTALL_DIR/bootstrap/cache" ]; then
+    find "$INSTALL_DIR/bootstrap/cache" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$INSTALL_DIR/bootstrap/cache" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
 
   # Clear caches
   info "Clearing Laravel caches..."

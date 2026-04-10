@@ -347,9 +347,21 @@ fix_database_permissions() {
     return 1
   fi
 
+  # Extract and validate pyrodactyl password
+  local pyro_pass
+  pyro_pass=$(grep '^pyrodactyl:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+
+  if [ -z "$pyro_pass" ]; then
+    error "pyrodactyl user password not found in credentials file"
+    return 1
+  fi
+
+  # Escape single quotes in password for SQL (replace ' with '')
+  local pyro_pass_escaped="${pyro_pass//\'/''}"
+
   output "Ensuring pyrodactyl database user exists..."
   mysql -u root -p"${db_root_pass}" -e "
-    GRANT ALL PRIVILEGES ON panel.* TO 'pyrodactyl'@'127.0.0.1' IDENTIFIED BY '$(grep '^pyrodactyl:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)' WITH GRANT OPTION;
+    GRANT ALL PRIVILEGES ON panel.* TO 'pyrodactyl'@'127.0.0.1' IDENTIFIED BY '${pyro_pass_escaped}' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
   " 2>/dev/null || warning "Failed to update pyrodactyl user permissions"
 
