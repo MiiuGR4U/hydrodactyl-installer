@@ -16,9 +16,172 @@ set -e
 # Check if lib is loaded, load if not or fail otherwise.
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
-  source /tmp/pyrodactyl-lib.sh 2>/dev/null || source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  # Try temp file first (when run through install.sh)
+  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+    # shellcheck source=/dev/null
+    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+      # Temp file exists but failed to load (corrupt/invalid) - remove it
+      rm -f /tmp/pyrodactyl-lib.sh
+    fi
+  fi
+  # Fall back to downloading if temp file didn't load or doesn't exist
+  if ! fn_exists lib_loaded; then
+    # shellcheck source=/dev/null
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
+
+# ------------------ Command Line Arguments ----------------- #
+
+# Parse command line arguments
+parse_arguments() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --fqdn|-f)
+        FQDN="$2"
+        shift 2
+        ;;
+      --panel-url|-u)
+        PANEL_URL="$2"
+        shift 2
+        ;;
+      --panel-fqdn)
+        PANEL_FQDN="$2"
+        FQDN="$2"
+        shift 2
+        ;;
+      --api-key|-k)
+        PANEL_API_KEY="$2"
+        shift 2
+        ;;
+      --node-name|-n)
+        NODE_NAME="$2"
+        shift 2
+        ;;
+      --node-token|-t)
+        NODE_TOKEN="$2"
+        shift 2
+        ;;
+      --node-id|-i)
+        NODE_ID="$2"
+        shift 2
+        ;;
+      --memory|-m)
+        NODE_MEMORY="$2"
+        shift 2
+        ;;
+      --disk|-d)
+        NODE_DISK="$2"
+        shift 2
+        ;;
+      --port-start)
+        GAME_PORT_START_PARAM="$2"
+        GAME_PORT_START="$2"
+        shift 2
+        ;;
+      --port-end)
+        GAME_PORT_END_PARAM="$2"
+        GAME_PORT_END="$2"
+        shift 2
+        ;;
+      --configure-firewall)
+        CONFIGURE_FIREWALL="true"
+        shift
+        ;;
+      --no-firewall)
+        CONFIGURE_FIREWALL="false"
+        shift
+        ;;
+      --install-auto-updater)
+        INSTALL_AUTO_UPDATER="true"
+        shift
+        ;;
+      --no-auto-updater)
+        INSTALL_AUTO_UPDATER="false"
+        shift
+        ;;
+      --behind-proxy)
+        BEHIND_PROXY="true"
+        shift
+        ;;
+      --github-token|-g)
+        GITHUB_TOKEN="$2"
+        shift 2
+        ;;
+      --elytra-repo)
+        ELYTRA_REPO="$2"
+        shift 2
+        ;;
+      --skip-wings-setup)
+        SKIP_WINGS_SETUP="true"
+        shift
+        ;;
+      --assume-ssl)
+        ASSUME_SSL="true"
+        shift
+        ;;
+      --help|-h)
+        show_help
+        exit 0
+        ;;
+      *)
+        echo "Unknown option: $1"
+        show_help
+        exit 1
+        ;;
+    esac
+  done
+}
+
+show_help() {
+  cat << EOF
+Elytra Installer - Command Line Options
+
+Usage: elytra.sh [OPTIONS]
+
+Connection (provide these or you'll be prompted):
+  --fqdn, -f <fqdn>              This node's FQDN (e.g., node.example.com)
+  --panel-url, -u <url>          Panel URL to connect to (e.g., https://panel.example.com)
+  --api-key, -k <key>            Panel API key for automatic node setup
+  --node-name, -n <name>         Node name (default: hostname)
+  --node-token, -t <token>       Node token for manual setup
+  --node-id, -i <id>             Node ID for manual setup
+
+Resources (optional, auto-detected if not provided):
+  --memory, -m <mb>              Memory limit in MB
+  --disk, -d <mb>                Disk limit in MB
+  --port-start <port>            Game port range start (default: 27015)
+  --port-end <port>              Game port range end (default: 28025)
+
+Options:
+  --configure-firewall           Enable firewall configuration
+  --no-firewall                  Disable firewall configuration
+  --install-auto-updater         Install auto-updater
+  --no-auto-updater              Don't install auto-updater
+  --behind-proxy                 Node is behind a proxy
+  --assume-ssl                   Assume SSL is already configured
+  --github-token, -g <token>     GitHub token for private repos
+  --elytra-repo <repo>           Elytra repo (default: pyrohost/elytra)
+  --skip-wings-setup             Skip Wings detection/setup
+  --help, -h                     Show this help message
+
+Examples:
+  # Automatic setup with API key (no prompts)
+  elytra.sh --fqdn node.example.com --panel-url https://panel.example.com --api-key pyro_xxx --configure-firewall
+  
+  # With all options specified (completely unattended)
+  elytra.sh --fqdn node.example.com --panel-url https://panel.example.com --api-key pyro_xxx \
+    --node-name "My Node" --memory 8192 --disk 100000 --configure-firewall --install-auto-updater
+
+  # Manual setup (will prompt for missing values)
+  elytra.sh
+
+EOF
+}
+
+# Parse arguments
+parse_arguments "$@"
 
 # ------------------ Variables ----------------- #
 
@@ -50,6 +213,16 @@ INSTALL_AUTO_UPDATER="${INSTALL_AUTO_UPDATER:-false}"
 # GitHub
 ELYTRA_REPO_PRIVATE="${ELYTRA_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+
+# Node configuration
+NODE_NAME="${NODE_NAME:-}"
+NODE_MEMORY="${NODE_MEMORY:-}"
+NODE_DISK="${NODE_DISK:-}"
+PANEL_FQDN="${PANEL_FQDN:-}"
+
+# Mode flags
+export SKIP_WINGS_SETUP="${SKIP_WINGS_SETUP:-false}"
+export ASSUME_SSL="${ASSUME_SSL:-false}"
 
 # Validation - either API key OR manual credentials required
 missing=()
@@ -225,7 +398,7 @@ configure_elytra() {
   if [ -f "/etc/letsencrypt/live/${panel_fqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${panel_fqdn}/privkey.pem" ]; then
     # Enable SSL and set certificate paths
     sed -i 's/enabled: false/enabled: true/' "${INSTALL_DIR}/config.yml"
-    sed -i "s|cert: .*|cert: /etc/letsencrypt/live/${panel_fqdn}/fullchain.pem|" "${INSTALL_DIR}/config.yml"
+    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${panel_fqdn}/fullchain.pem|" "${INSTALL_DIR}/config.yml"
     sed -i "s|key: .*|key: /etc/letsencrypt/live/${panel_fqdn}/privkey.pem|" "${INSTALL_DIR}/config.yml"
     success "SSL configured for Elytra using Let's Encrypt certificates"
   else
@@ -250,11 +423,10 @@ configure_elytra() {
 setup_systemd_service() {
   print_flame "Setting up Systemd Service"
 
-  output "Downloading elytra.service..."
+  output "Setting up elytra.service..."
 
-  # Download service file from GitHub
-  if ! curl -fsSL -o /etc/systemd/system/elytra.service "$GITHUB_URL/configs/elytra.service" 2>/dev/null; then
-    error "Failed to download Elytra service file"
+  # Get service file (downloads or copies from local)
+  if ! get_config "elytra.service" "/etc/systemd/system/elytra.service"; then
     exit 1
   fi
 
@@ -316,8 +488,10 @@ configure_firewall() {
   if [ "$CONFIGURE_FIREWALL" == true ]; then
     print_flame "Configuring Firewall"
 
-    # Ask about game ports
-    ask_game_ports GAME_PORT_START GAME_PORT_END
+    # Ask about game ports if not already set via parameters
+    if [ -z "${GAME_PORT_START_PARAM:-}" ] || [ -z "${GAME_PORT_END_PARAM:-}" ]; then
+      ask_game_ports GAME_PORT_START GAME_PORT_END
+    fi
 
     output "Opening ports for Elytra daemon and game servers..."
     output "  • 22 (SSH)"
@@ -377,17 +551,20 @@ main() {
   start_elytra
 
   # Set proper ownership on Elytra data directories (after service starts)
+  output "Ensuring Elytra data directories exist..."
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+
   output "Setting final permissions on Elytra data directories..."
-  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
-  chown -R 8888:8888 "$INSTALL_DIR" 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$INSTALL_DIR" 2>/dev/null || true
 
   # Set full permissions so containers can read/write/execute
-  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
-  chmod -R 777 "$INSTALL_DIR" 2>/dev/null || true
+  # Note: 777 is required for containerized game servers to access these directories
+  chmod -R 777 /var/lib/elytra/volumes
+  chmod -R 777 /var/lib/elytra/archives
+  chmod -R 777 /var/lib/elytra/backups
+  chmod -R 755 "$INSTALL_DIR" 2>/dev/null || true
+  # SECURITY: Config contains daemon credentials - restrict to owner-only
+  [ -f "$INSTALL_DIR/config.yml" ] && chmod 600 "$INSTALL_DIR/config.yml" 2>/dev/null || true
 
   configure_firewall
   install_auto_updater_if_requested
@@ -436,6 +613,17 @@ main() {
   fi
 
   print_brake 70
+
+  # Save installation information
+  save_elytra_install_info "install"
+
+  # Show completion screen
+  show_elytra_completion "install"
+
+  # Run health check
+  echo ""
+  output "Running post-installation health check..."
+  check_elytra_health
 }
 
 main

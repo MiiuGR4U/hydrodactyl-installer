@@ -13,7 +13,19 @@ set -e
 # Check if lib is loaded, load if not or fail otherwise.
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
-  source /tmp/pyrodactyl-lib.sh 2>/dev/null || source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  # Try temp file first (when run through install.sh)
+  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+    # shellcheck source=/dev/null
+    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+      # Temp file exists but failed to load (corrupt/invalid) - remove it
+      rm -f /tmp/pyrodactyl-lib.sh
+    fi
+  fi
+  # Fall back to downloading if temp file didn't load or doesn't exist
+  if ! fn_exists lib_loaded; then
+    # shellcheck source=/dev/null
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
@@ -290,7 +302,6 @@ install_panel_release() {
 
   output "Extracting files..."
   tar -xzf panel.tar.gz
-  chmod -R 755 storage/* bootstrap/cache/ 2>/dev/null || true
   rm -f panel.tar.gz
 
   # Check if .env.example exists, if not download from repo
@@ -347,11 +358,14 @@ install_panel_clone() {
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
   local git_url="https://github.com/${PANEL_REPO}.git"
+  
+  # Clone with http.extraHeader for private repos to avoid persisting token
+  local git_clone_cmd=("git" "clone")
   if [ -n "$GITHUB_TOKEN" ] && [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
+    git_clone_cmd=("git" "-c" "http.extraHeader=Authorization: Bearer ${GITHUB_TOKEN}" "clone")
   fi
 
-  if ! git clone "$git_url" "$INSTALL_DIR"; then
+  if ! "${git_clone_cmd[@]}" "$git_url" "$INSTALL_DIR"; then
     error "Failed to clone repository"
     exit 1
   fi
@@ -440,8 +454,8 @@ setup_services() {
 
   # Set permissions
   output "Setting file permissions..."
-  chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"/*
-  chmod -R 755 "$INSTALL_DIR"/storage/* "$INSTALL_DIR"/bootstrap/cache/*
+  chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"
+  chmod -R 755 "$INSTALL_DIR"/storage "$INSTALL_DIR"/bootstrap/cache
 
   # Enable Redis
   enable_redis
@@ -618,6 +632,30 @@ main() {
   echo ""
 
   print_brake 70
+
+  # Map installer variables to standard variable names for saving
+  FQDN="$PANEL_FQDN"
+  MYSQL_DB="$DB_NAME"
+  MYSQL_USER="$DB_USER"
+  MYSQL_PASSWORD="$DB_PASSWORD"
+  timezone="$PANEL_TIMEZONE"
+  email="$PANEL_ADMIN_EMAIL"
+  user_email="$PANEL_ADMIN_EMAIL"
+  user_username="$PANEL_ADMIN_USERNAME"
+  user_firstname="$PANEL_ADMIN_FIRSTNAME"
+  user_lastname="$PANEL_ADMIN_LASTNAME"
+  user_password="$PANEL_ADMIN_PASSWORD"
+
+  # Save installation information
+  save_panel_install_info "install"
+
+  # Show completion screen
+  show_panel_completion "install"
+
+  # Run health check
+  echo ""
+  output "Running post-installation health check..."
+  check_panel_health "$INSTALL_DIR"
 }
 
 main "$@"

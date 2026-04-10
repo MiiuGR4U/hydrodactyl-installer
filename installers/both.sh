@@ -13,7 +13,19 @@ set -e
 # Check if lib is loaded, load if not or fail otherwise.
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
-  source /tmp/pyrodactyl-lib.sh 2>/dev/null || source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  # Try temp file first (when run through install.sh)
+  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+    # shellcheck source=/dev/null
+    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+      # Temp file exists but failed to load (corrupt/invalid) - remove it
+      rm -f /tmp/pyrodactyl-lib.sh
+    fi
+  fi
+  # Fall back to downloading if temp file didn't load or doesn't exist
+  if ! fn_exists lib_loaded; then
+    # shellcheck source=/dev/null
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
@@ -286,7 +298,7 @@ install_panel_release() {
 
   output "Extracting files..."
   tar -xzf panel.tar.gz
-  chmod -R 755 storage/* bootstrap/cache/ 2>/dev/null || true
+
   rm -f panel.tar.gz
 
   # Check if .env.example exists, if not download from repo
@@ -343,7 +355,7 @@ install_panel_clone() {
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
   if [ -n "$GITHUB_TOKEN" ] && [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    git clone "https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
+    git -c http.extraHeader="Authorization: Bearer $GITHUB_TOKEN" clone "https://github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
   else
     git clone "https://github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
   fi
@@ -493,8 +505,8 @@ setup_panel_services() {
 
   # Set permissions
   output "Setting ownership to $WEBUSER:$WEBGROUP..."
-  chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"/*
-  chmod -R 755 "$INSTALL_DIR"/storage/* "$INSTALL_DIR"/bootstrap/cache/*
+  chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"
+  chmod -R 755 "$INSTALL_DIR"/storage "$INSTALL_DIR"/bootstrap/cache
 
   # Enable Redis
   enable_redis
@@ -712,7 +724,7 @@ install_elytra_daemon() {
   if [ -f "/etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${PANEL_FQDN}/privkey.pem" ]; then
     # Enable SSL and set certificate paths
     sed -i 's/enabled: false/enabled: true/' "${ELYTRA_DIR}/config.yml"
-    sed -i "s|cert: .*|cert: /etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem|" "${ELYTRA_DIR}/config.yml"
+    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem|" "${ELYTRA_DIR}/config.yml"
     sed -i "s|key: .*|key: /etc/letsencrypt/live/${PANEL_FQDN}/privkey.pem|" "${ELYTRA_DIR}/config.yml"
     success "SSL configured for Elytra using Let's Encrypt certificates"
   else
@@ -726,10 +738,10 @@ install_elytra_daemon() {
   # Install rustic using shared function from lib.sh
   install_rustic
 
-  # Download systemd service
-  output "Downloading Elytra service..."
-  if ! curl -fsSL -o /etc/systemd/system/elytra.service "$GITHUB_URL/configs/elytra.service" 2>/dev/null; then
-    error "Failed to download Elytra service file"
+  # Get systemd service
+  output "Setting up Elytra service..."
+  if ! get_config "elytra.service" "/etc/systemd/system/elytra.service"; then
+    error "Failed to get Elytra service file"
     exit 1
   fi
 
@@ -747,17 +759,19 @@ install_elytra_daemon() {
   fi
 
   # Set proper ownership and permissions on Elytra data directories (after service starts)
+  output "Ensuring Elytra data directories exist..."
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+
   output "Setting final permissions on Elytra data directories..."
-  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
-  chown -R 8888:8888 "$ELYTRA_DIR" 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$ELYTRA_DIR" 2>/dev/null || true
   
   # Set full permissions so containers can read/write/execute
-  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
-  chmod -R 777 "$ELYTRA_DIR" 2>/dev/null || true
+  # Note: 777 is required for containerized game servers to access these directories
+  chmod -R 777 /var/lib/elytra/volumes
+  chmod -R 777 /var/lib/elytra/archives
+  chmod -R 777 /var/lib/elytra/backups
+  chmod -R 755 "$ELYTRA_DIR" 2>/dev/null || true
+  [ -f "$ELYTRA_DIR/config.yml" ] && chmod 600 "$ELYTRA_DIR/config.yml" 2>/dev/null || true
 
   success "Elytra installed and started"
 }
@@ -974,6 +988,31 @@ main() {
   echo ""
 
   print_brake 70
+
+  # Map variables and save panel installation information
+  FQDN="$PANEL_FQDN"
+  MYSQL_DB="$DB_NAME"
+  MYSQL_USER="$DB_USER"
+  MYSQL_PASSWORD="$DB_PASSWORD"
+  timezone="$PANEL_TIMEZONE"
+  email="$PANEL_ADMIN_EMAIL"
+  user_email="$PANEL_ADMIN_EMAIL"
+  user_username="$PANEL_ADMIN_USERNAME"
+  user_firstname="$PANEL_ADMIN_FIRSTNAME"
+  user_lastname="$PANEL_ADMIN_LASTNAME"
+  user_password="$PANEL_ADMIN_PASSWORD"
+  save_panel_install_info "install"
+
+  # Save Elytra installation information
+  save_elytra_install_info "install"
+
+  # Show completion screen
+  show_both_completion
+
+  # Run health checks
+  echo ""
+  output "Running post-installation health checks..."
+  check_both_health
 }
 
 main

@@ -13,7 +13,19 @@ set -e
 # Check if lib is loaded, load if not or fail otherwise.
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
-  source /tmp/pyrodactyl-lib.sh 2>/dev/null || source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  # Try temp file first (when run through install.sh)
+  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+    # shellcheck source=/dev/null
+    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+      # Temp file exists but failed to load (corrupt/invalid) - remove it
+      rm -f /tmp/pyrodactyl-lib.sh
+    fi
+  fi
+  # Fall back to downloading if temp file didn't load or doesn't exist
+  if ! fn_exists lib_loaded; then
+    # shellcheck source=/dev/null
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
@@ -153,7 +165,10 @@ configure_panel_settings() {
 
     if check_fqdn "$PANEL_FQDN"; then
       # Verify DNS resolution
-      if bash <(curl -sSL "$GITHUB_URL/lib/verify-fqdn.sh") "$PANEL_FQDN"; then
+      local verify_result=1
+      bash <(curl -sSL "$GITHUB_URL/lib/verify-fqdn.sh") "$PANEL_FQDN" && verify_result=0
+      
+      if [ $verify_result -eq 0 ]; then
         valid_fqdn=true
       else
         # DNS verification failed and user chose not to continue
@@ -331,11 +346,11 @@ configure_auto_updaters() {
   print_flame "Auto-Updater Configuration"
 
   local install_panel_au=""
-  bool_input install_panel_au "Install auto-updater for the panel?" "y"
+  bool_input install_panel_au "Install auto-updater for the panel?" "n"
   [ "$install_panel_au" == "y" ] && INSTALL_AUTO_UPDATER_PANEL=true
 
   local install_elytra_au=""
-  bool_input install_elytra_au "Install auto-updater for Elytra?" "y"
+  bool_input install_elytra_au "Install auto-updater for Elytra?" "n"
   [ "$install_elytra_au" == "y" ] && INSTALL_AUTO_UPDATER_ELYTRA=true
 }
 

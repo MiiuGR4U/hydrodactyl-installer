@@ -15,11 +15,14 @@ A beautiful, modern, and feature-rich installer for **Pyrodactyl Panel** and **E
 - 📦 **Flexible Installation** - Install panel, Elytra, or both on the same machine
 - 🔒 **Private Repository Support** - Full support for private GitHub repositories with token validation
 - 🔄 **Auto-Updaters** - Optional automatic updates for both panel and Elytra
-- 🌐 **SSL/TLS Ready** - Let's Encrypt integration and custom certificate support
+- 🌐 **SSL/TLS Ready** - Let's Encrypt integration with automatic renewal and service restart hooks
 - 🛡️ **Firewall Configuration** - Automatic UFW/FirewallD setup
 - 📊 **OS Support** - Ubuntu 22.04/24.04, Debian 11/12, Rocky Linux 8/9, AlmaLinux 8/9
 - 🗄️ **Database Management** - Automated MariaDB setup and configuration
 - 🐳 **Docker Integration** - Seamless Docker installation for Elytra
+- 🔧 **Repair Tool** - Built-in repair tool to fix common permission and service issues
+- 🏥 **Health Checks** - Comprehensive health checking for panel, Elytra, and system resources
+- 💾 **System Requirements Check** - Automatic detection of system resources with recommendations
 
 ## 🚀 Quick Start
 
@@ -55,6 +58,10 @@ bash install.sh
 | **Storage** | 50+ GB SSD |
 | **Network** | Both IPv4 and IPv6 |
 
+> 💡 **Note:** The installer will display a warning if your system is below minimum requirements. Swap space is recommended for systems with limited RAM.
+
+> ⚠️ **Docker Compatibility:** Elytra requires Docker to run game servers. OpenVZ, LXC, or Virtuozzo virtualization are **not supported**. KVM, VMware, or dedicated servers work best. Run `systemd-detect-virt` to check your virtualization type.
+
 ## 🔧 Installation Options
 
 <img width="848" height="504" alt="image" src="https://github.com/user-attachments/assets/9974e217-f667-4488-8a13-8745a9d2498f" />
@@ -63,21 +70,37 @@ bash install.sh
 bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)
 ```
 
-## 🔄 Auto-Updater Installation
+## 🔧 Maintenance Tools
 
-The installer can set up automatic updates that check for new releases every hour.
+### Repair Tool (Option 7)
+The built-in repair tool can fix common issues:
+- **Fix Panel Permissions** - Corrects ownership and permissions for web server
+- **Fix Elytra Permissions** - Sets correct permissions for Elytra directories (UID 8888)
+- **Clear Laravel Caches** - Clears config, cache, view, and route caches
+- **Restart All Services** - Restarts nginx, PHP-FPM, pyroq, redis, and elytra
+- **Fix Database Permissions** - Re-grants privileges to pyrodactyl database user
+- **Setup Swap File** - Configure swap space for systems with limited RAM (1GB, 2GB, 4GB, or custom)
 
-### Panel Auto-Updater
-- Downloads and installs latest panel release
-- Creates backups before updating
-- Runs database migrations
-- Maintains custom configurations
+### Health Check (Option 8)
+Comprehensive diagnostics for your installation:
+- **Panel Health** - Checks directory structure, permissions, services (nginx, PHP-FPM, Redis, MariaDB, pyroq)
+- **Elytra Health** - Validates binary, configuration, data directories, Docker, and service status
+- **System Resources** - Displays CPU, RAM, disk, and swap information with requirement checking
 
-### Elytra Auto-Updater
-- Downloads latest Elytra binary
-- Stops service, updates, restarts
-- Creates backups of binary and config
-- Validates successful restart
+### System Requirements Monitoring
+The installer automatically displays system resources on startup:
+- CPU core count with minimum/recommended checking
+- RAM with human-readable display and warnings for low memory
+- Available disk space monitoring
+- Swap configuration status and setup recommendations
+
+## 🌐 SSL Certificate Auto-Renewal
+
+When Let's Encrypt is configured, the installer automatically sets up:
+- **Automatic Renewal** - Certificates renewed twice daily (as recommended by Let's Encrypt)
+- **Service Restart Hooks** - nginx and Elytra automatically restart after successful renewal
+- **Renewal Logging** - All renewal activity logged to `/var/log/pyrodactyl-certbot-renewal.log`
+- **Health Verification** - Dry-run testing to ensure renewal configuration is valid
 
 ## 🔐 Private Repository Support
 
@@ -158,6 +181,10 @@ During installation, select "Use custom repository" and provide:
 
 **Panel not accessible**
 ```bash
+# Use the built-in Repair Tool (Option 7)
+bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)
+
+# Or manually check services:
 systemctl status nginx
 systemctl status pyroq
 journalctl -u pyroq -f
@@ -165,6 +192,10 @@ journalctl -u pyroq -f
 
 **Elytra not connecting**
 ```bash
+# Check Elytra health via Health Check (Option 8)
+bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)
+
+# Or manually check:
 systemctl status elytra
 journalctl -u elytra -f
 cat /etc/elytra/config.yml
@@ -174,6 +205,32 @@ cat /etc/elytra/config.yml
 ```bash
 systemctl status mariadb
 mysql -u root -p -e "SHOW DATABASES;"
+```
+
+**Low memory / OOM errors**
+```bash
+# Check if swap is configured
+free -h
+
+# Use Repair Tool (Option 7) to set up swap if needed
+# Or manually create swap:
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo "/swapfile none swap sw 0 0" >> /etc/fstab
+```
+
+**Queue worker not processing jobs**
+```bash
+# Check queue worker status
+systemctl status pyroq
+journalctl -u pyroq -f
+
+# Check for failed jobs
+cd /var/www/pyrodactyl
+php artisan queue:failed
+php artisan queue:retry all  # Retry failed jobs
 ```
 
 ### Firewall Issues
@@ -219,6 +276,8 @@ All installation and update operations are logged:
 - **Installation**: `/var/log/pyrodactyl-installer.log`
 - **Panel Updates**: `/var/log/pyrodactyl-panel-auto-update.log`
 - **Elytra Updates**: `/var/log/pyrodactyl-elytra-auto-update.log`
+- **SSL Renewal**: `/var/log/pyrodactyl-certbot-renewal.log`
+- **Health Check Failures**: `/etc/pyrodactyl/update-health-check-failure.log` (Panel) or `/etc/elytra/update-health-check-failure.log` (Elytra)
 
 ## 🎮 Game Server Ports
 

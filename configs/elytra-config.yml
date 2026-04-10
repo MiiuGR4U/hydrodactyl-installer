@@ -17,6 +17,8 @@ system:
     data: /var/lib/pyrodactyl/volumes
     archive: /var/lib/pyrodactyl/archives
     backup: /var/lib/pyrodactyl/backups
+    tmpfs_size: 100
+    websocket_log_count: 150
 
 allowed-mounts: []
 allowed-origins: []
@@ -39,14 +41,19 @@ docker:
         size: 100
         mode: 1777
     container:
-        pid_limit: 512
+        pid_limit: 2048
     installer_limits:
-        memory: 1024
-        cpu: 100
+        memory: 2048
+        cpu: 200
 
 throttles:
     enabled: true
     lines: 1000
     line_reset_interval: 100
+    maximum_trigger_count: 5
+    decay_interval: 10000
+    stop_grace_period: 15
+    write_limit: 0
+    download_limit: 0
 
 installed: true

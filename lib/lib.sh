@@ -19,6 +19,8 @@ export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.0.0}"
 export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer}"
 export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
+
+
 # ------------------ Default Repositories ----------------- #
 
 export DEFAULT_PANEL_REPO="pyrodactyl-oss/pyrodactyl"
@@ -30,6 +32,18 @@ export INSTALL_DIR="/var/www/pyrodactyl"
 export ELYTRA_DIR="/etc/elytra"
 export PANEL_CONFIG_DIR="/etc/pyrodactyl"
 export LOG_PATH="/var/log/pyrodactyl-installer.log"
+
+# ------------------ System Requirements ----------------- #
+
+# Minimum Requirements
+export MIN_CPU_CORES=2
+export MIN_RAM_MB=2048      # 2GB
+export MIN_DISK_GB=20
+
+# Recommended Requirements
+export REC_CPU_CORES=4
+export REC_RAM_MB=4096      # 4GB
+export REC_DISK_GB=50
 
 # ------------------ Web Server User ----------------- #
 
@@ -47,6 +61,7 @@ export COLOR_GREEN='\033[0;32m'
 export COLOR_RED='\033[0;31m'
 export COLOR_BLUE='\033[0;34m'
 export COLOR_CYAN='\033[0;36m'
+export COLOR_GRAY='\033[38;5;240m'
 export COLOR_NC='\033[0m'
 
 # ------------------ Gradient Colors for Header ----------------- #
@@ -96,8 +111,8 @@ patch_pyrodactyl_node_api() {
     return 0
   fi
 
-  # Check if patch has already been applied (look for daemonType in the only() array)
-  if grep -q "'daemonType'" "$target_file"; then
+  # Check if patch has already been applied (look for daemonType transformations in validated method)
+  if grep -q "response\['daemonType'\]" "$target_file"; then
     info "Pyrodactyl API patch already applied"
     return 0
   fi
@@ -107,29 +122,42 @@ patch_pyrodactyl_node_api() {
   # Create a backup
   cp "$target_file" "$target_file.backup.$(date +%Y%m%d%H%M%S)"
 
-  # Use sed to add the missing fields after 'daemonBase'
-  if grep -q "'daemonBase'" "$target_file"; then
-    # Add daemonType and backupDisk after daemonBase
-    sed -i "/'daemonBase',/a\\        'daemonType',\\n        'backupDisk'," "$target_file"
-    output "Added daemonType and backupDisk to only() array"
+  # Check if the new file format with daemonType/daemonDisk in rules
+  if grep -q "'daemonType'" "$target_file"; then
+    output "Detected new StoreNodeRequest format with daemonType field"
+    
+    # Add transformations for daemonType and daemonDisk in validated() method
+    if grep -q "unset.*daemon_base" "$target_file"; then
+      # Add daemonType and daemonDisk transformations before the unset line
+      sed -i "/unset.*daemon_base/i\        \$response['daemonType'] = \$response['daemon_type'] ?? 'elytra';\n        \$response['daemonDisk'] = \$response['daemon_disk'] ?? 'rustic_local';" "$target_file"
+      # Update the unset line to also remove daemon_type and daemon_disk
+      sed -i "s/unset(\$response\['daemon_base'\], \$response\['daemon_listen'\], \$response\['daemon_sftp'\]);/unset(\$response['daemon_base'], \$response['daemon_listen'], \$response['daemon_sftp'], \$response['daemon_type'], \$response['daemon_disk']);/" "$target_file"
+      output "Added daemonType and daemonDisk transformations to validated() method"
+    else
+      warning "Could not find unset line in validated() method - patch may fail"
+      return 1
+    fi
   else
-    warning "Could not find 'daemonBase' in file - patch may fail"
-    return 1
-  fi
-
-  # Add transformation in validated() method
-  if grep -q "unset(\$response\['daemon_base'\]" "$target_file"; then
-    # Add daemonType and backupDisk transformations before the unset line
-    sed -i "/unset(\$response\['daemon_base'\]/i\\        \$response['daemonType'] = \$response['daemon_type'] ?? 'elytra';\\n        \$response['backupDisk'] = \$response['backup_disk'] ?? 'rustic_local';" "$target_file"
-    # Update the unset line to also remove daemon_type and backup_disk
-    sed -i "s/unset(\$response\['daemon_base'\], \$response\['daemon_listen'\], \$response\['daemon_sftp'\]);/unset(\$response['daemon_base'], \$response['daemon_listen'], \$response['daemon_sftp'], \$response['daemon_type'], \$response['backup_disk']);/" "$target_file"
-    output "Added daemonType and backupDisk transformations to validated() method"
-  else
-    warning "Could not find unset line in validated() method - patch may be incomplete"
+    # Legacy format - add daemonType and backupDisk to rules() and validated()
+    if grep -q "'daemonBase'" "$target_file"; then
+      # Add daemonType and backupDisk after daemonBase in rules
+      sed -i "/'daemonBase',/a\            'daemonType',\n            'daemonDisk'," "$target_file"
+      output "Added daemonType and daemonDisk to only() array"
+      
+      # Add transformations in validated() method
+      if grep -q "unset.*daemon_base" "$target_file"; then
+        sed -i "/unset.*daemon_base/i\        \$response['daemonType'] = \$response['daemon_type'] ?? 'elytra';\n        \$response['daemonDisk'] = \$response['daemon_disk'] ?? 'rustic_local';" "$target_file"
+        sed -i "s/unset(\$response\['daemon_base'\], \$response\['daemon_listen'\], \$response\['daemon_sftp'\]);/unset(\$response['daemon_base'], \$response['daemon_listen'], \$response['daemon_sftp'], \$response['daemon_type'], \$response['daemon_disk']);/" "$target_file"
+        output "Added daemonType and daemonDisk transformations to validated() method"
+      fi
+    else
+      warning "Could not find 'daemonBase' in file - patch may fail"
+      return 1
+    fi
   fi
 
   # Verify the patch was applied
-  if grep -q "'daemonType'" "$target_file" && grep -q "'backupDisk'" "$target_file"; then
+  if grep -q "response\['daemonType'\]" "$target_file"; then
     success "Pyrodactyl API patch applied successfully"
 
     # Clear caches to apply changes
@@ -222,6 +250,23 @@ welcome() {
   detect_os
 
   echo -e "  ${COLOR_ORANGE}Operating System:${COLOR_NC} $OS $OS_VER_MAJOR ($ARCH)"
+  
+  # Display system resources
+  local cpu_cores=$(nproc 2>/dev/null || echo "1")
+  local ram_human=$(free -h 2>/dev/null | awk '/^Mem:/{print $2}' || echo "Unknown")
+  local disk_human=$(df -h / 2>/dev/null | awk 'NR==2 {print $4}' || echo "Unknown")
+  local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
+  local swap_human=$(free -h 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
+  
+  echo -e "  ${COLOR_ORANGE}System Resources:${COLOR_NC} ${cpu_cores} cores, ${ram_human} RAM, ${disk_human} disk, ${swap_human} swap"
+  
+  # Warn if no swap configured
+  if [ "$swap_mb" -eq 0 ]; then
+    echo ""
+    echo -e "  ${COLOR_YELLOW}⚠ Warning: No swap configured. Consider setting up swap for system stability.${COLOR_NC}"
+    echo -e "     Use the Repair Tool (option 7) to configure swap."
+  fi
+  
   echo ""
 
   # Check installed components
@@ -374,6 +419,243 @@ detect_os() {
 
 # ------------------ Validation Functions ----------------- #
 
+# ------------------ System Resource Functions ----------------- #
+
+get_cpu_cores() {
+  nproc 2>/dev/null || echo "1"
+}
+
+get_ram_mb() {
+  free -m 2>/dev/null | awk '/^Mem:/{print $2}' || echo "0"
+}
+
+get_ram_human() {
+  free -h 2>/dev/null | awk '/^Mem:/{print $2}' || echo "Unknown"
+}
+
+get_disk_gb() {
+  df -BG / 2>/dev/null | awk 'NR==2 {gsub(/G/,""); print $4}' || echo "0"
+}
+
+get_disk_human() {
+  df -h / 2>/dev/null | awk 'NR==2 {print $4}' || echo "Unknown"
+}
+
+get_swap_mb() {
+  local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}')
+  echo "${swap_mb:-0}"
+}
+
+get_swap_human() {
+  free -h 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0"
+}
+
+check_system_resources() {
+  local cpu_cores=$(get_cpu_cores)
+  local ram_mb=$(get_ram_mb)
+  local disk_gb=$(get_disk_gb)
+  local below_minimum=false
+  local warnings=()
+
+  # Check minimum requirements
+  if [ "$cpu_cores" -lt "$MIN_CPU_CORES" ]; then
+    warnings+=("CPU cores: $cpu_cores (minimum: $MIN_CPU_CORES)")
+    below_minimum=true
+  fi
+
+  if [ "$ram_mb" -lt "$MIN_RAM_MB" ]; then
+    warnings+=("RAM: ${ram_mb}MB / $(get_ram_human) (minimum: ${MIN_RAM_MB}MB / 2GB)")
+    below_minimum=true
+  fi
+
+  if [ "$disk_gb" -lt "$MIN_DISK_GB" ]; then
+    warnings+=("Disk space: ${disk_gb}GB (minimum: ${MIN_DISK_GB}GB)")
+    below_minimum=true
+  fi
+
+  # Output results
+  echo ""
+  output "${COLOR_ORANGE}System Resources${COLOR_NC}"
+  print_brake 40
+  output "CPU Cores:        $cpu_cores"
+  output "RAM:              $(get_ram_human) (${ram_mb}MB)"
+  output "Disk (root):      $(get_disk_human) (${disk_gb}GB)"
+  output "Swap:             $(get_swap_human)"
+  print_brake 40
+
+  # Show recommendations
+  if [ "$below_minimum" == true ]; then
+    echo ""
+    warning "System is below minimum requirements:"
+    for warn in "${warnings[@]}"; do
+      output "  - $warn"
+    done
+    return 1
+  elif [ "$cpu_cores" -lt "$REC_CPU_CORES" ] || [ "$ram_mb" -lt "$REC_RAM_MB" ]; then
+    echo ""
+    info "System meets minimum requirements but is below recommended:"
+    [ "$cpu_cores" -lt "$REC_CPU_CORES" ] && output "  - CPU: $cpu_cores cores (recommended: $REC_CPU_CORES)"
+    [ "$ram_mb" -lt "$REC_RAM_MB" ] && output "  - RAM: $(get_ram_human) (recommended: 4GB)"
+    [ "$disk_gb" -lt "$REC_DISK_GB" ] && output "  - Disk: ${disk_gb}GB (recommended: ${REC_DISK_GB}GB)"
+    return 0
+  else
+    success "System meets recommended requirements!"
+    return 0
+  fi
+}
+
+check_swap() {
+  local swap_total=$(get_swap_mb)
+  
+  if [ "$swap_total" -eq 0 ]; then
+    return 1
+  fi
+  
+  return 0
+}
+
+setup_swap() {
+  local swap_size="${1:-2G}"
+  local swap_file="/swapfile"
+
+  output "Setting up ${swap_size} swap file..."
+
+  # Check if swap already exists
+  if swapon --show=NAME,TYPE | grep -q "$swap_file"; then
+    warning "Swap file already exists at $swap_file"
+    return 1
+  fi
+
+  # Validate swap size format
+  if [[ ! "$swap_size" =~ ^[0-9]+[MG]$ ]]; then
+    error "Invalid swap size format: $swap_size"
+    output "  Use format like: 1G, 2G, 512M, 4G"
+    return 1
+  fi
+
+  # Create swap file
+  output "Creating swap file (this may take a moment)..."
+  if command -v fallocate >/dev/null 2>&1; then
+    if ! fallocate -l "$swap_size" "$swap_file" 2>/dev/null; then
+      output "fallocate failed, using dd instead (slower)..."
+      # Convert to MB for dd
+      local size_mb
+      if [[ "$swap_size" =~ G$ ]]; then
+        size_mb=$((${swap_size%G} * 1024))
+      else
+        size_mb=${swap_size%M}
+      fi
+      dd if=/dev/zero of="$swap_file" bs=1M count="$size_mb" status=progress
+    fi
+  else
+    # Convert to MB for dd
+    local size_mb
+    if [[ "$swap_size" =~ G$ ]]; then
+      size_mb=$((${swap_size%G} * 1024))
+    else
+      size_mb=${swap_size%M}
+    fi
+    dd if=/dev/zero of="$swap_file" bs=1M count="$size_mb" status=progress
+  fi
+
+  # Set permissions (600 = owner read/write only)
+  chmod 600 "$swap_file"
+
+  # Set up swap
+  mkswap "$swap_file"
+  swapon "$swap_file"
+
+  # Persist in fstab using standard format
+  if ! grep -q "^$swap_file" /etc/fstab; then
+    echo "$swap_file swap swap defaults 0 0" >> /etc/fstab
+  fi
+
+  # Set swappiness to 10 for production servers (default is 60)
+  # Lower values make kernel less likely to use swap
+  output "Optimizing swappiness setting..."
+  sysctl vm.swappiness=10 2>/dev/null || true
+  
+  # Make swappiness persistent
+  if ! grep -q "^vm.swappiness" /etc/sysctl.conf 2>/dev/null; then
+    echo "vm.swappiness=10" >> /etc/sysctl.conf
+    output "Swappiness set to 10 (persistent across reboots)"
+  fi
+
+  # Show results
+  local swap_mb=$(get_swap_mb)
+  success "Swap configured: $(get_swap_human)"
+  output "Swappiness: $(cat /proc/sys/vm/swappiness 2>/dev/null || echo 'unknown')"
+  output ""
+  output "To verify swap is working: free -h"
+  output "To remove swap: swapoff $swap_file && rm $swap_file"
+  return 0
+}
+
+show_system_resources() {
+  local cpu_cores=$(get_cpu_cores)
+  local ram_human=$(get_ram_human)
+  local disk_human=$(get_disk_human)
+  local swap_human=$(get_swap_human)
+
+  echo ""
+  output "System Resources:"
+  output "  ${COLOR_ORANGE}CPU:${COLOR_NC}    $cpu_cores cores"
+  output "  ${COLOR_ORANGE}RAM:${COLOR_NC}    $ram_human"
+  output "  ${COLOR_ORANGE}Disk:${COLOR_NC}   $disk_human available"
+  output "  ${COLOR_ORANGE}Swap:${COLOR_NC}   $swap_human"
+}
+
+# Check if system can run Docker (important for Elytra)
+check_docker_compatibility() {
+  local has_warnings=false
+  
+  # Check for virtualization
+  if command -v systemd-detect-virt >/dev/null 2>&1; then
+    local virt_type
+    virt_type=$(systemd-detect-virt 2>/dev/null || echo "unknown")
+    
+    case "$virt_type" in
+      openvz|lxc|lxc-libvirt)
+        warning "Detected $virt_type virtualization - Docker may not work properly"
+        output "  Consider using KVM-based virtualization instead"
+        has_warnings=true
+        ;;
+      none|kvm|vmware|microsoft|xen|bochs)
+        output "✓ Virtualization type '$virt_type' is compatible with Docker"
+        ;;
+      *)
+        info "Unknown virtualization type: $virt_type"
+        ;;
+    esac
+  fi
+  
+  # Check if swap is disabled (affects Docker memory limits)
+  local swap_total
+  swap_total=$(get_swap_mb)
+  if [ "$swap_total" -eq 0 ]; then
+    warning "Swap is disabled - Docker containers may not be able to use swap"
+    output "  Consider enabling swap for better container stability"
+    has_warnings=true
+  fi
+  
+  # Check cgroup version (cgroup v2 is preferred)
+  if [ -f /proc/filesystems ]; then
+    if grep -q "cgroup2" /proc/filesystems 2>/dev/null; then
+      output "✓ Cgroup v2 is available (recommended for Docker)"
+    elif grep -q "cgroup" /proc/filesystems 2>/dev/null; then
+      info "Cgroup v1 detected - Docker will work but cgroup v2 is preferred"
+    fi
+  fi
+  
+  if [ "$has_warnings" == true ]; then
+    return 1
+  fi
+  
+  return 0
+}
+
+# ------------------ Validation Functions ----------------- #
+
 check_fqdn() {
   local fqdn="$1"
 
@@ -473,13 +755,13 @@ get_latest_release() {
   local repo="$1"
   local token="${2:-$GITHUB_TOKEN}"
 
-  local curl_opts="-sL --max-time 30"
+  local curl_opts=(-sL --max-time 30)
   if [ -n "$token" ]; then
-    curl_opts="$curl_opts -H \"Authorization: Bearer $token\""
+    curl_opts+=(-H "Authorization: Bearer $token")
   fi
 
   local release_json
-  release_json=$(eval curl $curl_opts "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
+  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message":"Not Found"'; then
     return 1
@@ -492,13 +774,13 @@ check_releases_exist() {
   local repo="$1"
   local token="${2:-$GITHUB_TOKEN}"
 
-  local curl_opts="-sL --max-time 30"
+  local curl_opts=(-sL --max-time 30)
   if [ -n "$token" ]; then
-    curl_opts="$curl_opts -H \"Authorization: Bearer $token\""
+    curl_opts+=(-H "Authorization: Bearer $token")
   fi
 
   local release_json
-  release_json=$(eval curl $curl_opts "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
+  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message":"Not Found"'; then
     return 1
@@ -1319,10 +1601,10 @@ PHPEOF
 
   output "Configuring nginx for phpMyAdmin..."
 
-  # Download config from GitHub
+  # Get phpMyAdmin config
   local phpmyadmin_config="/etc/nginx/sites-available/phpmyadmin.conf"
-  if ! curl -fsSL -o "$phpmyadmin_config" "${GITHUB_BASE_URL}/${GITHUB_SOURCE}/configs/phpmyadmin.conf" 2>/dev/null; then
-    error "Failed to download phpMyAdmin nginx configuration"
+  if ! get_config "phpmyadmin.conf" "$phpmyadmin_config"; then
+    error "Failed to get phpMyAdmin nginx configuration"
     return 1
   fi
 
@@ -1392,9 +1674,8 @@ php_fpm_conf() {
 
   local config_file="/etc/php-fpm.d/www-pyrodactyl.conf"
 
-  # Download config from GitHub
-  if ! curl -fsSL -o "$config_file" "$GITHUB_URL/configs/www-pyrodactyl.conf" 2>/dev/null; then
-    error "Failed to download PHP-FPM configuration"
+  # Download or copy config
+  if ! get_config "www-pyrodactyl.conf" "$config_file"; then
     exit 1
   fi
 
@@ -1436,9 +1717,8 @@ install_nginx_config() {
   local config_file="/etc/nginx/sites-available/pyrodactyl.conf"
 
   if [ "$ssl" == true ] && [ -n "$cert_path" ] && [ -n "$key_path" ]; then
-    # Download SSL config from GitHub
-    if ! curl -fsSL -o "$config_file" "$GITHUB_URL/configs/nginx_ssl.conf" 2>/dev/null; then
-      error "Failed to download nginx SSL config"
+    # Get SSL config
+    if ! get_config "nginx_ssl.conf" "$config_file"; then
       exit 1
     fi
     # Replace placeholders
@@ -1447,9 +1727,8 @@ install_nginx_config() {
     sed -i "s|<key_path>|$key_path|g" "$config_file"
     sed -i "s|<php_socket>|$php_socket|g" "$config_file"
   else
-    # Download HTTP config from GitHub
-    if ! curl -fsSL -o "$config_file" "$GITHUB_URL/configs/nginx.conf" 2>/dev/null; then
-      error "Failed to download nginx config"
+    # Get HTTP config
+    if ! get_config "nginx.conf" "$config_file"; then
       exit 1
     fi
     # Replace placeholders
@@ -1491,6 +1770,155 @@ install_letsencrypt() {
   }
 
   success "SSL certificate installed"
+  
+  # Setup automatic renewal
+  setup_certbot_renewal
+}
+
+# Setup certbot automatic renewal with service restart hooks
+setup_certbot_renewal() {
+  output "Configuring automatic certificate renewal..."
+
+  # Create renewal hooks directory
+  mkdir -p /etc/letsencrypt/renewal-hooks/deploy
+
+  # Create deploy hook script to restart services after renewal
+  cat > /etc/letsencrypt/renewal-hooks/deploy/pyrodactyl-services.sh << 'EOF'
+#!/bin/bash
+# Pyrodactyl/Elytra service restart hook for Certbot
+# This script runs after successful certificate renewal
+
+# Log the renewal
+echo "[$(date)] Certificate renewed, restarting services..." >> /var/log/pyrodactyl-certbot-renewal.log
+
+# Restart nginx
+if systemctl is-active --quiet nginx 2>/dev/null; then
+    systemctl restart nginx 2>/dev/null && echo "[$(date)] nginx restarted successfully" >> /var/log/pyrodactyl-certbot-renewal.log
+fi
+
+# Restart Elytra if installed
+if systemctl is-active --quiet elytra 2>/dev/null; then
+    systemctl restart elytra 2>/dev/null && echo "[$(date)] Elytra restarted successfully" >> /var/log/pyrodactyl-certbot-renewal.log
+fi
+
+exit 0
+EOF
+
+  chmod +x /etc/letsencrypt/renewal-hooks/deploy/pyrodactyl-services.sh
+
+  # Check if systemd timer is available (preferred method)
+  if systemctl list-timers 2>/dev/null | grep -q "certbot"; then
+    output "Certbot systemd timer already configured"
+  else
+    # Setup cron job for certbot renewal
+    output "Installing certbot renewal cron job..."
+    
+    # Remove any existing certbot cron jobs from user crontab
+    (crontab -l 2>/dev/null | grep -v "certbot renew") | crontab - 2>/dev/null || true
+    
+    # Also remove from system crontab if exists
+    if [ -f /etc/crontab ]; then
+      grep -v "certbot renew" /etc/crontab > /etc/crontab.tmp 2>/dev/null && mv /etc/crontab.tmp /etc/crontab || true
+    fi
+    
+    # Add renewal cron job with randomization (twice daily as recommended by Let's Encrypt)
+    # Random sleep prevents thundering herd against Let's Encrypt servers
+    local random_sleep=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}')
+    echo "0 0,12 * * * root sleep ${random_sleep} && certbot renew --quiet >> /var/log/pyrodactyl-certbot-renewal.log 2>&1" >> /etc/crontab
+    
+    output "Cron job installed: Certbot will check for renewals twice daily (with ${random_sleep}s random delay)"
+  fi
+
+  # Create log file
+  touch /var/log/pyrodactyl-certbot-renewal.log
+  
+  # Log initial setup
+  echo "[$(date)] Certbot auto-renewal configured for Pyrodactyl" >> /var/log/pyrodactyl-certbot-renewal.log
+
+  success "Automatic certificate renewal configured"
+  output "Services will automatically restart after certificate renewal"
+  output "Renewal logs: /var/log/pyrodactyl-certbot-renewal.log"
+}
+
+# Verify certbot renewal configuration
+verify_certbot_renewal() {
+  local has_errors=false
+  
+  echo ""
+  output "${COLOR_ORANGE}Certbot Renewal Check${COLOR_NC}"
+  echo ""
+  
+  # Check if certbot is installed
+  if ! command -v certbot >/dev/null 2>&1; then
+    warning "Certbot is not installed"
+    return 1
+  fi
+  output "✓ Certbot is installed"
+  
+  # Check for renewal hooks
+  if [ -f "/etc/letsencrypt/renewal-hooks/deploy/pyrodactyl-services.sh" ]; then
+    output "✓ Pyrodactyl renewal hook script exists"
+    
+    if [ -x "/etc/letsencrypt/renewal-hooks/deploy/pyrodactyl-services.sh" ]; then
+      output "✓ Renewal hook script is executable"
+    else
+      warning "Renewal hook script is not executable"
+      has_errors=true
+    fi
+  else
+    warning "Pyrodactyl renewal hook script not found"
+    has_errors=true
+  fi
+  
+  # Check for cron job or systemd timer
+  local renewal_configured=false
+  
+  if crontab -l 2>/dev/null | grep -q "certbot renew"; then
+    output "✓ Certbot renewal cron job is configured"
+    renewal_configured=true
+  fi
+  
+  if systemctl list-timers 2>/dev/null | grep -q certbot; then
+    output "✓ Certbot systemd timer is active"
+    renewal_configured=true
+  fi
+  
+  if [ "$renewal_configured" == false ]; then
+    warning "No certbot renewal mechanism found (cron or systemd timer)"
+    has_errors=true
+  fi
+  
+  # Check renewal logs
+  if [ -f "/var/log/pyrodactyl-certbot-renewal.log" ]; then
+    output "✓ Renewal log file exists"
+    
+    # Show last renewal
+    local last_renewal
+    last_renewal=$(grep "Certificate renewed" /var/log/pyrodactyl-certbot-renewal.log 2>/dev/null | tail -1)
+    if [ -n "$last_renewal" ]; then
+      output "  Last renewal: $last_renewal"
+    fi
+  else
+    info "No renewal log file yet (certificates may not have been renewed)"
+  fi
+  
+  # Test certbot renewal (dry run)
+  output "Testing certbot renewal (dry run)..."
+  if certbot renew --dry-run --quiet 2>/dev/null; then
+    output "✓ Certbot renewal dry-run successful"
+  else
+    warning "Certbot renewal dry-run failed - check certbot configuration"
+    has_errors=true
+  fi
+  
+  echo ""
+  if [ "$has_errors" == true ]; then
+    warning "Certbot renewal check completed with warnings"
+    return 1
+  else
+    success "Certbot renewal check passed!"
+    return 0
+  fi
 }
 
 # ------------------ Redis Functions ----------------- #
@@ -1534,9 +1962,8 @@ insert_cronjob() {
 install_pyroq() {
   output "Installing queue worker service..."
 
-  # Download from GitHub
-  if ! curl -fsSL -o /etc/systemd/system/pyroq.service "$GITHUB_URL/configs/pyroq.service" 2>/dev/null; then
-    error "Failed to download pyroq service file"
+  # Get service file
+  if ! get_config "pyroq.service" "/etc/systemd/system/pyroq.service"; then
     exit 1
   fi
 
@@ -1547,7 +1974,104 @@ install_pyroq() {
   systemctl enable pyroq
   systemctl start pyroq
 
+  # Wait for service to start
+  sleep 2
+
+  # Verify installation
+  if ! systemctl is-active --quiet pyroq 2>/dev/null; then
+    warning "Queue worker service failed to start - attempting restart..."
+    systemctl restart pyroq
+    sleep 2
+    
+    if ! systemctl is-active --quiet pyroq 2>/dev/null; then
+      warning "Queue worker service failed to start. Check logs with: journalctl -u pyroq"
+    fi
+  fi
+
   success "Queue worker installed"
+}
+
+# Verify queue worker is running and healthy
+verify_pyroq() {
+  local panel_dir="${1:-$INSTALL_DIR}"
+  local has_errors=false
+  
+  # Check if service is active
+  if ! systemctl is-active --quiet pyroq 2>/dev/null; then
+    warning "Queue worker (pyroq) is not running"
+    has_errors=true
+  else
+    output "✓ Queue worker (pyroq) is running"
+  fi
+  
+  # Check if service is enabled
+  if ! systemctl is-enabled --quiet pyroq 2>/dev/null; then
+    warning "Queue worker (pyroq) is not enabled to start on boot"
+    has_errors=true
+  else
+    output "✓ Queue worker (pyroq) is enabled"
+  fi
+  
+  # Check for failed jobs if panel is installed
+  if [ -f "$panel_dir/artisan" ]; then
+    local failed_jobs
+    failed_jobs=$(cd "$panel_dir" && php artisan queue:failed 2>/dev/null | wc -l)
+    if [ "$failed_jobs" -gt 0 ]; then
+      warning "There are failed jobs in the queue: $failed_jobs"
+      output "  Run '${COLOR_ORANGE}php artisan queue:retry all${COLOR_NC}' to retry failed jobs"
+      has_errors=true
+    else
+      output "✓ No failed jobs in queue"
+    fi
+  fi
+  
+  if [ "$has_errors" == true ]; then
+    return 1
+  fi
+  
+  return 0
+}
+
+# Get queue worker status summary
+get_pyroq_status() {
+  local status="unknown"
+  local enabled="unknown"
+  
+  if systemctl is-active --quiet pyroq 2>/dev/null; then
+    status="running"
+  else
+    status="stopped"
+  fi
+  
+  if systemctl is-enabled --quiet pyroq 2>/dev/null; then
+    enabled="enabled"
+  else
+    enabled="disabled"
+  fi
+  
+  echo "Queue worker: $status ($enabled)"
+}
+
+# Restart queue worker and verify
+restart_pyroq() {
+  output "Restarting queue worker..."
+  
+  systemctl restart pyroq 2>/dev/null || {
+    error "Failed to restart queue worker"
+    return 1
+  }
+  
+  # Wait a moment for service to start
+  sleep 2
+  
+  # Verify it's running
+  if systemctl is-active --quiet pyroq 2>/dev/null; then
+    success "Queue worker restarted successfully"
+    return 0
+  else
+    error "Queue worker failed to start after restart"
+    return 1
+  fi
 }
 
 # ------------------ Auto-Updater Functions ----------------- #
@@ -1557,27 +2081,35 @@ install_auto_updater_panel() {
 
   mkdir -p /etc/pyrodactyl
 
-  # Download auto-update script from GitHub installers folder
-  if ! curl -fsSL -o /usr/local/bin/pyrodactyl-auto-update-panel.sh "$GITHUB_URL/installers/auto-update-panel.sh" 2>/dev/null; then
-    error "Failed to download auto-update script"
+  # Get auto-update script
+  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/pyrodactyl-auto-update-panel.sh"; then
+    error "Failed to get auto-update script"
     exit 1
   fi
-  chmod +x /usr/local/bin/pyrodactyl-auto-update-panel.sh
+
+  # Auto-detect update method based on installation type
+  local update_method="releases"
+  if [ -d "/var/www/pyrodactyl/.git" ]; then
+    update_method="git"
+    output "Detected git-based installation - will use git for updates"
+  else
+    output "Detected release-based installation - will check GitHub releases"
+  fi
 
   # Create config
   echo "PANEL_REPO=\"${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}\"" > /etc/pyrodactyl/auto-update-panel.env
   echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-panel.env
+  echo "UPDATE_METHOD=\"${update_method}\"" >> /etc/pyrodactyl/auto-update-panel.env
+  echo "PANEL_REPO_PRIVATE=\"${PANEL_REPO_PRIVATE:-false}\"" >> /etc/pyrodactyl/auto-update-panel.env
   chmod 600 /etc/pyrodactyl/auto-update-panel.env
 
-  # Download systemd service from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-panel-auto-update.service "$GITHUB_URL/configs/auto-update-panel.service" 2>/dev/null; then
-    error "Failed to download systemd service file"
+  # Get systemd service
+  if ! get_config "auto-update-panel.service" "/etc/systemd/system/pyrodactyl-panel-auto-update.service"; then
     exit 1
   fi
 
-  # Download systemd timer from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-panel-auto-update.timer "$GITHUB_URL/configs/auto-update-panel.timer" 2>/dev/null; then
-    error "Failed to download systemd timer file"
+  # Get systemd timer
+  if ! get_config "auto-update-panel.timer" "/etc/systemd/system/pyrodactyl-panel-auto-update.timer"; then
     exit 1
   fi
 
@@ -1592,27 +2124,29 @@ install_auto_updater_elytra() {
 
   mkdir -p /etc/pyrodactyl
 
-  # Download auto-update script from GitHub
-  if ! curl -fsSL -o /usr/local/bin/pyrodactyl-auto-update-elytra.sh "$GITHUB_URL/installers/auto-update-elytra.sh" 2>/dev/null; then
-    error "Failed to download auto-update script"
+  # Get auto-update script
+  if ! get_script "installers" "auto-update-elytra" "/usr/local/bin/pyrodactyl-auto-update-elytra.sh"; then
+    error "Failed to get auto-update script"
     exit 1
   fi
-  chmod +x /usr/local/bin/pyrodactyl-auto-update-elytra.sh
+
+  # Elytra always uses release-based updates (distributed as binary)
+  output "Elytra uses release-based updates"
 
   # Create config
   echo "ELYTRA_REPO=\"${ELYTRA_REPO:-pyrohost/elytra}\"" > /etc/pyrodactyl/auto-update-elytra.env
   echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-elytra.env
+  echo "UPDATE_METHOD=\"releases\"" >> /etc/pyrodactyl/auto-update-elytra.env
+  echo "ELYTRA_REPO_PRIVATE=\"${ELYTRA_REPO_PRIVATE:-false}\"" >> /etc/pyrodactyl/auto-update-elytra.env
   chmod 600 /etc/pyrodactyl/auto-update-elytra.env
 
-  # Download systemd service from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-elytra-auto-update.service "$GITHUB_URL/configs/auto-update-elytra.service" 2>/dev/null; then
-    error "Failed to download systemd service file"
+  # Get systemd service
+  if ! get_config "auto-update-elytra.service" "/etc/systemd/system/pyrodactyl-elytra-auto-update.service"; then
     exit 1
   fi
 
-  # Download systemd timer from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-elytra-auto-update.timer "$GITHUB_URL/configs/auto-update-elytra.timer" 2>/dev/null; then
-    error "Failed to download systemd timer file"
+  # Get systemd timer
+  if ! get_config "auto-update-elytra.timer" "/etc/systemd/system/pyrodactyl-elytra-auto-update.timer"; then
     exit 1
   fi
 
@@ -1660,20 +2194,74 @@ remove_auto_updater_elytra() {
 
 run_ui() {
   local script_name="$1"
-  bash <(curl -sSL "$GITHUB_URL/ui/$script_name.sh")
+  get_script "ui" "$script_name"
 }
 
 run_installer() {
   local script_name="$1"
-  bash <(curl -sSL "$GITHUB_URL/installers/$script_name.sh")
+  get_script "installers" "$script_name"
 }
 
 update_lib_source() {
   GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
-  rm -f /tmp/pyrodactyl-lib.sh
-  curl -sSL -o /tmp/pyrodactyl-lib.sh "$GITHUB_URL/lib/lib.sh"
+  source_lib "lib"
+}
+
+# Helper function to download or copy config files
+get_config() {
+  local config_name="$1"
+  local output_path="$2"
+
+  # Download from GitHub
+  if ! curl -fsSL -o "$output_path" "$GITHUB_URL/configs/$config_name" 2>/dev/null; then
+    error "Failed to download config: $config_name"
+    return 1
+  fi
+  chmod 644 "$output_path" 2>/dev/null || true
+  return 0
+}
+
+# Helper function to get script (UI, installer, or config)
+# Usage: get_script <type> <name> [output_path]
+# type: ui, installers, lib, configs
+# If output_path is provided, copies/saves there; otherwise executes directly
+get_script() {
+  local script_type="$1"  # ui, installers, lib, configs
+  local script_name="$2"
+  local output_path="${3:-}"  # optional
+
+  # Download from GitHub
+  if [ -n "$output_path" ]; then
+    if ! curl -fsSL -o "$output_path" "$GITHUB_URL/$script_type/$script_name.sh" 2>/dev/null; then
+      error "Failed to download script: $script_name"
+      return 1
+    fi
+    chmod 755 "$output_path" 2>/dev/null || true
+    return 0
+  else
+    # Execute directly
+    bash <(curl -sSL "$GITHUB_URL/$script_type/$script_name.sh")
+    return $?
+  fi
+}
+
+# Helper function to source a library script
+source_lib() {
+  local lib_name="$1"
+
+  # Download and source
+  local temp_lib
+  temp_lib=$(mktemp)
+  if ! curl -fsSL -o "$temp_lib" "$GITHUB_URL/lib/$lib_name.sh" 2>/dev/null; then
+    error "Failed to download library: $lib_name"
+    rm -f "$temp_lib"
+    return 1
+  fi
   # shellcheck source=/dev/null
-  source /tmp/pyrodactyl-lib.sh
+  source "$temp_lib"
+  local exit_code=$?
+  rm -f "$temp_lib"
+  return $exit_code
 }
 
 # ------------------ Docker Functions ----------------- #
@@ -1768,22 +2356,22 @@ install_rustic() {
 
 # ------------------ System Spec Functions ----------------- #
 
+# Note: Use get_ram_mb() and get_disk_gb() from System Resource Functions section instead
+# These are kept for backward compatibility with existing code
 get_system_memory() {
-  # Get total system memory in MB
-  local mem_mb
-  mem_mb=$(free -m | awk '/^Mem:/{print $2}')
-  echo "$mem_mb"
+  get_ram_mb
 }
 
 get_system_disk() {
   # Get available disk space in MB for /var/lib/pyrodactyl or root
-  local disk_mb
+  local disk_gb
   if [ -d "/var/lib/pyrodactyl" ]; then
-    disk_mb=$(df -m /var/lib/pyrodactyl | awk 'NR==2 {print $4}')
+    disk_gb=$(df -BG /var/lib/pyrodactyl | awk 'NR==2 {gsub(/G/,""); print $4}')
   else
-    disk_mb=$(df -m / | awk 'NR==2 {print $4}')
+    disk_gb=$(df -BG / | awk 'NR==2 {gsub(/G/,""); print $4}')
   fi
-  echo "$disk_mb"
+  # Convert GB to MB
+  echo $((disk_gb * 1024))
 }
 
 # ------------------ Minecraft Server Creation ----------------- #
@@ -2211,12 +2799,15 @@ create_node_via_api() {
 
   # Detect system specs if not provided
   if [ -z "$memory_mb" ] || [ "$memory_mb" == "0" ]; then
-    memory_mb=$(get_system_memory)
+    memory_mb=$(get_ram_mb)
     memory_mb=${memory_mb:-8192}
   fi
 
   if [ -z "$disk_mb" ] || [ "$disk_mb" == "0" ]; then
-    disk_mb=$(df -m / | awk 'NR==2 {print $2}')
+    # Get total disk space in GB and convert to MB
+    local disk_gb
+    disk_gb=$(df -BG / | awk 'NR==2 {gsub(/G/,""); print $2}')
+    disk_mb=$((disk_gb * 1024))
     disk_mb=${disk_mb:-32768}
   fi
 
@@ -2411,3 +3002,519 @@ get_node_configuration() {
 
 # Detect OS on load
 detect_os
+
+# ------------------ Installation Info Functions ----------------- #
+
+# Directory for storing installation information
+INSTALL_INFO_DIR="/etc/pyrodactyl/install-info"
+
+# Save panel installation information
+save_panel_install_info() {
+  local install_type="${1:-install}"
+
+  # Create directory if it doesn't exist
+  mkdir -p "$INSTALL_INFO_DIR"
+  chmod 700 "$INSTALL_INFO_DIR"
+
+  local info_file="$INSTALL_INFO_DIR/panel-info"
+
+  output "Saving panel installation information..."
+
+  {
+    echo "# Pyrodactyl Panel Installation Information"
+    echo "# Generated: $(date)"
+    echo "# Type: $install_type"
+    echo ""
+    echo "INSTALL_DATE=\"$(date)\""
+    echo "INSTALL_TYPE=\"$install_type\""
+    [ -n "$PANEL_VERSION" ] && echo "PANEL_VERSION=\"$PANEL_VERSION\""
+    [ -n "$FQDN" ] && echo "FQDN=\"$FQDN\""
+    [ -n "$MYSQL_DB" ] && echo "MYSQL_DB=\"$MYSQL_DB\""
+    [ -n "$MYSQL_USER" ] && echo "MYSQL_USER=\"$MYSQL_USER\""
+    [ -n "$MYSQL_PASSWORD" ] && echo "MYSQL_PASSWORD=\"$MYSQL_PASSWORD\""
+    [ -n "$MYSQL_ROOT_PASSWORD" ] && echo "MYSQL_ROOT_PASSWORD=\"$MYSQL_ROOT_PASSWORD\""
+    [ -n "$timezone" ] && echo "TIMEZONE=\"$timezone\""
+    [ -n "$email" ] && echo "EMAIL=\"$email\""
+    [ -n "$user_email" ] && echo "USER_EMAIL=\"$user_email\""
+    [ -n "$user_username" ] && echo "USER_USERNAME=\"$user_username\""
+    [ -n "$user_firstname" ] && echo "USER_FIRSTNAME=\"$user_firstname\""
+    [ -n "$user_lastname" ] && echo "USER_LASTNAME=\"$user_lastname\""
+    [ -n "$user_password" ] && echo "USER_PASSWORD=\"$user_password\""
+    [ -n "$PANEL_REPO" ] && echo "PANEL_REPO=\"$PANEL_REPO\""
+    [ -n "$GITHUB_TOKEN" ] && echo "GITHUB_TOKEN=\"$GITHUB_TOKEN\""
+    echo "INSTALL_DIR=\"$INSTALL_DIR\""
+    echo "WEBUSER=\"$WEBUSER\""
+    echo "WEBGROUP=\"$WEBGROUP\""
+    echo "PHP_VERSION=\"$PHP_VERSION\""
+  } > "$info_file"
+
+  chmod 600 "$info_file"
+  success "Panel installation information saved to $info_file"
+}
+
+# Save Elytra installation information
+save_elytra_install_info() {
+  local install_type="${1:-install}"
+
+  # Create directory if it doesn't exist
+  mkdir -p "$INSTALL_INFO_DIR"
+  chmod 700 "$INSTALL_INFO_DIR"
+
+  local info_file="$INSTALL_INFO_DIR/elytra-info"
+
+  output "Saving Elytra installation information..."
+
+  {
+    echo "# Elytra Daemon Installation Information"
+    echo "# Generated: $(date)"
+    echo "# Type: $install_type"
+    echo ""
+    echo "INSTALL_DATE=\"$(date)\""
+    echo "INSTALL_TYPE=\"$install_type\""
+    [ -n "$ELYTRA_VERSION" ] && echo "ELYTRA_VERSION=\"$ELYTRA_VERSION\""
+    [ -n "$ELYTRA_REPO" ] && echo "ELYTRA_REPO=\"$ELYTRA_REPO\""
+    [ -n "$GITHUB_TOKEN" ] && echo "GITHUB_TOKEN=\"$GITHUB_TOKEN\""
+    [ -n "$PANEL_FQDN" ] && echo "PANEL_FQDN=\"$PANEL_FQDN\""
+    [ -n "$PANEL_URL" ] && echo "PANEL_URL=\"$PANEL_URL\""
+    [ -n "$NODE_NAME" ] && echo "NODE_NAME=\"$NODE_NAME\""
+    [ -n "$NODE_MEMORY" ] && echo "NODE_MEMORY=\"$NODE_MEMORY\""
+    [ -n "$NODE_DISK" ] && echo "NODE_DISK=\"$NODE_DISK\""
+    [ -n "$ALLOCATION_PORT_START" ] && echo "ALLOCATION_PORT_START=\"$ALLOCATION_PORT_START\""
+    [ -n "$ALLOCATION_PORT_END" ] && echo "ALLOCATION_PORT_END=\"$ALLOCATION_PORT_END\""
+    [ -n "$API_KEY" ] && echo "API_KEY=\"$API_KEY\""
+    [ -n "$LOCATION_ID" ] && echo "LOCATION_ID=\"$LOCATION_ID\""
+    [ -n "$NODE_ID" ] && echo "NODE_ID=\"$NODE_ID\""
+    [ -n "$NODE_TOKEN" ] && echo "NODE_TOKEN=\"$NODE_TOKEN\""
+    [ -n "$NODE_UUID" ] && echo "NODE_UUID=\"$NODE_UUID\""
+    echo "ELYTRA_DIR=\"$ELYTRA_DIR\""
+    echo "ELYTRA_BINARY=\"$ELYTRA_BINARY\""
+  } > "$info_file"
+
+  chmod 600 "$info_file"
+  success "Elytra installation information saved to $info_file"
+}
+
+# Load panel installation information
+load_panel_install_info() {
+  local info_file="$INSTALL_INFO_DIR/panel-info"
+
+  if [ -f "$info_file" ]; then
+    # shellcheck source=/dev/null
+    source "$info_file"
+    return 0
+  fi
+  return 1
+}
+
+# Load Elytra installation information
+load_elytra_install_info() {
+  local info_file="$INSTALL_INFO_DIR/elytra-info"
+
+  if [ -f "$info_file" ]; then
+    # shellcheck source=/dev/null
+    source "$info_file"
+    return 0
+  fi
+  return 1
+}
+
+# Check if panel installation info exists
+panel_install_info_exists() {
+  [ -f "$INSTALL_INFO_DIR/panel-info" ]
+}
+
+# Check if Elytra installation info exists
+elytra_install_info_exists() {
+  [ -f "$INSTALL_INFO_DIR/elytra-info" ]
+}
+
+# Display panel installation information
+display_panel_install_info() {
+  if ! panel_install_info_exists; then
+    warning "No panel installation information found"
+    return 1
+  fi
+
+  # Load the info
+  load_panel_install_info
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_ORANGE}Pyrodactyl Panel Installation Information${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  [ -n "$INSTALL_DATE" ] && output "Installation Date: $INSTALL_DATE"
+  [ -n "$INSTALL_TYPE" ] && output "Type: $INSTALL_TYPE"
+  [ -n "$PANEL_VERSION" ] && output "Version: $PANEL_VERSION"
+  [ -n "$FQDN" ] && output "FQDN: $FQDN"
+  [ -n "$MYSQL_DB" ] && output "Database Name: $MYSQL_DB"
+  [ -n "$MYSQL_USER" ] && output "Database User: $MYSQL_USER"
+  [ -n "$MYSQL_PASSWORD" ] && output "Database Password: (hidden)"
+  [ -n "$timezone" ] && output "Timezone: $timezone"
+  [ -n "$email" ] && output "Admin Email: $email"
+  [ -n "$user_email" ] && output "Initial User Email: $user_email"
+  [ -n "$user_username" ] && output "Initial User Username: $user_username"
+  [ -n "$user_firstname" ] && output "Initial User First Name: $user_firstname"
+  [ -n "$user_lastname" ] && output "Initial User Last Name: $user_lastname"
+  [ -n "$user_password" ] && output "Initial User Password: (hidden)"
+  [ -n "$PANEL_REPO" ] && output "Repository: $PANEL_REPO"
+  [ -n "$INSTALL_DIR" ] && output "Install Directory: $INSTALL_DIR"
+  [ -n "$PHP_VERSION" ] && output "PHP Version: $PHP_VERSION"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Information file: $INSTALL_INFO_DIR/panel-info"
+  echo ""
+}
+
+# Display Elytra installation information
+display_elytra_install_info() {
+  if ! elytra_install_info_exists; then
+    warning "No Elytra installation information found"
+    return 1
+  fi
+
+  # Load the info
+  load_elytra_install_info
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_ORANGE}Elytra Daemon Installation Information${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  [ -n "$INSTALL_DATE" ] && output "Installation Date: $INSTALL_DATE"
+  [ -n "$INSTALL_TYPE" ] && output "Type: $INSTALL_TYPE"
+  [ -n "$ELYTRA_VERSION" ] && output "Version: $ELYTRA_VERSION"
+  [ -n "$PANEL_FQDN" ] && output "Panel FQDN: $PANEL_FQDN"
+  [ -n "$PANEL_URL" ] && output "Panel URL: $PANEL_URL"
+  [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
+  [ -n "$NODE_MEMORY" ] && output "Node Memory: $NODE_MEMORY MB"
+  [ -n "$NODE_DISK" ] && output "Node Disk: $NODE_DISK MB"
+  [ -n "$ALLOCATION_PORT_START" ] && output "Allocation Port Start: $ALLOCATION_PORT_START"
+  [ -n "$ALLOCATION_PORT_END" ] && output "Allocation Port End: $ALLOCATION_PORT_END"
+  [ -n "$LOCATION_ID" ] && output "Location ID: $LOCATION_ID"
+  [ -n "$NODE_ID" ] && output "Node ID: $NODE_ID"
+  [ -n "$NODE_TOKEN" ] && output "Node Token: (hidden)"
+  [ -n "$NODE_UUID" ] && output "Node UUID: $NODE_UUID"
+  [ -n "$ELYTRA_DIR" ] && output "Config Directory: $ELYTRA_DIR"
+  [ -n "$ELYTRA_BINARY" ] && output "Binary Location: $ELYTRA_BINARY"
+  [ -n "$ELYTRA_REPO" ] && output "Repository: $ELYTRA_REPO"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Information file: $INSTALL_INFO_DIR/elytra-info"
+  echo ""
+}
+
+# Display completion screen for panel
+show_panel_completion() {
+  local install_type="${1:-Installation}"
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_GREEN}✓ $install_type Completed Successfully!${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Your Pyrodactyl panel has been installed and configured."
+  echo ""
+  [ -n "$FQDN" ] && output "Panel URL: https://$FQDN"
+  [ -n "$user_email" ] && output "Admin Email: $user_email"
+  [ -n "$user_username" ] && output "Admin Username: $user_username"
+  [ -n "$user_password" ] && output "Admin Password: (saved in install info)"
+  echo ""
+  output "Installation Details:"
+  [ -n "$MYSQL_DB" ] && output "  Database: $MYSQL_DB"
+  [ -n "$MYSQL_USER" ] && output "  DB User: $MYSQL_USER"
+  output "  Install Directory: $INSTALL_DIR"
+  echo ""
+  output "To view installation information later, run:"
+  output "  bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)"
+  output "  and select 'View Installation Information'"
+  echo ""
+  print_brake 70
+  echo ""
+}
+
+# Display completion screen for Elytra
+show_elytra_completion() {
+  local install_type="${1:-Installation}"
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_GREEN}✓ $install_type Completed Successfully!${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Your Elytra daemon has been installed and configured."
+  echo ""
+  [ -n "$PANEL_URL" ] && output "Panel URL: $PANEL_URL"
+  [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
+  [ -n "$NODE_TOKEN" ] && output "Node Token: (saved in install info)"
+  echo ""
+  output "Next Steps:"
+  output "  1. Start Elytra: systemctl start elytra"
+  output "  2. Check status: systemctl status elytra"
+  output "  3. View logs: journalctl -u elytra -f"
+  echo ""
+  output "To view installation information later, run:"
+  output "  bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)"
+  output "  and select 'View Installation Information'"
+  echo ""
+  print_brake 70
+  echo ""
+}
+
+# Display completion screen for both
+show_both_completion() {
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_GREEN}✓ Full Installation Completed Successfully!${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Both Pyrodactyl Panel and Elytra Daemon have been installed."
+  echo ""
+  [ -n "$FQDN" ] && output "Panel URL: https://$FQDN"
+  [ -n "$user_email" ] && output "Admin Email: $user_email"
+  [ -n "$user_username" ] && output "Admin Username: $user_username"
+  [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
+  echo ""
+  output "Next Steps:"
+  output "  1. Start Elytra: systemctl start elytra"
+  output "  2. Check Elytra status: systemctl status elytra"
+  output "  3. Access your panel at: https://$FQDN"
+  output "  4. Log in with your admin credentials"
+  echo ""
+  output "To view installation information later, run:"
+  output "  bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)"
+  output "  and select 'View Installation Information'"
+  echo ""
+  print_brake 70
+  echo ""
+}
+
+# ------------------ Health Check Functions ----------------- #
+
+# Check panel health
+check_panel_health() {
+  local panel_dir="${1:-$INSTALL_DIR}"
+  local has_errors=false
+  
+  echo ""
+  output "${COLOR_ORANGE}Panel Health Check${COLOR_NC}"
+  echo ""
+  
+  # Check directory exists
+  if [ ! -d "$panel_dir" ]; then
+    error "Panel directory not found: $panel_dir"
+    return 1
+  fi
+  output "✓ Panel directory exists"
+  
+  # Check artisan exists
+  if [ ! -f "$panel_dir/artisan" ]; then
+    error "artisan command not found"
+    has_errors=true
+  else
+    output "✓ artisan command exists"
+  fi
+  
+  # Check .env exists
+  if [ ! -f "$panel_dir/.env" ]; then
+    warning ".env file not found"
+    has_errors=true
+  else
+    output "✓ .env file exists"
+  fi
+  
+  # Check storage permissions
+  if [ -d "$panel_dir/storage" ]; then
+    local storage_owner
+    storage_owner=$(stat -c '%U' "$panel_dir/storage" 2>/dev/null)
+    if [ "$storage_owner" == "www-data" ] || [ "$storage_owner" == "nginx" ]; then
+      output "✓ Storage directory owned by $storage_owner"
+    else
+      warning "Storage directory owned by $storage_owner (expected www-data or nginx)"
+      has_errors=true
+    fi
+  else
+    warning "Storage directory not found"
+    has_errors=true
+  fi
+  
+  # Check bootstrap/cache permissions
+  if [ -d "$panel_dir/bootstrap/cache" ]; then
+    local cache_owner
+    cache_owner=$(stat -c '%U' "$panel_dir/bootstrap/cache" 2>/dev/null)
+    if [ "$cache_owner" == "www-data" ] || [ "$cache_owner" == "nginx" ]; then
+      output "✓ Cache directory owned by $cache_owner"
+    else
+      warning "Cache directory owned by $cache_owner (expected www-data or nginx)"
+      has_errors=true
+    fi
+  else
+    warning "Cache directory not found"
+    has_errors=true
+  fi
+  
+  # Check services
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    output "✓ nginx is running"
+  else
+    warning "nginx is not running"
+    has_errors=true
+  fi
+  
+  # Check PHP-FPM (try multiple versions)
+  local php_fpm_running=false
+  for version in 8.4 8.3 8.2 8.1 8.0; do
+    if systemctl is-active --quiet "php${version}-fpm" 2>/dev/null; then
+      output "✓ php${version}-fpm is running"
+      php_fpm_running=true
+      break
+    fi
+  done
+  if [ "$php_fpm_running" == false ]; then
+    if systemctl is-active --quiet php-fpm 2>/dev/null; then
+      output "✓ php-fpm is running"
+      php_fpm_running=true
+    else
+      warning "PHP-FPM is not running"
+      has_errors=true
+    fi
+  fi
+  
+  # Check Redis
+  if systemctl is-active --quiet redis-server 2>/dev/null || systemctl is-active --quiet redis 2>/dev/null; then
+    output "✓ Redis is running"
+  else
+    warning "Redis is not running"
+    has_errors=true
+  fi
+  
+  # Check database
+  if systemctl is-active --quiet mariadb 2>/dev/null || systemctl is-active --quiet mysql 2>/dev/null; then
+    output "✓ Database is running"
+  else
+    warning "Database is not running"
+    has_errors=true
+  fi
+  
+  # Check queue worker with detailed verification
+  if ! verify_pyroq "$panel_dir"; then
+    has_errors=true
+  fi
+  
+  # Try to check if panel is responding (optional)
+  if [ -f "$panel_dir/.env" ]; then
+    local app_url
+    app_url=$(grep "^APP_URL=" "$panel_dir/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"')
+    if [ -n "$app_url" ] && command -v curl >/dev/null 2>&1; then
+      if curl -sfL --max-time 5 "$app_url" >/dev/null 2>&1; then
+        output "✓ Panel is responding at $app_url"
+      else
+        warning "Panel is not responding at $app_url"
+      fi
+    fi
+  fi
+  
+  echo ""
+  if [ "$has_errors" == true ]; then
+    warning "Health check completed with warnings/errors"
+  else
+    success "Panel health check passed!"
+  fi
+  
+  return 0
+}
+
+# Check Elytra health
+check_elytra_health() {
+  local has_errors=false
+  
+  echo ""
+  output "${COLOR_ORANGE}Elytra Health Check${COLOR_NC}"
+  echo ""
+  
+  # Check binary exists
+  if [ -f "/usr/local/bin/elytra" ]; then
+    output "✓ Elytra binary exists at /usr/local/bin/elytra"
+    
+    # Check binary is executable
+    if [ -x "/usr/local/bin/elytra" ]; then
+      output "✓ Elytra binary is executable"
+    else
+      warning "Elytra binary is not executable"
+      has_errors=true
+    fi
+    
+    # Check binary version
+    local version
+    version=$(/usr/local/bin/elytra --version 2>/dev/null | head -1)
+    if [ -n "$version" ]; then
+      output "✓ Elytra version: $version"
+    fi
+  else
+    error "Elytra binary not found at /usr/local/bin/elytra"
+    has_errors=true
+  fi
+  
+  # Check config directory
+  if [ -d "/etc/elytra" ]; then
+    output "✓ Elytra config directory exists"
+    
+    if [ -f "/etc/elytra/config.yml" ]; then
+      output "✓ Elytra config file exists"
+    else
+      warning "Elytra config file not found"
+      has_errors=true
+    fi
+  else
+    warning "Elytra config directory not found"
+    has_errors=true
+  fi
+  
+  # Check data directories
+  for dir in /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups; do
+    if [ -d "$dir" ]; then
+      output "✓ Data directory exists: $dir"
+    else
+      warning "Data directory missing: $dir"
+    fi
+  done
+  
+  # Check Docker
+  if systemctl is-active --quiet docker 2>/dev/null; then
+    output "✓ Docker is running"
+  else
+    warning "Docker is not running"
+    has_errors=true
+  fi
+  
+  # Check service
+  if systemctl is-active --quiet elytra 2>/dev/null; then
+    output "✓ Elytra service is running"
+  elif systemctl is-enabled --quiet elytra 2>/dev/null; then
+    warning "Elytra service is enabled but not running"
+  else
+    warning "Elytra service is not enabled"
+  fi
+  
+  echo ""
+  if [ "$has_errors" == true ]; then
+    warning "Health check completed with warnings/errors"
+  else
+    success "Elytra health check passed!"
+  fi
+  
+  return 0
+}
+
+# Check both panel and Elytra health
+check_both_health() {
+  check_panel_health "$INSTALL_DIR"
+  check_elytra_health
+}
