@@ -112,12 +112,12 @@ configure_panel_auto_updater() {
     output "Verifying git repository access..."
     
     # Verify access using http.extraHeader instead of token in URL
-    local git_ls_cmd="git ls-remote --exit-code https://github.com/${PANEL_REPO}.git HEAD"
+    local git_ls_cmd=("git" "ls-remote" "--exit-code" "https://github.com/${PANEL_REPO}.git" "HEAD")
     if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN_PANEL" ]; then
-      git_ls_cmd="git -c http.extraHeader=\"Authorization: Bearer ${GITHUB_TOKEN_PANEL}\" ls-remote --exit-code https://github.com/${PANEL_REPO}.git HEAD"
+      git_ls_cmd=("git" "-c" "http.extraHeader=Authorization: Bearer ${GITHUB_TOKEN_PANEL}" "ls-remote" "--exit-code" "https://github.com/${PANEL_REPO}.git" "HEAD")
     fi
     
-    if ! eval "$git_ls_cmd" &>/dev/null; then
+    if ! "${git_ls_cmd[@]}" &>/dev/null; then
       error "Cannot access git repository. Please verify the repository exists and your token is valid (if private)."
       exit 1
     fi

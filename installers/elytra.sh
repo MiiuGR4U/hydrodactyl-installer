@@ -76,10 +76,12 @@ parse_arguments() {
         shift 2
         ;;
       --port-start)
+        GAME_PORT_START_PARAM="$2"
         GAME_PORT_START="$2"
         shift 2
         ;;
       --port-end)
+        GAME_PORT_END_PARAM="$2"
         GAME_PORT_END="$2"
         shift 2
         ;;

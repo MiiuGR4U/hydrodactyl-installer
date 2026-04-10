@@ -192,13 +192,13 @@ get_latest_release() {
 
 get_remote_commit_hash() {
   # Use http.extraHeader for auth to avoid persisting token in .git/config
-  local git_cmd="git"
+  local git_cmd=("git")
   if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-    git_cmd="git -c http.extraHeader=\"Authorization: Bearer $GITHUB_TOKEN\""
+    git_cmd=("git" "-c" "http.extraHeader=Authorization: Bearer $GITHUB_TOKEN")
   fi
 
   local remote_hash
-  remote_hash=$($git_cmd ls-remote --exit-code "https://github.com/${PANEL_REPO}.git" HEAD 2>/dev/null | awk '{print $1}')
+  remote_hash=$("${git_cmd[@]}" ls-remote --exit-code "https://github.com/${PANEL_REPO}.git" HEAD 2>/dev/null | awk '{print $1}')
 
   if [ -z "$remote_hash" ]; then
     error "Failed to fetch remote commit hash"
@@ -523,13 +523,15 @@ perform_update() {
     cp "${temp_dir}/.env.backup" "$INSTALL_DIR/.env"
   fi
 
-  # Restore storage directory (atomic copy-then-swap to prevent data loss)
+  # Restore storage directory (atomic rename-then-rename to prevent data loss)
   if [ -d "${temp_dir}/storage.backup" ]; then
     # Copy to temporary location first, then swap atomically
     if cp -a "${temp_dir}/storage.backup" "$INSTALL_DIR/storage.new"; then
-      # Only remove original after successful copy
-      rm -rf "$INSTALL_DIR/storage"
+      # Atomic swap: rename old to .old, then new to storage
+      # mv on same filesystem is atomic (single rename(2) syscall)
+      mv "$INSTALL_DIR/storage" "$INSTALL_DIR/storage.old"
       mv "$INSTALL_DIR/storage.new" "$INSTALL_DIR/storage"
+      rm -rf "$INSTALL_DIR/storage.old"
     else
       error "Failed to restore storage directory - original preserved"
       php artisan up 2>/dev/null || true
@@ -720,11 +722,11 @@ perform_update_git() {
     git remote add origin "$git_url"
 
     # Fetch and checkout (use http.extraHeader for private repos)
-    local git_fetch_cmd="git"
+    local git_fetch_cmd=("git")
     if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-      git_fetch_cmd="git -c http.extraHeader=\"Authorization: Bearer $GITHUB_TOKEN\""
+      git_fetch_cmd=("git" "-c" "http.extraHeader=Authorization: Bearer $GITHUB_TOKEN")
     fi
-    $git_fetch_cmd fetch origin
+    "${git_fetch_cmd[@]}" fetch origin
     git checkout -f -B main origin/HEAD || git checkout -f -B master origin/HEAD || {
       error "Failed to checkout from git repository"
       php artisan up 2>/dev/null || true
@@ -740,12 +742,12 @@ perform_update_git() {
 
     # Fetch and pull
     # Use http.extraHeader for private repos to avoid persisting token in .git/config
-    local git_fetch_cmd="git"
+    local git_fetch_cmd=("git")
     if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-      git_fetch_cmd="git -c http.extraHeader=\"Authorization: Bearer $GITHUB_TOKEN\""
+      git_fetch_cmd=("git" "-c" "http.extraHeader=Authorization: Bearer $GITHUB_TOKEN")
     fi
 
-    if ! $git_fetch_cmd fetch origin; then
+    if ! "${git_fetch_cmd[@]}" fetch origin; then
       error "Failed to fetch from git repository"
       php artisan up 2>/dev/null || true
       return $EXIT_UPDATE_FAILED

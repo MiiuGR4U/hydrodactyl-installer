@@ -442,7 +442,8 @@ get_disk_human() {
 }
 
 get_swap_mb() {
-  free -m 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0"
+  local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}')
+  echo "${swap_mb:-0}"
 }
 
 get_swap_human() {
@@ -1823,7 +1824,7 @@ EOF
     # Add renewal cron job with randomization (twice daily as recommended by Let's Encrypt)
     # Random sleep prevents thundering herd against Let's Encrypt servers
     local random_sleep=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}')
-    echo "0 0,12 * * * root sleep ${random_sleep} && certbot renew --quiet --deploy-hook /etc/letsencrypt/renewal-hooks/deploy/pyrodactyl-services.sh >> /var/log/pyrodactyl-certbot-renewal.log 2>&1" >> /etc/crontab
+    echo "0 0,12 * * * root sleep ${random_sleep} && certbot renew --quiet >> /var/log/pyrodactyl-certbot-renewal.log 2>&1" >> /etc/crontab
     
     output "Cron job installed: Certbot will check for renewals twice daily (with ${random_sleep}s random delay)"
   fi

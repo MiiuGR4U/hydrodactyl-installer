@@ -535,6 +535,18 @@ EOF
       echo "And select option [7] Repair / Fix Common Issues" >> "$INSTALL_DIR/update-health-check-failure.log"
 
       error "Update completed but health check failed. See: $INSTALL_DIR/update-health-check-failure.log"
+      
+      # Attempt rollback since health check failed
+      error "Attempting rollback..."
+      local latest_backup
+      latest_backup=$(ls -t ${BACKUP_DIR}/elytra-backup-*.binary 2>/dev/null | head -1)
+      if [ -n "$latest_backup" ]; then
+        info "Restoring from backup: $latest_backup"
+        cp "$latest_backup" "/usr/local/bin/elytra"
+        chmod +x "/usr/local/bin/elytra"
+        start_elytra || true
+      fi
+      
       return $EXIT_UPDATE_FAILED
     fi
   fi

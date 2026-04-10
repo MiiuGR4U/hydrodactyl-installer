@@ -125,7 +125,15 @@ fix_panel_permissions() {
   }
 
   output "Setting permissions on storage and cache directories..."
-  chmod -R 755 "$panel_dir"/storage/* "$panel_dir"/bootstrap/cache/* 2>/dev/null || true
+  # Apply correct permissions: 755 for directories, 644 for files
+  if [ -d "$panel_dir/storage" ]; then
+    find "$panel_dir/storage" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$panel_dir/storage" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
+  if [ -d "$panel_dir/bootstrap/cache" ]; then
+    find "$panel_dir/bootstrap/cache" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$panel_dir/bootstrap/cache" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
 
   success "Panel permissions fixed at $panel_dir"
   return 0
