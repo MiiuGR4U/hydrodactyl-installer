@@ -1,0 +1,367 @@
+#!/bin/bash
+
+set -e
+
+######################################################################################
+#                                                                                    #
+# Pyrodactyl Repair Tool UI                                                          #
+#                                                                                    #
+# Repair and fix common issues with Pyrodactyl Panel and Elytra                      #
+#                                                                                    #
+# Copyright (C) 2025, Muspelheim Hosting                                             #
+#                                                                                    #
+# https://github.com/Muspelheim-Hosting/pyrodactyl-installer                         #
+#                                                                                    #
+######################################################################################
+
+# Check if lib is loaded, load if not or fail otherwise.
+fn_exists() { declare -F "$1" >/dev/null; }
+if ! fn_exists lib_loaded; then
+  # Try temp file first (when run through install.sh)
+  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+    # shellcheck source=/dev/null
+    source /tmp/pyrodactyl-lib.sh
+  # Fall back to downloading
+  else
+    # shellcheck source=/dev/null
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  fi
+  ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
+fi
+
+# ------------------ Detection Functions ----------------- #
+
+detect_panel_location() {
+  # Check for Pyrodactyl first (install script location)
+  if [ -d "/var/www/pyrodactyl" ] && [ -f "/var/www/pyrodactyl/artisan" ]; then
+    echo "/var/www/pyrodactyl"
+    return 0
+  fi
+  
+  # Check for Pterodactyl location (might be Pyrodactyl migrated)
+  if [ -d "/var/www/pterodactyl" ] && [ -f "/var/www/pterodactyl/artisan" ]; then
+    # Verify it's actually Pyrodactyl
+    if grep -q "Pyrodactyl" "/var/www/pterodactyl/config/app.php" 2>/dev/null || \
+       grep -q "pyrodactyl" "/var/www/pterodactyl/composer.json" 2>/dev/null; then
+      echo "/var/www/pterodactyl"
+      return 0
+    fi
+  fi
+  
+  # Check if INSTALL_DIR variable is set and valid
+  if [ -n "$INSTALL_DIR" ] && [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/artisan" ]; then
+    echo "$INSTALL_DIR"
+    return 0
+  fi
+  
+  # Not found
+  return 1
+}
+
+detect_elytra_binary() {
+  if [ -f "/usr/local/bin/elytra" ]; then
+    echo "/usr/local/bin/elytra"
+    return 0
+  fi
+  
+  if [ -f "/usr/bin/elytra" ]; then
+    echo "/usr/bin/elytra"
+    return 0
+  fi
+  
+  return 1
+}
+
+detect_elytra_config_dir() {
+  if [ -d "/etc/elytra" ] && [ -f "/etc/elytra/config.yml" ]; then
+    echo "/etc/elytra"
+    return 0
+  fi
+  
+  if [ -n "$ELYTRA_DIR" ] && [ -d "$ELYTRA_DIR" ] && [ -f "$ELYTRA_DIR/config.yml" ]; then
+    echo "$ELYTRA_DIR"
+    return 0
+  fi
+  
+  # Default fallback
+  echo "/etc/elytra"
+  return 0
+}
+
+# ------------------ Repair Functions ----------------- #
+
+fix_panel_permissions() {
+  print_flame "Fixing Panel Permissions"
+
+  local panel_dir
+  panel_dir=$(detect_panel_location) || {
+    error "Panel installation not found at any standard location"
+    output "Searched: /var/www/pyrodactyl, /var/www/pterodactyl"
+    return 1
+  }
+
+  output "Found panel at: $panel_dir"
+
+  output "Setting ownership to web server user..."
+  chown -R www-data:www-data "$panel_dir" 2>/dev/null || \
+  chown -R nginx:nginx "$panel_dir" 2>/dev/null || {
+    error "Failed to set ownership"
+    return 1
+  }
+
+  output "Setting permissions on storage and cache directories..."
+  chmod -R 755 "$panel_dir"/storage/* "$panel_dir"/bootstrap/cache/* 2>/dev/null || true
+
+  success "Panel permissions fixed at $panel_dir"
+  return 0
+}
+
+fix_elytra_permissions() {
+  print_flame "Fixing Elytra Permissions"
+
+  local elytra_binary
+  local elytra_dir
+  
+  elytra_binary=$(detect_elytra_binary) || {
+    error "Elytra binary not found at /usr/local/bin/elytra or /usr/bin/elytra"
+    return 1
+  }
+  
+  elytra_dir=$(detect_elytra_config_dir)
+
+  output "Found Elytra binary at: $elytra_binary"
+  output "Found Elytra config at: $elytra_dir"
+  
+  output "Setting binary permissions..."
+  chmod +x "$elytra_binary"
+
+  output "Setting ownership on Elytra data directories..."
+  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
+  chown -R 8888:8888 "$elytra_dir" 2>/dev/null || true
+
+  output "Setting permissions on Elytra data directories..."
+  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
+  chmod -R 777 "$elytra_dir" 2>/dev/null || true
+
+  success "Elytra permissions fixed"
+  return 0
+}
+
+clear_caches() {
+  print_flame "Clearing Laravel Caches"
+
+  local panel_dir
+  panel_dir=$(detect_panel_location) || {
+    error "Panel installation not found at any standard location"
+    return 1
+  }
+
+  output "Found panel at: $panel_dir"
+  cd "$panel_dir"
+
+  output "Clearing config cache..."
+  php artisan config:clear 2>/dev/null || warning "Failed to clear config cache"
+
+  output "Clearing application cache..."
+  php artisan cache:clear 2>/dev/null || warning "Failed to clear application cache"
+
+  output "Clearing view cache..."
+  php artisan view:clear 2>/dev/null || warning "Failed to clear view cache"
+
+  output "Clearing route cache..."
+  php artisan route:clear 2>/dev/null || warning "Failed to clear route cache"
+
+  success "Caches cleared successfully at $panel_dir"
+  return 0
+}
+
+restart_services() {
+  print_flame "Restarting Services"
+
+  output "Restarting nginx..."
+  systemctl restart nginx 2>/dev/null || warning "Failed to restart nginx (may not be installed)"
+
+  output "Restarting PHP-FPM..."
+  if systemctl is-active --quiet php8.4-fpm 2>/dev/null; then
+    systemctl restart php8.4-fpm 2>/dev/null || warning "Failed to restart php8.4-fpm"
+  elif systemctl is-active --quiet php-fpm 2>/dev/null; then
+    systemctl restart php-fpm 2>/dev/null || warning "Failed to restart php-fpm"
+  else
+    warning "PHP-FPM not found or not running"
+  fi
+
+  output "Restarting queue worker (pyroq)..."
+  systemctl restart pyroq 2>/dev/null || warning "Failed to restart pyroq (may not be installed)"
+
+  output "Restarting Redis..."
+  systemctl restart redis-server 2>/dev/null || \
+  systemctl restart redis 2>/dev/null || \
+  warning "Failed to restart redis (may not be installed)"
+
+  local elytra_binary
+  elytra_binary=$(detect_elytra_binary 2>/dev/null)
+  if [ -n "$elytra_binary" ]; then
+    output "Restarting Elytra..."
+    systemctl restart elytra 2>/dev/null || warning "Failed to restart elytra (may not be installed)"
+  fi
+
+  success "Services restarted"
+  return 0
+}
+
+fix_database_permissions() {
+  print_flame "Fixing Database Permissions"
+
+  local db_root_pass=""
+
+  if [ -f /root/.config/pyrodactyl/db-credentials ]; then
+    db_root_pass=$(grep '^root:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  fi
+
+  if [ -z "$db_root_pass" ]; then
+    error "Database root password not found in /root/.config/pyrodactyl/db-credentials"
+    echo ""
+    output "Please enter the MySQL/MariaDB root password:"
+    read -r -s db_root_pass
+    echo ""
+  fi
+
+  # Test connection
+  if ! mysql -u root -p"${db_root_pass}" -e "SELECT 1" >/dev/null 2>&1; then
+    error "Failed to connect to database with provided password"
+    return 1
+  fi
+
+  output "Ensuring pyrodactyl database user exists..."
+  mysql -u root -p"${db_root_pass}" -e "
+    GRANT ALL PRIVILEGES ON panel.* TO 'pyrodactyl'@'127.0.0.1' IDENTIFIED BY '$(grep '^pyrodactyl:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)' WITH GRANT OPTION;
+    FLUSH PRIVILEGES;
+  " 2>/dev/null || warning "Failed to update pyrodactyl user permissions"
+
+  output "Testing database connectivity..."
+  local db_pass
+  db_pass=$(grep '^pyrodactyl:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  if mysql -u pyrodactyl -p"${db_pass}" -h 127.0.0.1 -e "SELECT 1" panel >/dev/null 2>&1; then
+    success "Database connection successful"
+  else
+    warning "Database connection test failed"
+  fi
+
+  return 0
+}
+
+run_all_fixes() {
+  print_flame "Running All Fixes"
+
+  local has_errors=false
+
+  echo ""
+  warning "This will run all repair operations. Some services may be restarted."
+  output "Press Enter to continue or Ctrl+C to cancel..."
+  read -r
+
+  fix_panel_permissions || has_errors=true
+  echo ""
+
+  fix_elytra_permissions || has_errors=true
+  echo ""
+
+  clear_caches || has_errors=true
+  echo ""
+
+  restart_services || has_errors=true
+  echo ""
+
+  if [ "$has_errors" == true ]; then
+    warning "Some fixes completed with warnings. Check the output above."
+  else
+    success "All fixes completed successfully!"
+  fi
+
+  output "Press Enter to return to the menu..."
+  read -r
+}
+
+# ------------------ Menu Functions ----------------- #
+
+show_repair_menu() {
+  local choice=""
+
+  while true; do
+    print_header
+    print_flame "Repair Tool"
+
+    echo ""
+    output "${COLOR_ORANGE}What would you like to repair?${COLOR_NC}"
+    echo ""
+    output "[${COLOR_ORANGE}0${COLOR_NC}] Fix Panel Permissions"
+    output "[${COLOR_ORANGE}1${COLOR_NC}] Fix Elytra Permissions"
+    output "[${COLOR_ORANGE}2${COLOR_NC}] Clear Laravel Caches"
+    output "[${COLOR_ORANGE}3${COLOR_NC}] Restart All Services"
+    output "[${COLOR_ORANGE}4${COLOR_NC}] Fix Database Permissions"
+    output "[${COLOR_ORANGE}5${COLOR_NC}] Run All Fixes (Recommended)"
+    echo ""
+    output "[${COLOR_ORANGE}6${COLOR_NC}] Back to Main Menu"
+    echo ""
+
+    echo -n "* Select an option [0-6]: "
+    read -r choice
+
+    case "$choice" in
+      0)
+        fix_panel_permissions
+        output "Press Enter to return to the menu..."
+        read -r
+        continue
+        ;;
+      1)
+        fix_elytra_permissions
+        output "Press Enter to return to the menu..."
+        read -r
+        continue
+        ;;
+      2)
+        clear_caches
+        output "Press Enter to return to the menu..."
+        read -r
+        continue
+        ;;
+      3)
+        restart_services
+        output "Press Enter to return to the menu..."
+        read -r
+        continue
+        ;;
+      4)
+        fix_database_permissions
+        output "Press Enter to return to the menu..."
+        read -r
+        continue
+        ;;
+      5)
+        run_all_fixes
+        continue
+        ;;
+      6)
+        return 0
+        ;;
+      *)
+        error "Invalid option. Please select 0-6."
+        sleep 1
+        ;;
+    esac
+  done
+}
+
+# ------------------ Main ----------------- #
+
+main() {
+  show_repair_menu
+}
+
+# Run main
+main "$@"

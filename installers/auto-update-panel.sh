@@ -237,6 +237,14 @@ create_backup() {
     }
   fi
 
+  # Backup .env file separately to env-backups folder
+  debug "Backing up .env file..."
+  mkdir -p "${BACKUP_DIR}/env-backups"
+  local env_backup="${BACKUP_DIR}/env-backups/env-${timestamp}"
+  if [ -f "$INSTALL_DIR/.env" ]; then
+    cp "$INSTALL_DIR/.env" "${env_backup}" 2>/dev/null || warning "Failed to backup .env file"
+  fi
+
   # Create restore info
   cat > "${backup_path}.info" << EOF
 Backup created: $(date)
@@ -253,6 +261,11 @@ EOF
 
 cleanup_old_backups() {
   debug "Cleaning up old backups (keeping last $KEEP_BACKUPS)"
+
+  # Keep only the most recent env backups
+  ls -t ${BACKUP_DIR}/env-backups/env-* 2>/dev/null | \
+    tail -n +$((KEEP_BACKUPS + 1)) | \
+    xargs -r rm -f 2>/dev/null || true
 
   # Keep only the most recent backups
   ls -t ${BACKUP_DIR}/panel-backup-*.tar.gz 2>/dev/null | \
@@ -359,10 +372,26 @@ perform_update() {
     cp "${temp_dir}/.env.backup" "$INSTALL_DIR/.env"
   fi
 
+  # Install composer dependencies
+  info "Installing composer dependencies..."
+  cd "$INSTALL_DIR"
+  if ! COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null; then
+    warning "Composer install may have failed, continuing..."
+  fi
+
+  # Build frontend assets
+  info "Building frontend assets..."
+  if ! pnpm install 2>/dev/null; then
+    warning "pnpm install may have failed, continuing..."
+  fi
+  if ! pnpm build 2>/dev/null; then
+    warning "pnpm build may have failed, continuing..."
+  fi
+
   # Set permissions
   chown -R www-data:www-data "$INSTALL_DIR" 2>/dev/null || \
   chown -R nginx:nginx "$INSTALL_DIR" 2>/dev/null || true
-  chmod -R 755 "$INSTALL_DIR/storage" "$INSTALL_DIR/bootstrap/cache" 2>/dev/null || true
+  chmod -R 755 "$INSTALL_DIR"/storage/* "$INSTALL_DIR"/bootstrap/cache/* 2>/dev/null || true
 
   # Run migrations
   info "Running database migrations..."
@@ -382,17 +411,201 @@ perform_update() {
   php artisan route:cache 2>/dev/null || true
   php artisan view:cache 2>/dev/null || true
 
+  # Restart queue workers
+  info "Restarting queue workers..."
+  php artisan queue:restart 2>/dev/null || true
+
   # Disable maintenance mode
   php artisan up 2>/dev/null || true
 
   # Cleanup
   rm -rf "$temp_dir"
 
+  # Run post-update health check with auto-fix
+  info "Running post-update health check..."
+  if ! post_update_health_check; then
+    warning "Health check detected issues, attempting auto-fix..."
+    auto_fix_panel_issues
+    
+    # Run second health check after auto-fix
+    info "Running second health check after auto-fix..."
+    if ! post_update_health_check; then
+      error "Auto-fix failed to resolve all issues"
+      
+      # Log failure information
+      mkdir -p "$PANEL_CONFIG_DIR"
+      cat > "$PANEL_CONFIG_DIR/update-health-check-failure.log" << EOF
+[$(date)] Panel Update Health Check Failed
+Version: ${new_version}
+Status: Auto-fix applied but issues persist
+
+Failed Checks:
+EOF
+      
+      # Append specific failed checks to log
+      if [ ! -d "$INSTALL_DIR" ]; then
+        echo "- Panel directory not found" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      fi
+      
+      if [ -d "$INSTALL_DIR/storage" ]; then
+        local storage_owner
+        storage_owner=$(stat -c '%U' "$INSTALL_DIR/storage" 2>/dev/null)
+        if [ "$storage_owner" != "www-data" ] && [ "$storage_owner" != "nginx" ]; then
+          echo "- Storage directory has incorrect ownership: $storage_owner" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+        fi
+      fi
+      
+      if [ -d "$INSTALL_DIR/bootstrap/cache" ]; then
+        local cache_owner
+        cache_owner=$(stat -c '%U' "$INSTALL_DIR/bootstrap/cache" 2>/dev/null)
+        if [ "$cache_owner" != "www-data" ] && [ "$cache_owner" != "nginx" ]; then
+          echo "- Cache directory has incorrect ownership: $cache_owner" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+        fi
+      fi
+      
+      if ! systemctl is-active --quiet nginx 2>/dev/null; then
+        echo "- nginx is not running" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      fi
+      
+      local php_fpm_running=false
+      for version in 8.4 8.3 8.2 8.1 8.0; do
+        if systemctl is-active --quiet "php${version}-fpm" 2>/dev/null; then
+          php_fpm_running=true
+          break
+        fi
+      done
+      if [ "$php_fpm_running" == false ] && systemctl is-active --quiet php-fpm 2>/dev/null; then
+        php_fpm_running=true
+      fi
+      if [ "$php_fpm_running" == false ]; then
+        echo "- PHP-FPM is not running" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      fi
+      
+      if ! systemctl is-active --quiet pyroq 2>/dev/null; then
+        echo "- Queue worker (pyroq) is not running" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      fi
+      
+      echo "" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      echo "Please run the Repair Tool or check manually:" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      echo "bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      echo "And select option [7] Repair / Fix Common Issues" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      
+      error "Update completed but health check failed. See: $PANEL_CONFIG_DIR/update-health-check-failure.log"
+      return $EXIT_UPDATE_FAILED
+    fi
+  fi
+
   # Log update
   echo "[$(date)] Updated from $(get_current_version) to ${new_version}" >> "${BACKUP_DIR}/update-history.log"
 
   success "Update to $new_version completed successfully!"
   return 0
+}
+
+# ------------------ Post-Update Health Check & Auto-Fix ----------------- #
+
+post_update_health_check() {
+  local has_errors=false
+  
+  debug "Checking panel directory..."
+  if [ ! -d "$INSTALL_DIR" ]; then
+    error "Panel directory not found"
+    return 1
+  fi
+  
+  debug "Checking storage permissions..."
+  if [ -d "$INSTALL_DIR/storage" ]; then
+    local storage_owner
+    storage_owner=$(stat -c '%U' "$INSTALL_DIR/storage" 2>/dev/null)
+    if [ "$storage_owner" != "www-data" ] && [ "$storage_owner" != "nginx" ]; then
+      warning "Storage directory has incorrect ownership: $storage_owner"
+      has_errors=true
+    fi
+  fi
+  
+  debug "Checking bootstrap/cache permissions..."
+  if [ -d "$INSTALL_DIR/bootstrap/cache" ]; then
+    local cache_owner
+    cache_owner=$(stat -c '%U' "$INSTALL_DIR/bootstrap/cache" 2>/dev/null)
+    if [ "$cache_owner" != "www-data" ] && [ "$cache_owner" != "nginx" ]; then
+      warning "Cache directory has incorrect ownership: $cache_owner"
+      has_errors=true
+    fi
+  fi
+  
+  debug "Checking nginx status..."
+  if ! systemctl is-active --quiet nginx 2>/dev/null; then
+    warning "nginx is not running"
+    has_errors=true
+  fi
+  
+  debug "Checking PHP-FPM status..."
+  local php_fpm_running=false
+  for version in 8.4 8.3 8.2 8.1 8.0; do
+    if systemctl is-active --quiet "php${version}-fpm" 2>/dev/null; then
+      php_fpm_running=true
+      break
+    fi
+  done
+  if [ "$php_fpm_running" == false ] && systemctl is-active --quiet php-fpm 2>/dev/null; then
+    php_fpm_running=true
+  fi
+  if [ "$php_fpm_running" == false ]; then
+    warning "PHP-FPM is not running"
+    has_errors=true
+  fi
+  
+  debug "Checking queue worker..."
+  if ! systemctl is-active --quiet pyroq 2>/dev/null; then
+    warning "Queue worker (pyroq) is not running"
+    has_errors=true
+  fi
+  
+  if [ "$has_errors" == true ]; then
+    return 1
+  fi
+  
+  info "Health check passed"
+  return 0
+}
+
+auto_fix_panel_issues() {
+  info "Attempting to auto-fix issues..."
+  
+  # Fix permissions
+  info "Fixing file permissions..."
+  chown -R www-data:www-data "$INSTALL_DIR" 2>/dev/null || \
+  chown -R nginx:nginx "$INSTALL_DIR" 2>/dev/null || true
+  chmod -R 755 "$INSTALL_DIR"/storage/* "$INSTALL_DIR"/bootstrap/cache/* 2>/dev/null || true
+  
+  # Clear caches
+  info "Clearing Laravel caches..."
+  cd "$INSTALL_DIR"
+  php artisan config:clear 2>/dev/null || true
+  php artisan cache:clear 2>/dev/null || true
+  php artisan view:clear 2>/dev/null || true
+  
+  # Restart services
+  info "Restarting services..."
+  systemctl restart nginx 2>/dev/null || true
+  
+  for version in 8.4 8.3 8.2 8.1 8.0; do
+    if systemctl is-active --quiet "php${version}-fpm" 2>/dev/null; then
+      systemctl restart "php${version}-fpm" 2>/dev/null || true
+      break
+    fi
+  done
+  systemctl restart php-fpm 2>/dev/null || true
+  
+  systemctl restart pyroq 2>/dev/null || true
+  
+  # Rebuild caches
+  info "Rebuilding caches..."
+  php artisan config:cache 2>/dev/null || true
+  php artisan route:cache 2>/dev/null || true
+  php artisan view:cache 2>/dev/null || true
+  
+  success "Auto-fix completed"
 }
 
 send_notification() {

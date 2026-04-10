@@ -13,7 +13,15 @@ set -e
 # Check if lib is loaded, load if not or fail otherwise.
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
-  source /tmp/pyrodactyl-lib.sh 2>/dev/null || source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  # Try temp file first (when run through install.sh)
+  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+    # shellcheck source=/dev/null
+    source /tmp/pyrodactyl-lib.sh
+  # Fall back to downloading
+  else
+    # shellcheck source=/dev/null
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
@@ -286,7 +294,7 @@ install_panel_release() {
 
   output "Extracting files..."
   tar -xzf panel.tar.gz
-  chmod -R 755 storage/* bootstrap/cache/ 2>/dev/null || true
+
   rm -f panel.tar.gz
 
   # Check if .env.example exists, if not download from repo
@@ -493,8 +501,8 @@ setup_panel_services() {
 
   # Set permissions
   output "Setting ownership to $WEBUSER:$WEBGROUP..."
-  chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"/*
-  chmod -R 755 "$INSTALL_DIR"/storage/* "$INSTALL_DIR"/bootstrap/cache/*
+  chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"
+  chmod -R 755 "$INSTALL_DIR"/storage "$INSTALL_DIR"/bootstrap/cache
 
   # Enable Redis
   enable_redis
@@ -726,10 +734,10 @@ install_elytra_daemon() {
   # Install rustic using shared function from lib.sh
   install_rustic
 
-  # Download systemd service
-  output "Downloading Elytra service..."
-  if ! curl -fsSL -o /etc/systemd/system/elytra.service "$GITHUB_URL/configs/elytra.service" 2>/dev/null; then
-    error "Failed to download Elytra service file"
+  # Get systemd service
+  output "Setting up Elytra service..."
+  if ! get_config "elytra.service" "/etc/systemd/system/elytra.service"; then
+    error "Failed to get Elytra service file"
     exit 1
   fi
 
@@ -974,6 +982,31 @@ main() {
   echo ""
 
   print_brake 70
+
+  # Map variables and save panel installation information
+  FQDN="$PANEL_FQDN"
+  MYSQL_DB="$DB_NAME"
+  MYSQL_USER="$DB_USER"
+  MYSQL_PASSWORD="$DB_PASSWORD"
+  timezone="$PANEL_TIMEZONE"
+  email="$PANEL_ADMIN_EMAIL"
+  user_email="$PANEL_ADMIN_EMAIL"
+  user_username="$PANEL_ADMIN_USERNAME"
+  user_firstname="$PANEL_ADMIN_FIRSTNAME"
+  user_lastname="$PANEL_ADMIN_LASTNAME"
+  user_password="$PANEL_ADMIN_PASSWORD"
+  save_panel_install_info "install"
+
+  # Save Elytra installation information
+  save_elytra_install_info "install"
+
+  # Show completion screen
+  show_both_completion
+
+  # Run health checks
+  echo ""
+  output "Running post-installation health checks..."
+  check_both_health
 }
 
 main

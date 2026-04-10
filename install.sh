@@ -5,6 +5,33 @@ rm -f /tmp/pyrodactyl-lib.sh /tmp/pyrodactyl-*.sh 2>/dev/null || true
 
 set -e
 
+# ------------------ Command Line Arguments ----------------- #
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --help|-h)
+      echo "Pyrodactyl Installer"
+      echo ""
+      echo "Usage: install.sh [OPTIONS]"
+      echo ""
+      echo "Options:"
+      echo "  --help, -h    Show this help message"
+      echo ""
+      echo "Examples:"
+      echo "  # Standard install (downloads from GitHub)"
+      echo "  bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)"
+      echo ""
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use --help for usage information"
+      exit 1
+      ;;
+  esac
+done
+
 ######################################################################################
 #                                                                                    #
 # Pyrodactyl Installer                                                               #
@@ -167,7 +194,7 @@ check_curl() {
 
 # Download and source library
 load_library() {
-  # Always remove old lib.sh before downloading
+  # Download lib.sh from GitHub
   [ -f /tmp/pyrodactyl-lib.sh ] && rm -rf /tmp/pyrodactyl-lib.sh
 
   output "Loading installer library..."
@@ -195,12 +222,21 @@ execute_ui() {
   local script_name="$1"
   local next_script="${2:-}"
 
+  # Download and run from GitHub
   run_ui "$script_name" 2>&1 | tee -a "$LOG_PATH"
   local exit_code=${PIPESTATUS[0]}
 
   # Exit if the installation failed
   if [ $exit_code -ne 0 ]; then
     exit $exit_code
+  fi
+
+  # Wait for user to acknowledge before returning to menu
+  # (unless there's a next script to run)
+  if [[ -z "$next_script" ]]; then
+    echo ""
+    output "Press Enter to return to the menu..."
+    read -r
   fi
 
   if [[ -n "$next_script" ]]; then
@@ -234,6 +270,7 @@ check_installations() {
   PANEL_UPDATER_INSTALLED=false
   ELYTRA_UPDATER_INSTALLED=false
 
+  # Check for Pyrodactyl
   if [ -d "/var/www/pyrodactyl" ]; then
     PANEL_INSTALLED=true
     if [ -f "/var/www/pyrodactyl/config/app.php" ]; then
@@ -241,6 +278,7 @@ check_installations() {
     fi
   fi
 
+  # Check for Elytra
   if [ -f "/usr/local/bin/elytra" ]; then
     ELYTRA_INSTALLED=true
     if [ -f "/etc/pyrodactyl/elytra-version" ]; then
@@ -325,26 +363,14 @@ run_panel_update() {
     chmod 600 /etc/pyrodactyl/auto-update-panel.env
   fi
 
-  output "Downloading and running panel auto-updater..."
+  output "Getting and running panel auto-updater..."
   echo ""
 
-  # Download and run the auto-update script
-  local temp_script
-  temp_script=$(mktemp)
-  if ! curl -fsSL -o "$temp_script" "$GITHUB_BASE_URL/$GITHUB_SOURCE/installers/auto-update-panel.sh"; then
-    error "Failed to download update script"
-    rm -f "$temp_script"
+  # Get and run the auto-update script
+  if ! get_script "installers" "auto-update-panel"; then
+    error "Update failed"
     return 1
   fi
-
-  chmod +x "$temp_script"
-  "$temp_script" || {
-    error "Update failed"
-    rm -f "$temp_script"
-    return 1
-  }
-
-  rm -f "$temp_script"
   echo ""
   output "Press Enter to continue..."
   read -r
@@ -370,26 +396,14 @@ run_elytra_update() {
     chmod 600 /etc/pyrodactyl/auto-update-elytra.env
   fi
 
-  output "Downloading and running Elytra auto-updater..."
+  output "Getting and running Elytra auto-updater..."
   echo ""
 
-  # Download and run the auto-update script
-  local temp_script
-  temp_script=$(mktemp)
-  if ! curl -fsSL -o "$temp_script" "$GITHUB_BASE_URL/$GITHUB_SOURCE/installers/auto-update-elytra.sh"; then
-    error "Failed to download update script"
-    rm -f "$temp_script"
+  # Get and run the auto-update script
+  if ! get_script "installers" "auto-update-elytra"; then
+    error "Update failed"
     return 1
   fi
-
-  chmod +x "$temp_script"
-  "$temp_script" || {
-    error "Update failed"
-    rm -f "$temp_script"
-    return 1
-  }
-
-  rm -f "$temp_script"
   echo ""
   output "Press Enter to continue..."
   read -r
@@ -444,12 +458,18 @@ show_menu() {
     echo ""
     output "[${COLOR_ORANGE}6${COLOR_NC}] Auto Updater Management"
     echo ""
-    output "[${COLOR_ORANGE}7${COLOR_NC}] Uninstall Pyrodactyl / Elytra"
+    output "[${COLOR_ORANGE}7${COLOR_NC}] Repair / Fix Common Issues"
     echo ""
-    output "[${COLOR_ORANGE}8${COLOR_NC}] Exit"
+    output "[${COLOR_ORANGE}8${COLOR_NC}] Health Check"
+    echo ""
+    output "[${COLOR_ORANGE}9${COLOR_NC}] Uninstall Pyrodactyl / Elytra"
+    echo ""
+    output "[${COLOR_ORANGE}10${COLOR_NC}] View Installation Information"
+    echo ""
+    output "[${COLOR_ORANGE}11${COLOR_NC}] Exit"
     echo ""
 
-    echo -n "* Select an option [0-8]: "
+    echo -n "* Select an option [0-11]: "
     read -r choice
 
     case "$choice" in
@@ -497,15 +517,40 @@ show_menu() {
         continue
         ;;
       7)
-        execute_ui "uninstall"
+        execute_ui "repair"
         continue
         ;;
       8)
+        # Health Check - runs based on what's installed
+        if [ "$PANEL_INSTALLED" == true ] && [ "$ELYTRA_INSTALLED" == true ]; then
+          check_both_health
+        elif [ "$PANEL_INSTALLED" == true ]; then
+          check_panel_health
+        elif [ "$ELYTRA_INSTALLED" == true ]; then
+          check_elytra_health
+        else
+          error "Nothing installed to check. Install Pyrodactyl or Elytra first."
+          sleep 2
+          continue
+        fi
+        output "Press Enter to return to the menu..."
+        read -r
+        continue
+        ;;
+      9)
+        execute_ui "uninstall"
+        continue
+        ;;
+      10)
+        execute_ui "view-info"
+        continue
+        ;;
+      11)
         output "Exiting..."
         exit 0
         ;;
       *)
-        error "Invalid option. Please select 0-8."
+        error "Invalid option. Please select 0-11."
         ;;
     esac
   done
@@ -515,6 +560,7 @@ show_menu() {
 main() {
   check_root
   check_curl
+
   load_library
   log_execution
   show_welcome

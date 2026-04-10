@@ -13,7 +13,15 @@ set -e
 # Check if lib is loaded, load if not or fail otherwise.
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
-  source /tmp/pyrodactyl-lib.sh 2>/dev/null || source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  # Try temp file first (when run through install.sh)
+  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+    # shellcheck source=/dev/null
+    source /tmp/pyrodactyl-lib.sh
+  # Fall back to downloading
+  else
+    # shellcheck source=/dev/null
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+  fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 

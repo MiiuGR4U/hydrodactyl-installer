@@ -19,6 +19,8 @@ export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.0.0}"
 export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer}"
 export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
+
+
 # ------------------ Default Repositories ----------------- #
 
 export DEFAULT_PANEL_REPO="pyrodactyl-oss/pyrodactyl"
@@ -1319,10 +1321,10 @@ PHPEOF
 
   output "Configuring nginx for phpMyAdmin..."
 
-  # Download config from GitHub
+  # Get phpMyAdmin config
   local phpmyadmin_config="/etc/nginx/sites-available/phpmyadmin.conf"
-  if ! curl -fsSL -o "$phpmyadmin_config" "${GITHUB_BASE_URL}/${GITHUB_SOURCE}/configs/phpmyadmin.conf" 2>/dev/null; then
-    error "Failed to download phpMyAdmin nginx configuration"
+  if ! get_config "phpmyadmin.conf" "$phpmyadmin_config"; then
+    error "Failed to get phpMyAdmin nginx configuration"
     return 1
   fi
 
@@ -1392,9 +1394,8 @@ php_fpm_conf() {
 
   local config_file="/etc/php-fpm.d/www-pyrodactyl.conf"
 
-  # Download config from GitHub
-  if ! curl -fsSL -o "$config_file" "$GITHUB_URL/configs/www-pyrodactyl.conf" 2>/dev/null; then
-    error "Failed to download PHP-FPM configuration"
+  # Download or copy config
+  if ! get_config "www-pyrodactyl.conf" "$config_file"; then
     exit 1
   fi
 
@@ -1436,9 +1437,8 @@ install_nginx_config() {
   local config_file="/etc/nginx/sites-available/pyrodactyl.conf"
 
   if [ "$ssl" == true ] && [ -n "$cert_path" ] && [ -n "$key_path" ]; then
-    # Download SSL config from GitHub
-    if ! curl -fsSL -o "$config_file" "$GITHUB_URL/configs/nginx_ssl.conf" 2>/dev/null; then
-      error "Failed to download nginx SSL config"
+    # Get SSL config
+    if ! get_config "nginx_ssl.conf" "$config_file"; then
       exit 1
     fi
     # Replace placeholders
@@ -1447,9 +1447,8 @@ install_nginx_config() {
     sed -i "s|<key_path>|$key_path|g" "$config_file"
     sed -i "s|<php_socket>|$php_socket|g" "$config_file"
   else
-    # Download HTTP config from GitHub
-    if ! curl -fsSL -o "$config_file" "$GITHUB_URL/configs/nginx.conf" 2>/dev/null; then
-      error "Failed to download nginx config"
+    # Get HTTP config
+    if ! get_config "nginx.conf" "$config_file"; then
       exit 1
     fi
     # Replace placeholders
@@ -1534,9 +1533,8 @@ insert_cronjob() {
 install_pyroq() {
   output "Installing queue worker service..."
 
-  # Download from GitHub
-  if ! curl -fsSL -o /etc/systemd/system/pyroq.service "$GITHUB_URL/configs/pyroq.service" 2>/dev/null; then
-    error "Failed to download pyroq service file"
+  # Get service file
+  if ! get_config "pyroq.service" "/etc/systemd/system/pyroq.service"; then
     exit 1
   fi
 
@@ -1557,27 +1555,24 @@ install_auto_updater_panel() {
 
   mkdir -p /etc/pyrodactyl
 
-  # Download auto-update script from GitHub installers folder
-  if ! curl -fsSL -o /usr/local/bin/pyrodactyl-auto-update-panel.sh "$GITHUB_URL/installers/auto-update-panel.sh" 2>/dev/null; then
-    error "Failed to download auto-update script"
+  # Get auto-update script
+  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/pyrodactyl-auto-update-panel.sh"; then
+    error "Failed to get auto-update script"
     exit 1
   fi
-  chmod +x /usr/local/bin/pyrodactyl-auto-update-panel.sh
 
   # Create config
   echo "PANEL_REPO=\"${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}\"" > /etc/pyrodactyl/auto-update-panel.env
   echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-panel.env
   chmod 600 /etc/pyrodactyl/auto-update-panel.env
 
-  # Download systemd service from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-panel-auto-update.service "$GITHUB_URL/configs/auto-update-panel.service" 2>/dev/null; then
-    error "Failed to download systemd service file"
+  # Get systemd service
+  if ! get_config "auto-update-panel.service" "/etc/systemd/system/pyrodactyl-panel-auto-update.service"; then
     exit 1
   fi
 
-  # Download systemd timer from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-panel-auto-update.timer "$GITHUB_URL/configs/auto-update-panel.timer" 2>/dev/null; then
-    error "Failed to download systemd timer file"
+  # Get systemd timer
+  if ! get_config "auto-update-panel.timer" "/etc/systemd/system/pyrodactyl-panel-auto-update.timer"; then
     exit 1
   fi
 
@@ -1592,27 +1587,24 @@ install_auto_updater_elytra() {
 
   mkdir -p /etc/pyrodactyl
 
-  # Download auto-update script from GitHub
-  if ! curl -fsSL -o /usr/local/bin/pyrodactyl-auto-update-elytra.sh "$GITHUB_URL/installers/auto-update-elytra.sh" 2>/dev/null; then
-    error "Failed to download auto-update script"
+  # Get auto-update script
+  if ! get_script "installers" "auto-update-elytra" "/usr/local/bin/pyrodactyl-auto-update-elytra.sh"; then
+    error "Failed to get auto-update script"
     exit 1
   fi
-  chmod +x /usr/local/bin/pyrodactyl-auto-update-elytra.sh
 
   # Create config
   echo "ELYTRA_REPO=\"${ELYTRA_REPO:-pyrohost/elytra}\"" > /etc/pyrodactyl/auto-update-elytra.env
   echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/pyrodactyl/auto-update-elytra.env
   chmod 600 /etc/pyrodactyl/auto-update-elytra.env
 
-  # Download systemd service from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-elytra-auto-update.service "$GITHUB_URL/configs/auto-update-elytra.service" 2>/dev/null; then
-    error "Failed to download systemd service file"
+  # Get systemd service
+  if ! get_config "auto-update-elytra.service" "/etc/systemd/system/pyrodactyl-elytra-auto-update.service"; then
     exit 1
   fi
 
-  # Download systemd timer from configs
-  if ! curl -fsSL -o /etc/systemd/system/pyrodactyl-elytra-auto-update.timer "$GITHUB_URL/configs/auto-update-elytra.timer" 2>/dev/null; then
-    error "Failed to download systemd timer file"
+  # Get systemd timer
+  if ! get_config "auto-update-elytra.timer" "/etc/systemd/system/pyrodactyl-elytra-auto-update.timer"; then
     exit 1
   fi
 
@@ -1660,20 +1652,74 @@ remove_auto_updater_elytra() {
 
 run_ui() {
   local script_name="$1"
-  bash <(curl -sSL "$GITHUB_URL/ui/$script_name.sh")
+  get_script "ui" "$script_name"
 }
 
 run_installer() {
   local script_name="$1"
-  bash <(curl -sSL "$GITHUB_URL/installers/$script_name.sh")
+  get_script "installers" "$script_name"
 }
 
 update_lib_source() {
   GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
-  rm -f /tmp/pyrodactyl-lib.sh
-  curl -sSL -o /tmp/pyrodactyl-lib.sh "$GITHUB_URL/lib/lib.sh"
+  source_lib "lib"
+}
+
+# Helper function to download or copy config files
+get_config() {
+  local config_name="$1"
+  local output_path="$2"
+
+  # Download from GitHub
+  if ! curl -fsSL -o "$output_path" "$GITHUB_URL/configs/$config_name" 2>/dev/null; then
+    error "Failed to download config: $config_name"
+    return 1
+  fi
+  chmod 644 "$output_path" 2>/dev/null || true
+  return 0
+}
+
+# Helper function to get script (UI, installer, or config)
+# Usage: get_script <type> <name> [output_path]
+# type: ui, installers, lib, configs
+# If output_path is provided, copies/saves there; otherwise executes directly
+get_script() {
+  local script_type="$1"  # ui, installers, lib, configs
+  local script_name="$2"
+  local output_path="${3:-}"  # optional
+
+  # Download from GitHub
+  if [ -n "$output_path" ]; then
+    if ! curl -fsSL -o "$output_path" "$GITHUB_URL/$script_type/$script_name.sh" 2>/dev/null; then
+      error "Failed to download script: $script_name"
+      return 1
+    fi
+    chmod 755 "$output_path" 2>/dev/null || true
+    return 0
+  else
+    # Execute directly
+    bash <(curl -sSL "$GITHUB_URL/$script_type/$script_name.sh")
+    return $?
+  fi
+}
+
+# Helper function to source a library script
+source_lib() {
+  local lib_name="$1"
+
+  # Download and source
+  local temp_lib
+  temp_lib=$(mktemp)
+  if ! curl -fsSL -o "$temp_lib" "$GITHUB_URL/lib/$lib_name.sh" 2>/dev/null; then
+    error "Failed to download library: $lib_name"
+    rm -f "$temp_lib"
+    return 1
+  fi
   # shellcheck source=/dev/null
-  source /tmp/pyrodactyl-lib.sh
+  source "$temp_lib"
+  local exit_code=$?
+  rm -f "$temp_lib"
+  return $exit_code
 }
 
 # ------------------ Docker Functions ----------------- #
@@ -2411,3 +2457,522 @@ get_node_configuration() {
 
 # Detect OS on load
 detect_os
+
+# ------------------ Installation Info Functions ----------------- #
+
+# Directory for storing installation information
+INSTALL_INFO_DIR="/etc/pyrodactyl/install-info"
+
+# Save panel installation information
+save_panel_install_info() {
+  local install_type="${1:-install}"
+
+  # Create directory if it doesn't exist
+  mkdir -p "$INSTALL_INFO_DIR"
+  chmod 700 "$INSTALL_INFO_DIR"
+
+  local info_file="$INSTALL_INFO_DIR/panel-info"
+
+  output "Saving panel installation information..."
+
+  {
+    echo "# Pyrodactyl Panel Installation Information"
+    echo "# Generated: $(date)"
+    echo "# Type: $install_type"
+    echo ""
+    echo "INSTALL_DATE=\"$(date)\""
+    echo "INSTALL_TYPE=\"$install_type\""
+    [ -n "$PANEL_VERSION" ] && echo "PANEL_VERSION=\"$PANEL_VERSION\""
+    [ -n "$FQDN" ] && echo "FQDN=\"$FQDN\""
+    [ -n "$MYSQL_DB" ] && echo "MYSQL_DB=\"$MYSQL_DB\""
+    [ -n "$MYSQL_USER" ] && echo "MYSQL_USER=\"$MYSQL_USER\""
+    [ -n "$MYSQL_PASSWORD" ] && echo "MYSQL_PASSWORD=\"$MYSQL_PASSWORD\""
+    [ -n "$MYSQL_ROOT_PASSWORD" ] && echo "MYSQL_ROOT_PASSWORD=\"$MYSQL_ROOT_PASSWORD\""
+    [ -n "$timezone" ] && echo "TIMEZONE=\"$timezone\""
+    [ -n "$email" ] && echo "EMAIL=\"$email\""
+    [ -n "$user_email" ] && echo "USER_EMAIL=\"$user_email\""
+    [ -n "$user_username" ] && echo "USER_USERNAME=\"$user_username\""
+    [ -n "$user_firstname" ] && echo "USER_FIRSTNAME=\"$user_firstname\""
+    [ -n "$user_lastname" ] && echo "USER_LASTNAME=\"$user_lastname\""
+    [ -n "$user_password" ] && echo "USER_PASSWORD=\"$user_password\""
+    [ -n "$PANEL_REPO" ] && echo "PANEL_REPO=\"$PANEL_REPO\""
+    [ -n "$GITHUB_TOKEN" ] && echo "GITHUB_TOKEN=\"$GITHUB_TOKEN\""
+    echo "INSTALL_DIR=\"$INSTALL_DIR\""
+    echo "WEBUSER=\"$WEBUSER\""
+    echo "WEBGROUP=\"$WEBGROUP\""
+    echo "PHP_VERSION=\"$PHP_VERSION\""
+  } > "$info_file"
+
+  chmod 600 "$info_file"
+  success "Panel installation information saved to $info_file"
+}
+
+# Save Elytra installation information
+save_elytra_install_info() {
+  local install_type="${1:-install}"
+
+  # Create directory if it doesn't exist
+  mkdir -p "$INSTALL_INFO_DIR"
+  chmod 700 "$INSTALL_INFO_DIR"
+
+  local info_file="$INSTALL_INFO_DIR/elytra-info"
+
+  output "Saving Elytra installation information..."
+
+  {
+    echo "# Elytra Daemon Installation Information"
+    echo "# Generated: $(date)"
+    echo "# Type: $install_type"
+    echo ""
+    echo "INSTALL_DATE=\"$(date)\""
+    echo "INSTALL_TYPE=\"$install_type\""
+    [ -n "$ELYTRA_VERSION" ] && echo "ELYTRA_VERSION=\"$ELYTRA_VERSION\""
+    [ -n "$ELYTRA_REPO" ] && echo "ELYTRA_REPO=\"$ELYTRA_REPO\""
+    [ -n "$GITHUB_TOKEN" ] && echo "GITHUB_TOKEN=\"$GITHUB_TOKEN\""
+    [ -n "$PANEL_FQDN" ] && echo "PANEL_FQDN=\"$PANEL_FQDN\""
+    [ -n "$PANEL_URL" ] && echo "PANEL_URL=\"$PANEL_URL\""
+    [ -n "$NODE_NAME" ] && echo "NODE_NAME=\"$NODE_NAME\""
+    [ -n "$NODE_MEMORY" ] && echo "NODE_MEMORY=\"$NODE_MEMORY\""
+    [ -n "$NODE_DISK" ] && echo "NODE_DISK=\"$NODE_DISK\""
+    [ -n "$ALLOCATION_PORT_START" ] && echo "ALLOCATION_PORT_START=\"$ALLOCATION_PORT_START\""
+    [ -n "$ALLOCATION_PORT_END" ] && echo "ALLOCATION_PORT_END=\"$ALLOCATION_PORT_END\""
+    [ -n "$API_KEY" ] && echo "API_KEY=\"$API_KEY\""
+    [ -n "$LOCATION_ID" ] && echo "LOCATION_ID=\"$LOCATION_ID\""
+    [ -n "$NODE_ID" ] && echo "NODE_ID=\"$NODE_ID\""
+    [ -n "$NODE_TOKEN" ] && echo "NODE_TOKEN=\"$NODE_TOKEN\""
+    [ -n "$NODE_UUID" ] && echo "NODE_UUID=\"$NODE_UUID\""
+    echo "ELYTRA_DIR=\"$ELYTRA_DIR\""
+    echo "ELYTRA_BINARY=\"$ELYTRA_BINARY\""
+  } > "$info_file"
+
+  chmod 600 "$info_file"
+  success "Elytra installation information saved to $info_file"
+}
+
+# Load panel installation information
+load_panel_install_info() {
+  local info_file="$INSTALL_INFO_DIR/panel-info"
+
+  if [ -f "$info_file" ]; then
+    # shellcheck source=/dev/null
+    source "$info_file"
+    return 0
+  fi
+  return 1
+}
+
+# Load Elytra installation information
+load_elytra_install_info() {
+  local info_file="$INSTALL_INFO_DIR/elytra-info"
+
+  if [ -f "$info_file" ]; then
+    # shellcheck source=/dev/null
+    source "$info_file"
+    return 0
+  fi
+  return 1
+}
+
+# Check if panel installation info exists
+panel_install_info_exists() {
+  [ -f "$INSTALL_INFO_DIR/panel-info" ]
+}
+
+# Check if Elytra installation info exists
+elytra_install_info_exists() {
+  [ -f "$INSTALL_INFO_DIR/elytra-info" ]
+}
+
+# Display panel installation information
+display_panel_install_info() {
+  if ! panel_install_info_exists; then
+    warning "No panel installation information found"
+    return 1
+  fi
+
+  # Load the info
+  load_panel_install_info
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_ORANGE}Pyrodactyl Panel Installation Information${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  [ -n "$INSTALL_DATE" ] && output "Installation Date: $INSTALL_DATE"
+  [ -n "$INSTALL_TYPE" ] && output "Type: $INSTALL_TYPE"
+  [ -n "$PANEL_VERSION" ] && output "Version: $PANEL_VERSION"
+  [ -n "$FQDN" ] && output "FQDN: $FQDN"
+  [ -n "$MYSQL_DB" ] && output "Database Name: $MYSQL_DB"
+  [ -n "$MYSQL_USER" ] && output "Database User: $MYSQL_USER"
+  [ -n "$MYSQL_PASSWORD" ] && output "Database Password: (hidden)"
+  [ -n "$timezone" ] && output "Timezone: $timezone"
+  [ -n "$email" ] && output "Admin Email: $email"
+  [ -n "$user_email" ] && output "Initial User Email: $user_email"
+  [ -n "$user_username" ] && output "Initial User Username: $user_username"
+  [ -n "$user_firstname" ] && output "Initial User First Name: $user_firstname"
+  [ -n "$user_lastname" ] && output "Initial User Last Name: $user_lastname"
+  [ -n "$user_password" ] && output "Initial User Password: (hidden)"
+  [ -n "$PANEL_REPO" ] && output "Repository: $PANEL_REPO"
+  [ -n "$INSTALL_DIR" ] && output "Install Directory: $INSTALL_DIR"
+  [ -n "$PHP_VERSION" ] && output "PHP Version: $PHP_VERSION"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Information file: $INSTALL_INFO_DIR/panel-info"
+  echo ""
+}
+
+# Display Elytra installation information
+display_elytra_install_info() {
+  if ! elytra_install_info_exists; then
+    warning "No Elytra installation information found"
+    return 1
+  fi
+
+  # Load the info
+  load_elytra_install_info
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_ORANGE}Elytra Daemon Installation Information${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  [ -n "$INSTALL_DATE" ] && output "Installation Date: $INSTALL_DATE"
+  [ -n "$INSTALL_TYPE" ] && output "Type: $INSTALL_TYPE"
+  [ -n "$ELYTRA_VERSION" ] && output "Version: $ELYTRA_VERSION"
+  [ -n "$PANEL_FQDN" ] && output "Panel FQDN: $PANEL_FQDN"
+  [ -n "$PANEL_URL" ] && output "Panel URL: $PANEL_URL"
+  [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
+  [ -n "$NODE_MEMORY" ] && output "Node Memory: $NODE_MEMORY MB"
+  [ -n "$NODE_DISK" ] && output "Node Disk: $NODE_DISK MB"
+  [ -n "$ALLOCATION_PORT_START" ] && output "Allocation Port Start: $ALLOCATION_PORT_START"
+  [ -n "$ALLOCATION_PORT_END" ] && output "Allocation Port End: $ALLOCATION_PORT_END"
+  [ -n "$LOCATION_ID" ] && output "Location ID: $LOCATION_ID"
+  [ -n "$NODE_ID" ] && output "Node ID: $NODE_ID"
+  [ -n "$NODE_TOKEN" ] && output "Node Token: (hidden)"
+  [ -n "$NODE_UUID" ] && output "Node UUID: $NODE_UUID"
+  [ -n "$ELYTRA_DIR" ] && output "Config Directory: $ELYTRA_DIR"
+  [ -n "$ELYTRA_BINARY" ] && output "Binary Location: $ELYTRA_BINARY"
+  [ -n "$ELYTRA_REPO" ] && output "Repository: $ELYTRA_REPO"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Information file: $INSTALL_INFO_DIR/elytra-info"
+  echo ""
+}
+
+# Display completion screen for panel
+show_panel_completion() {
+  local install_type="${1:-Installation}"
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_GREEN}✓ $install_type Completed Successfully!${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Your Pyrodactyl panel has been installed and configured."
+  echo ""
+  [ -n "$FQDN" ] && output "Panel URL: https://$FQDN"
+  [ -n "$user_email" ] && output "Admin Email: $user_email"
+  [ -n "$user_username" ] && output "Admin Username: $user_username"
+  [ -n "$user_password" ] && output "Admin Password: (saved in install info)"
+  echo ""
+  output "Installation Details:"
+  [ -n "$MYSQL_DB" ] && output "  Database: $MYSQL_DB"
+  [ -n "$MYSQL_USER" ] && output "  DB User: $MYSQL_USER"
+  output "  Install Directory: $INSTALL_DIR"
+  echo ""
+  output "To view installation information later, run:"
+  output "  bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)"
+  output "  and select 'View Installation Information'"
+  echo ""
+  print_brake 70
+  echo ""
+}
+
+# Display completion screen for Elytra
+show_elytra_completion() {
+  local install_type="${1:-Installation}"
+
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_GREEN}✓ $install_type Completed Successfully!${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Your Elytra daemon has been installed and configured."
+  echo ""
+  [ -n "$PANEL_URL" ] && output "Panel URL: $PANEL_URL"
+  [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
+  [ -n "$NODE_TOKEN" ] && output "Node Token: (saved in install info)"
+  echo ""
+  output "Next Steps:"
+  output "  1. Start Elytra: systemctl start elytra"
+  output "  2. Check status: systemctl status elytra"
+  output "  3. View logs: journalctl -u elytra -f"
+  echo ""
+  output "To view installation information later, run:"
+  output "  bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)"
+  output "  and select 'View Installation Information'"
+  echo ""
+  print_brake 70
+  echo ""
+}
+
+# Display completion screen for both
+show_both_completion() {
+  print_brake 70
+  echo ""
+  echo -e "  ${COLOR_GREEN}✓ Full Installation Completed Successfully!${COLOR_NC}"
+  echo ""
+  print_brake 70
+  echo ""
+  output "Both Pyrodactyl Panel and Elytra Daemon have been installed."
+  echo ""
+  [ -n "$FQDN" ] && output "Panel URL: https://$FQDN"
+  [ -n "$user_email" ] && output "Admin Email: $user_email"
+  [ -n "$user_username" ] && output "Admin Username: $user_username"
+  [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
+  echo ""
+  output "Next Steps:"
+  output "  1. Start Elytra: systemctl start elytra"
+  output "  2. Check Elytra status: systemctl status elytra"
+  output "  3. Access your panel at: https://$FQDN"
+  output "  4. Log in with your admin credentials"
+  echo ""
+  output "To view installation information later, run:"
+  output "  bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)"
+  output "  and select 'View Installation Information'"
+  echo ""
+  print_brake 70
+  echo ""
+}
+
+# ------------------ Health Check Functions ----------------- #
+
+# Check panel health
+check_panel_health() {
+  local panel_dir="${1:-$INSTALL_DIR}"
+  local has_errors=false
+  
+  echo ""
+  output "${COLOR_ORANGE}Panel Health Check${COLOR_NC}"
+  echo ""
+  
+  # Check directory exists
+  if [ ! -d "$panel_dir" ]; then
+    error "Panel directory not found: $panel_dir"
+    return 1
+  fi
+  output "✓ Panel directory exists"
+  
+  # Check artisan exists
+  if [ ! -f "$panel_dir/artisan" ]; then
+    error "artisan command not found"
+    has_errors=true
+  else
+    output "✓ artisan command exists"
+  fi
+  
+  # Check .env exists
+  if [ ! -f "$panel_dir/.env" ]; then
+    warning ".env file not found"
+    has_errors=true
+  else
+    output "✓ .env file exists"
+  fi
+  
+  # Check storage permissions
+  if [ -d "$panel_dir/storage" ]; then
+    local storage_owner
+    storage_owner=$(stat -c '%U' "$panel_dir/storage" 2>/dev/null)
+    if [ "$storage_owner" == "www-data" ] || [ "$storage_owner" == "nginx" ]; then
+      output "✓ Storage directory owned by $storage_owner"
+    else
+      warning "Storage directory owned by $storage_owner (expected www-data or nginx)"
+      has_errors=true
+    fi
+  else
+    warning "Storage directory not found"
+    has_errors=true
+  fi
+  
+  # Check bootstrap/cache permissions
+  if [ -d "$panel_dir/bootstrap/cache" ]; then
+    local cache_owner
+    cache_owner=$(stat -c '%U' "$panel_dir/bootstrap/cache" 2>/dev/null)
+    if [ "$cache_owner" == "www-data" ] || [ "$cache_owner" == "nginx" ]; then
+      output "✓ Cache directory owned by $cache_owner"
+    else
+      warning "Cache directory owned by $cache_owner (expected www-data or nginx)"
+      has_errors=true
+    fi
+  else
+    warning "Cache directory not found"
+    has_errors=true
+  fi
+  
+  # Check services
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    output "✓ nginx is running"
+  else
+    warning "nginx is not running"
+    has_errors=true
+  fi
+  
+  # Check PHP-FPM (try multiple versions)
+  local php_fpm_running=false
+  for version in 8.4 8.3 8.2 8.1 8.0; do
+    if systemctl is-active --quiet "php${version}-fpm" 2>/dev/null; then
+      output "✓ php${version}-fpm is running"
+      php_fpm_running=true
+      break
+    fi
+  done
+  if [ "$php_fpm_running" == false ]; then
+    if systemctl is-active --quiet php-fpm 2>/dev/null; then
+      output "✓ php-fpm is running"
+      php_fpm_running=true
+    else
+      warning "PHP-FPM is not running"
+      has_errors=true
+    fi
+  fi
+  
+  # Check Redis
+  if systemctl is-active --quiet redis-server 2>/dev/null || systemctl is-active --quiet redis 2>/dev/null; then
+    output "✓ Redis is running"
+  else
+    warning "Redis is not running"
+    has_errors=true
+  fi
+  
+  # Check database
+  if systemctl is-active --quiet mariadb 2>/dev/null || systemctl is-active --quiet mysql 2>/dev/null; then
+    output "✓ Database is running"
+  else
+    warning "Database is not running"
+    has_errors=true
+  fi
+  
+  # Check queue worker
+  if systemctl is-active --quiet pyroq 2>/dev/null; then
+    output "✓ Queue worker (pyroq) is running"
+  else
+    warning "Queue worker (pyroq) is not running"
+    has_errors=true
+  fi
+  
+  # Try to check if panel is responding (optional)
+  if [ -f "$panel_dir/.env" ]; then
+    local app_url
+    app_url=$(grep "^APP_URL=" "$panel_dir/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"')
+    if [ -n "$app_url" ] && command -v curl >/dev/null 2>&1; then
+      if curl -sfL --max-time 5 "$app_url" >/dev/null 2>&1; then
+        output "✓ Panel is responding at $app_url"
+      else
+        warning "Panel is not responding at $app_url"
+      fi
+    fi
+  fi
+  
+  echo ""
+  if [ "$has_errors" == true ]; then
+    warning "Health check completed with warnings/errors"
+  else
+    success "Panel health check passed!"
+  fi
+  
+  return 0
+}
+
+# Check Elytra health
+check_elytra_health() {
+  local has_errors=false
+  
+  echo ""
+  output "${COLOR_ORANGE}Elytra Health Check${COLOR_NC}"
+  echo ""
+  
+  # Check binary exists
+  if [ -f "/usr/local/bin/elytra" ]; then
+    output "✓ Elytra binary exists at /usr/local/bin/elytra"
+    
+    # Check binary is executable
+    if [ -x "/usr/local/bin/elytra" ]; then
+      output "✓ Elytra binary is executable"
+    else
+      warning "Elytra binary is not executable"
+      has_errors=true
+    fi
+    
+    # Check binary version
+    local version
+    version=$(/usr/local/bin/elytra --version 2>/dev/null | head -1)
+    if [ -n "$version" ]; then
+      output "✓ Elytra version: $version"
+    fi
+  else
+    error "Elytra binary not found at /usr/local/bin/elytra"
+    has_errors=true
+  fi
+  
+  # Check config directory
+  if [ -d "/etc/elytra" ]; then
+    output "✓ Elytra config directory exists"
+    
+    if [ -f "/etc/elytra/config.yml" ]; then
+      output "✓ Elytra config file exists"
+    else
+      warning "Elytra config file not found"
+      has_errors=true
+    fi
+  else
+    warning "Elytra config directory not found"
+    has_errors=true
+  fi
+  
+  # Check data directories
+  for dir in /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups; do
+    if [ -d "$dir" ]; then
+      output "✓ Data directory exists: $dir"
+    else
+      warning "Data directory missing: $dir"
+    fi
+  done
+  
+  # Check Docker
+  if systemctl is-active --quiet docker 2>/dev/null; then
+    output "✓ Docker is running"
+  else
+    warning "Docker is not running"
+    has_errors=true
+  fi
+  
+  # Check service
+  if systemctl is-active --quiet elytra 2>/dev/null; then
+    output "✓ Elytra service is running"
+  elif systemctl is-enabled --quiet elytra 2>/dev/null; then
+    warning "Elytra service is enabled but not running"
+  else
+    warning "Elytra service is not enabled"
+  fi
+  
+  echo ""
+  if [ "$has_errors" == true ]; then
+    warning "Health check completed with warnings/errors"
+  else
+    success "Elytra health check passed!"
+  fi
+  
+  return 0
+}
+
+# Check both panel and Elytra health
+check_both_health() {
+  check_panel_health "$INSTALL_DIR"
+  check_elytra_health
+}

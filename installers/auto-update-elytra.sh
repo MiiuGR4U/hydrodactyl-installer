@@ -483,11 +483,156 @@ perform_update() {
   # Save current version
   save_current_version "$new_version"
 
+  # Run post-update health check with auto-fix
+  info "Running post-update health check..."
+  if ! post_update_health_check; then
+    warning "Health check detected issues, attempting auto-fix..."
+    auto_fix_elytra_issues
+    
+    # Run second health check after auto-fix
+    info "Running second health check after auto-fix..."
+    if ! post_update_health_check; then
+      error "Auto-fix failed to resolve all issues"
+      
+      # Log failure information
+      mkdir -p "$INSTALL_DIR"
+      cat > "$INSTALL_DIR/update-health-check-failure.log" << EOF
+[$(date)] Elytra Update Health Check Failed
+Version: ${new_version}
+Status: Auto-fix applied but issues persist
+
+Failed Checks:
+EOF
+      
+      # Append specific failed checks to log
+      if [ ! -f "/usr/local/bin/elytra" ]; then
+        echo "- Elytra binary not found" >> "$INSTALL_DIR/update-health-check-failure.log"
+      elif [ ! -x "/usr/local/bin/elytra" ]; then
+        echo "- Elytra binary is not executable" >> "$INSTALL_DIR/update-health-check-failure.log"
+      fi
+      
+      if [ ! -f "/etc/elytra/config.yml" ]; then
+        echo "- Elytra config file not found" >> "$INSTALL_DIR/update-health-check-failure.log"
+      fi
+      
+      for dir in /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups; do
+        if [ ! -d "$dir" ]; then
+          echo "- Data directory missing: $dir" >> "$INSTALL_DIR/update-health-check-failure.log"
+        fi
+      done
+      
+      if ! systemctl is-active --quiet docker 2>/dev/null; then
+        echo "- Docker is not running" >> "$INSTALL_DIR/update-health-check-failure.log"
+      fi
+      
+      if ! systemctl is-active --quiet elytra 2>/dev/null; then
+        echo "- Elytra service is not running" >> "$INSTALL_DIR/update-health-check-failure.log"
+      fi
+      
+      echo "" >> "$INSTALL_DIR/update-health-check-failure.log"
+      echo "Please run the Repair Tool or check manually:" >> "$INSTALL_DIR/update-health-check-failure.log"
+      echo "bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)" >> "$INSTALL_DIR/update-health-check-failure.log"
+      echo "And select option [7] Repair / Fix Common Issues" >> "$INSTALL_DIR/update-health-check-failure.log"
+      
+      error "Update completed but health check failed. See: $INSTALL_DIR/update-health-check-failure.log"
+      return $EXIT_UPDATE_FAILED
+    fi
+  fi
+
   # Log update
   echo "[$(date)] Updated to ${new_version}" >> "${BACKUP_DIR}/update-history.log"
 
   success "Update to $new_version completed successfully!"
   return 0
+}
+
+# ------------------ Post-Update Health Check & Auto-Fix ----------------- #
+
+post_update_health_check() {
+  local has_errors=false
+  
+  debug "Checking Elytra binary..."
+  if [ ! -f "/usr/local/bin/elytra" ]; then
+    error "Elytra binary not found"
+    return 1
+  fi
+  
+  if [ ! -x "/usr/local/bin/elytra" ]; then
+    warning "Elytra binary is not executable"
+    has_errors=true
+  fi
+  
+  debug "Checking Elytra config..."
+  if [ ! -f "/etc/elytra/config.yml" ]; then
+    warning "Elytra config file not found"
+    has_errors=true
+  fi
+  
+  debug "Checking data directories..."
+  for dir in /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups; do
+    if [ ! -d "$dir" ]; then
+      warning "Data directory missing: $dir"
+      has_errors=true
+    fi
+  done
+  
+  debug "Checking Docker status..."
+  if ! systemctl is-active --quiet docker 2>/dev/null; then
+    warning "Docker is not running"
+    has_errors=true
+  fi
+  
+  debug "Checking Elytra service..."
+  if ! systemctl is-active --quiet elytra 2>/dev/null; then
+    warning "Elytra service is not running"
+    has_errors=true
+  fi
+  
+  if [ "$has_errors" == true ]; then
+    return 1
+  fi
+  
+  info "Health check passed"
+  return 0
+}
+
+auto_fix_elytra_issues() {
+  info "Attempting to auto-fix issues..."
+  
+  # Fix binary permissions
+  if [ -f "/usr/local/bin/elytra" ]; then
+    info "Fixing binary permissions..."
+    chmod +x /usr/local/bin/elytra
+  fi
+  
+  # Fix data directory permissions
+  info "Fixing data directory permissions..."
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+  
+  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
+  chown -R 8888:8888 /etc/elytra 2>/dev/null || true
+  
+  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
+  chmod -R 777 /etc/elytra 2>/dev/null || true
+  
+  # Restart services
+  info "Restarting services..."
+  systemctl restart docker 2>/dev/null || true
+  systemctl restart elytra 2>/dev/null || true
+  
+  # Verify Elytra started
+  sleep 3
+  if systemctl is-active --quiet elytra 2>/dev/null; then
+    success "Elytra is now running"
+  else
+    warning "Elytra may still have issues - manual intervention may be required"
+  fi
+  
+  success "Auto-fix completed"
 }
 
 send_notification() {
