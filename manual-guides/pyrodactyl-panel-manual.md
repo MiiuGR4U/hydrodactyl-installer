@@ -322,6 +322,8 @@ server {
 
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
+        # Debian/Ubuntu: unix:/run/php/php8.4-fpm.sock
+        # Rocky/Alma/RHEL: unix:/run/php-fpm/www.sock
         fastcgi_pass unix:/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         fastcgi_read_timeout 300;

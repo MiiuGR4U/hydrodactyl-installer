@@ -477,7 +477,7 @@ perform_update() {
       info "Restoring from backup: $latest_backup"
       cp "$latest_backup" "/usr/local/bin/elytra"
       chmod +x "/usr/local/bin/elytra"
-      start_elytra || true
+      restart_elytra || true
     fi
 
     return $EXIT_UPDATE_FAILED
@@ -544,7 +544,7 @@ EOF
         info "Restoring from backup: $latest_backup"
         cp "$latest_backup" "/usr/local/bin/elytra"
         chmod +x "/usr/local/bin/elytra"
-        start_elytra || true
+        restart_elytra || true
       fi
       
       return $EXIT_UPDATE_FAILED
