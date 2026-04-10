@@ -628,15 +628,13 @@ check_docker_compatibility() {
     esac
   fi
   
-  # Check if swap is limited (affects Docker memory limits)
-  if [ -f /proc/sys/vm/swappiness ]; then
-    local swap_enabled
-    swap_enabled=$(cat /proc/sys/vm/swappiness 2>/dev/null || echo "0")
-    if [ "$swap_enabled" -eq 0 ]; then
-      warning "Swap is disabled - Docker containers may not be able to use swap"
-      output "  Consider enabling swap for better container stability"
-      has_warnings=true
-    fi
+  # Check if swap is disabled (affects Docker memory limits)
+  local swap_total
+  swap_total=$(get_swap_mb)
+  if [ "$swap_total" -eq 0 ]; then
+    warning "Swap is disabled - Docker containers may not be able to use swap"
+    output "  Consider enabling swap for better container stability"
+    has_warnings=true
   fi
   
   # Check cgroup version (cgroup v2 is preferred)

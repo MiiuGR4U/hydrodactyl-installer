@@ -1,6 +1,3 @@
-pyrodactyl-installer\manual-guides\both-same-machine.md
-```
-
 # Pyrodactyl Panel + Elytra Daemon - Same Machine Installation Guide
 
 This guide covers installing both the Pyrodactyl Panel and Elytra Daemon on the same physical or virtual server. This setup is suitable for small deployments, development environments, or single-node installations.
@@ -373,7 +370,14 @@ groupadd --system --gid 8888 pyrodactyl 2>/dev/null || true
 useradd --system --no-create-home --shell /usr/sbin/nologin --uid 8888 --gid 8888 pyrodactyl 2>/dev/null || true
 
 chown -R 8888:8888 /var/lib/pyrodactyl /etc/elytra
+
+# SECURITY NOTE: 777 is required because containerized game servers run as
+# various UIDs and must read/write game data. This grants all users access.
+# Ensure /var/lib/pyrodactyl parent directory restricts access.
 chmod -R 777 /var/lib/pyrodactyl/volumes /var/lib/pyrodactyl/archives /var/lib/pyrodactyl/backups
+chmod -R 755 /etc/elytra
+# SECURITY: Config contains daemon credentials - restrict to owner-only
+[ -f /etc/elytra/config.yml ] && chmod 600 /etc/elytra/config.yml
 ```
 
 ### Initial Config (Temporary)
@@ -452,9 +456,12 @@ certbot --nginx -d daemon.yourdomain.com --non-interactive --agree-tos --email y
 If using Let's Encrypt for Elytra:
 ```bash
 mkdir -p /etc/elytra
-cp /etc/letsencrypt/live/daemon.yourdomain.com/fullchain.pem /etc/elytra/certificate.pem
-cp /etc/letsencrypt/live/daemon.yourdomain.com/privkey.pem /etc/elytra/certificate.key
+# Use symlinks instead of copies so certificates auto-update on renewal
+ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/fullchain.pem /etc/elytra/certificate.pem
+ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/privkey.pem /etc/elytra/certificate.key
 chown 8888:8888 /etc/elytra/certificate.*
+chmod 644 /etc/elytra/certificate.pem
+chmod 600 /etc/elytra/certificate.key
 ```
 
 Update `/etc/elytra/config.yml`:
@@ -474,6 +481,18 @@ Create `/etc/letsencrypt/renewal-hooks/deploy/combined-restart.sh`:
 cat > /etc/letsencrypt/renewal-hooks/deploy/combined-restart.sh << 'EOF'
 #!/bin/bash
 echo "[$(date)] Certificate renewed" >> /var/log/pyrodactyl-certbot-renewal.log
+
+# Ensure Elytra certificate symlinks are valid (re-create if needed)
+# Symlinks automatically point to latest certs, just need to ensure they exist
+if [ -d "/etc/letsencrypt/live/daemon.yourdomain.com" ]; then
+    ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/fullchain.pem /etc/elytra/certificate.pem
+    ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/privkey.pem /etc/elytra/certificate.key
+    chown 8888:8888 /etc/elytra/certificate.*
+    chmod 644 /etc/elytra/certificate.pem
+    chmod 600 /etc/elytra/certificate.key
+    echo "[$(date)] Elytra certificates updated" >> /var/log/pyrodactyl-certbot-renewal.log
+fi
+
 systemctl restart nginx
 systemctl restart elytra
 EOF

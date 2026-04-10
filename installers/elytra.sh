@@ -19,9 +19,13 @@ if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
   if [ -f /tmp/pyrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    source /tmp/pyrodactyl-lib.sh
-  # Fall back to downloading
-  else
+    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+      # Temp file exists but failed to load (corrupt/invalid) - remove it
+      rm -f /tmp/pyrodactyl-lib.sh
+    fi
+  fi
+  # Fall back to downloading if temp file didn't load or doesn't exist
+  if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
     source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
@@ -392,7 +396,7 @@ configure_elytra() {
   if [ -f "/etc/letsencrypt/live/${panel_fqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${panel_fqdn}/privkey.pem" ]; then
     # Enable SSL and set certificate paths
     sed -i 's/enabled: false/enabled: true/' "${INSTALL_DIR}/config.yml"
-    sed -i "s|cert: .*|cert: /etc/letsencrypt/live/${panel_fqdn}/fullchain.pem|" "${INSTALL_DIR}/config.yml"
+    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${panel_fqdn}/fullchain.pem|" "${INSTALL_DIR}/config.yml"
     sed -i "s|key: .*|key: /etc/letsencrypt/live/${panel_fqdn}/privkey.pem|" "${INSTALL_DIR}/config.yml"
     success "SSL configured for Elytra using Let's Encrypt certificates"
   else
@@ -557,7 +561,8 @@ main() {
   chmod -R 777 /var/lib/elytra/archives
   chmod -R 777 /var/lib/elytra/backups
   chmod -R 755 "$INSTALL_DIR" 2>/dev/null || true
-  [ -f "$INSTALL_DIR/config.yml" ] && chmod 640 "$INSTALL_DIR/config.yml" 2>/dev/null || true
+  # SECURITY: Config contains daemon credentials - restrict to owner-only
+  [ -f "$INSTALL_DIR/config.yml" ] && chmod 600 "$INSTALL_DIR/config.yml" 2>/dev/null || true
 
   configure_firewall
   install_auto_updater_if_requested

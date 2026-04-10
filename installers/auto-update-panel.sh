@@ -39,6 +39,8 @@ CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
 UPDATE_METHOD="${UPDATE_METHOD:-releases}"
 PANEL_REPO_PRIVATE="${PANEL_REPO_PRIVATE:-false}"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/pyrodactyl}"
+GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer}"
+GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
 
 # ------------------ Runtime Flags ----------------- #
 
@@ -731,7 +733,8 @@ perform_update_git() {
     # Fetch and pull
     local git_url="https://github.com/${PANEL_REPO}.git"
     if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-      # Update remote URL if needed
+      # Update remote URL with token for private repo
+      git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
       git remote set-url origin "$git_url" 2>/dev/null || true
     fi
 
@@ -834,8 +837,8 @@ perform_update_git() {
       error "Auto-fix failed to resolve all issues"
 
       # Log failure information
-      mkdir -p "/etc/pyrodactyl"
-      cat > "/etc/pyrodactyl/update-health-check-failure.log" << EOF
+      mkdir -p "$PANEL_CONFIG_DIR"
+      cat > "$PANEL_CONFIG_DIR/update-health-check-failure.log" << EOF
 [$(date)] Panel Update Health Check Failed
 Commit: ${new_commit:0:8}
 Status: Auto-fix applied but issues persist
@@ -845,14 +848,14 @@ EOF
 
       # Append specific failed checks to log
       if [ ! -d "$INSTALL_DIR" ]; then
-        echo "- Panel directory not found" >> "/etc/pyrodactyl/update-health-check-failure.log"
+        echo "- Panel directory not found" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
       fi
 
       if [ -d "$INSTALL_DIR/storage" ]; then
         local storage_owner
         storage_owner=$(stat -c '%U' "$INSTALL_DIR/storage" 2>/dev/null)
         if [ "$storage_owner" != "www-data" ] && [ "$storage_owner" != "nginx" ]; then
-          echo "- Storage directory has incorrect ownership: $storage_owner" >> "/etc/pyrodactyl/update-health-check-failure.log"
+          echo "- Storage directory has incorrect ownership: $storage_owner" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
         fi
       fi
 
@@ -860,12 +863,12 @@ EOF
         local cache_owner
         cache_owner=$(stat -c '%U' "$INSTALL_DIR/bootstrap/cache" 2>/dev/null)
         if [ "$cache_owner" != "www-data" ] && [ "$cache_owner" != "nginx" ]; then
-          echo "- Cache directory has incorrect ownership: $cache_owner" >> "/etc/pyrodactyl/update-health-check-failure.log"
+          echo "- Cache directory has incorrect ownership: $cache_owner" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
         fi
       fi
 
       if ! systemctl is-active --quiet nginx 2>/dev/null; then
-        echo "- nginx is not running" >> "/etc/pyrodactyl/update-health-check-failure.log"
+        echo "- nginx is not running" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
       fi
 
       local php_fpm_running=false
@@ -879,19 +882,19 @@ EOF
         php_fpm_running=true
       fi
       if [ "$php_fpm_running" == false ]; then
-        echo "- PHP-FPM is not running" >> "/etc/pyrodactyl/update-health-check-failure.log"
+        echo "- PHP-FPM is not running" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
       fi
 
       if ! systemctl is-active --quiet pyroq 2>/dev/null; then
-        echo "- Queue worker (pyroq) is not running" >> "/etc/pyrodactyl/update-health-check-failure.log"
+        echo "- Queue worker (pyroq) is not running" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
       fi
 
-      echo "" >> "/etc/pyrodactyl/update-health-check-failure.log"
-      echo "Please run the Repair Tool or check manually:" >> "/etc/pyrodactyl/update-health-check-failure.log"
-      echo "bash <(curl -sSL https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer/main/install.sh)" >> "/etc/pyrodactyl/update-health-check-failure.log"
-      echo "And select option [7] Repair / Fix Common Issues" >> "/etc/pyrodactyl/update-health-check-failure.log"
+      echo "" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      echo "Please run the Repair Tool or check manually:" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      echo "bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
+      echo "And select option [7] Repair / Fix Common Issues" >> "$PANEL_CONFIG_DIR/update-health-check-failure.log"
 
-      error "Update completed but health check failed. See: /etc/pyrodactyl/update-health-check-failure.log"
+      error "Update completed but health check failed. See: $PANEL_CONFIG_DIR/update-health-check-failure.log"
       return $EXIT_UPDATE_FAILED
     fi
   fi

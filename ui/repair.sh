@@ -20,9 +20,13 @@ if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
   if [ -f /tmp/pyrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    source /tmp/pyrodactyl-lib.sh
-  # Fall back to downloading
-  else
+    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+      # Temp file exists but failed to load (corrupt/invalid) - remove it
+      rm -f /tmp/pyrodactyl-lib.sh
+    fi
+  fi
+  # Fall back to downloading if temp file didn't load or doesn't exist
+  if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
     source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
@@ -271,7 +275,7 @@ setup_swap_menu() {
   
   if [ "$ram_mb" -lt 2048 ]; then
     # Less than 2GB RAM: 2x RAM
-    recommended_swap="${ram_mb}M"
+    recommended_swap="$((ram_mb * 2))M"
     recommended_text="2x RAM (current RAM: $(free -h | awk '/^Mem:/{print $2}'))"
   elif [ "$ram_mb" -lt 8192 ]; then
     # 2-8GB RAM: same as RAM

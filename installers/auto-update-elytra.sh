@@ -483,9 +483,6 @@ perform_update() {
     return $EXIT_UPDATE_FAILED
   fi
 
-  # Save current version
-  save_current_version "$new_version"
-
   # Run post-update health check with auto-fix
   info "Running post-update health check..."
   if ! post_update_health_check; then
@@ -514,7 +511,7 @@ EOF
         echo "- Elytra binary is not executable" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
 
-      if [ ! -f "/etc/elytra/config.yml" ]; then
+      if [ ! -f "$INSTALL_DIR/config.yml" ]; then
         echo "- Elytra config file not found" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
 
@@ -542,6 +539,9 @@ EOF
     fi
   fi
 
+  # Save current version only after successful health check
+  save_current_version "$new_version"
+
   # Log update
   echo "[$(date)] Updated to ${new_version}" >> "${BACKUP_DIR}/update-history.log"
 
@@ -566,7 +566,7 @@ post_update_health_check() {
   fi
 
   debug "Checking Elytra config..."
-  if [ ! -f "/etc/elytra/config.yml" ]; then
+  if [ ! -f "$INSTALL_DIR/config.yml" ]; then
     warning "Elytra config file not found"
     has_errors=true
   fi
@@ -634,7 +634,9 @@ auto_fix_elytra_issues() {
   # Elytra config directory - create if needed and set more restrictive permissions
   mkdir -p /etc/elytra
   find /etc/elytra -type d -exec chmod 755 {} \; 2>/dev/null || true
-  find /etc/elytra -type f -exec chmod 640 {} \; 2>/dev/null || true
+  # SECURITY: Config contains daemon credentials - restrict to owner-only
+  find /etc/elytra -type f -name "config.yml" -exec chmod 600 {} \; 2>/dev/null || true
+  find /etc/elytra -type f ! -name "config.yml" -exec chmod 640 {} \; 2>/dev/null || true
 
   # Restart Elytra service
   info "Restarting Elytra service..."

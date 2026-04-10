@@ -246,6 +246,10 @@ chown -R 8888:8888 /var/lib/pyrodactyl
 chown -R 8888:8888 /etc/elytra
 
 # Set permissions
+# SECURITY NOTE: 777 permissions are required because containerized game servers
+# run as various UIDs and must read/write game data, logs, and backups.
+# This grants all users read/write/execute access to these directories.
+# Ensure these directories are only accessible to trusted users.
 chmod -R 777 /var/lib/pyrodactyl/volumes
 chmod -R 777 /var/lib/pyrodactyl/archives
 chmod -R 777 /var/lib/pyrodactyl/backups
@@ -339,7 +343,8 @@ installed: true
 ```bash
 chown -R 8888:8888 /etc/elytra
 chmod 755 /etc/elytra
-chmod 644 /etc/elytra/config.yml
+# SECURITY: Config contains daemon credentials - restrict to owner-only read/write
+chmod 600 /etc/elytra/config.yml
 ```
 
 ---
@@ -457,7 +462,7 @@ systemctl status elytra
 
 ---
 
-## Step 7: Firewall Configuration
+## Step 8: Firewall Configuration
 
 ### Using UFW (Ubuntu/Debian)
 
