@@ -97,67 +97,47 @@ lib_loaded() {
 
 # ------------------ Pyrodactyl API Patch ----------------- #
 
-# Patch Pyrodactyl StoreNodeRequest to include daemonType and backupDisk fields
+# Copy custom StoreNodeRequest.php with daemonType and backupDisk support
 # This fixes the "The daemon type field is required" API error
 patch_pyrodactyl_node_api() {
   local install_dir="${1:-$INSTALL_DIR}"
   local target_file="$install_dir/app/Http/Requests/Api/Application/Nodes/StoreNodeRequest.php"
+  local source_file="${SCRIPT_DIR:-/tmp}/configs/StoreNodeRequest.php"
 
   output "Checking Pyrodactyl API patch..."
 
-  # Check if file exists
-  if [ ! -f "$target_file" ]; then
-    warning "Target file not found: $target_file"
+  # Check if target directory exists
+  if [ ! -d "$install_dir/app/Http/Requests/Api/Application/Nodes" ]; then
+    warning "Target directory not found: $install_dir/app/Http/Requests/Api/Application/Nodes"
     return 0
   fi
 
-  # Check if patch has already been applied (look for daemonType transformations in validated method)
-  if grep -q "response\['daemonType'\]" "$target_file"; then
-    info "Pyrodactyl API patch already applied"
-    return 0
-  fi
-
-  output "Applying Pyrodactyl API patch..."
-
-  # Create a backup
-  cp "$target_file" "$target_file.backup.$(date +%Y%m%d%H%M%S)"
-
-  # Check if the new file format with daemonType/daemonDisk in rules
-  if grep -q "'daemonType'" "$target_file"; then
-    output "Detected new StoreNodeRequest format with daemonType field"
-
-    # Add transformations for daemonType and daemonDisk in validated() method
-    if grep -q "unset.*daemon_base" "$target_file"; then
-      # Add daemonType and daemonDisk transformations before the unset line
-      sed -i "/unset.*daemon_base/i\        \$response['daemonType'] = \$response['daemon_type'] ?? 'elytra';\n        \$response['daemonDisk'] = \$response['daemon_disk'] ?? 'rustic_local';" "$target_file"
-      # Update the unset line to also remove daemon_type and daemon_disk
-      sed -i "s/unset(\$response\['daemon_base'\], \$response\['daemon_listen'\], \$response\['daemon_sftp'\]);/unset(\$response['daemon_base'], \$response['daemon_listen'], \$response['daemon_sftp'], \$response['daemon_type'], \$response['daemon_disk']);/" "$target_file"
-      output "Added daemonType and daemonDisk transformations to validated() method"
+  # Check if source file exists
+  if [ ! -f "$source_file" ]; then
+    # Try alternate locations
+    if [ -f "/tmp/pyrodactyl-installer/configs/StoreNodeRequest.php" ]; then
+      source_file="/tmp/pyrodactyl-installer/configs/StoreNodeRequest.php"
+    elif [ -f "/root/pyrodactyl-installer/configs/StoreNodeRequest.php" ]; then
+      source_file="/root/pyrodactyl-installer/configs/StoreNodeRequest.php"
     else
-      warning "Could not find unset line in validated() method - patch may fail"
-      return 1
-    fi
-  else
-    # Legacy format - add daemonType and backupDisk to rules() and validated()
-    if grep -q "'daemonBase'" "$target_file"; then
-      # Add daemonType and backupDisk after daemonBase in rules
-      sed -i "/'daemonBase',/a\            'daemonType',\n            'daemonDisk'," "$target_file"
-      output "Added daemonType and daemonDisk to only() array"
-
-      # Add transformations in validated() method
-      if grep -q "unset.*daemon_base" "$target_file"; then
-        sed -i "/unset.*daemon_base/i\        \$response['daemonType'] = \$response['daemon_type'] ?? 'elytra';\n        \$response['daemonDisk'] = \$response['daemon_disk'] ?? 'rustic_local';" "$target_file"
-        sed -i "s/unset(\$response\['daemon_base'\], \$response\['daemon_listen'\], \$response\['daemon_sftp'\]);/unset(\$response['daemon_base'], \$response['daemon_listen'], \$response['daemon_sftp'], \$response['daemon_type'], \$response['daemon_disk']);/" "$target_file"
-        output "Added daemonType and daemonDisk transformations to validated() method"
-      fi
-    else
-      warning "Could not find 'daemonBase' in file - patch may fail"
-      return 1
+      warning "Source StoreNodeRequest.php not found in configs/"
+      return 0
     fi
   fi
 
-  # Verify the patch was applied
-  if grep -q "response\['daemonType'\]" "$target_file"; then
+  # Backup existing file if it exists
+  if [ -f "$target_file" ]; then
+    cp "$target_file" "$target_file.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  fi
+
+  # Copy the patched StoreNodeRequest.php
+  output "Installing patched StoreNodeRequest.php..."
+  if cp "$source_file" "$target_file"; then
+    # Set proper ownership and permissions
+    chown www-data:www-data "$target_file" 2>/dev/null || \
+    chown nginx:nginx "$target_file" 2>/dev/null || true
+    chmod 644 "$target_file" 2>/dev/null || true
+    
     success "Pyrodactyl API patch applied successfully"
 
     # Clear caches to apply changes
@@ -170,7 +150,7 @@ patch_pyrodactyl_node_api() {
 
     return 0
   else
-    warning "Patch verification failed - please check $target_file manually"
+    warning "Failed to copy StoreNodeRequest.php"
     return 1
   fi
 }
@@ -2853,7 +2833,7 @@ create_node_via_api() {
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "elytra", daemon_disk: "rustic_local"}' > "$json_file" 2>&1; then
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "elytra", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
       error "Failed to build JSON with jq"
       error "jq error: $(cat "$json_file")"
       rm -f "$json_file"
@@ -2861,7 +2841,7 @@ create_node_via_api() {
     fi
   else
     # Fallback: write JSON directly to file
-    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"elytra","daemon_disk":"rustic_local"}' \
+    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"elytra","backup_disk":"rustic_local"}' \
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
