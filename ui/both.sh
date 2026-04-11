@@ -93,8 +93,12 @@ configure_panel_repository() {
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
     local is_private=""
-    bool_input is_private "Is this a private repository?" "n"
-    PANEL_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+    bool_input is_private "Is this a private repository?" "n" || true
+    if [ "$is_private" == "y" ]; then
+      PANEL_REPO_PRIVATE="true"
+    else
+      PANEL_REPO_PRIVATE="false"
+    fi
 
     if [ "$PANEL_REPO_PRIVATE" == "true" ]; then
       echo ""
@@ -264,8 +268,12 @@ configure_elytra_settings() {
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
     local is_private=""
-    bool_input is_private "Is this a private repository?" "n"
-    ELYTRA_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+    bool_input is_private "Is this a private repository?" "n" || true
+    if [ "$is_private" == "y" ]; then
+      ELYTRA_REPO_PRIVATE="true"
+    else
+      ELYTRA_REPO_PRIVATE="false"
+    fi
 
     if [ "$ELYTRA_REPO_PRIVATE" == "true" ]; then
       echo ""
@@ -314,8 +322,12 @@ configure_elytra_settings() {
   required_input NODE_DESCRIPTION "Node description [Local Node]: " "" "Local Node"
 
   local behind_proxy_input=""
-  bool_input behind_proxy_input "Is this node behind a proxy (e.g., Cloudflare)?" "n"
-  BEHIND_PROXY=$([ "$behind_proxy_input" == "y" ] && echo "true" || echo "false")
+  bool_input behind_proxy_input "Is this node behind a proxy (e.g., Cloudflare)?" "n" || true
+  if [ "$behind_proxy_input" == "y" ]; then
+    BEHIND_PROXY="true"
+  else
+    BEHIND_PROXY="false"
+  fi
 }
 
 # ------------------ Minecraft Server Setup ----------------- #
@@ -329,8 +341,12 @@ configure_minecraft_server() {
   echo ""
 
   local create_server=""
-  bool_input create_server "Create Minecraft server automatically?" "n"
-  CREATE_MINECRAFT_SERVER=$([ "$create_server" == "y" ] && echo "true" || echo "false")
+  bool_input create_server "Create Minecraft server automatically?" "n" || true
+  if [ "$create_server" == "y" ]; then
+    CREATE_MINECRAFT_SERVER="true"
+  else
+    CREATE_MINECRAFT_SERVER="false"
+  fi
 
   if [ "$CREATE_MINECRAFT_SERVER" == "true" ]; then
     output "A Minecraft server will be created automatically after installation."
@@ -346,12 +362,16 @@ configure_auto_updaters() {
   print_flame "Auto-Updater Configuration"
 
   local install_panel_au=""
-  bool_input install_panel_au "Install auto-updater for the panel?" "n"
-  [ "$install_panel_au" == "y" ] && INSTALL_AUTO_UPDATER_PANEL=true
+  bool_input install_panel_au "Install auto-updater for the panel?" "n" || true
+  if [ "$install_panel_au" == "y" ]; then
+    INSTALL_AUTO_UPDATER_PANEL=true
+  fi
 
   local install_elytra_au=""
-  bool_input install_elytra_au "Install auto-updater for Elytra?" "n"
-  [ "$install_elytra_au" == "y" ] && INSTALL_AUTO_UPDATER_ELYTRA=true
+  bool_input install_elytra_au "Install auto-updater for Elytra?" "n" || true
+  if [ "$install_elytra_au" == "y" ]; then
+    INSTALL_AUTO_UPDATER_ELYTRA=true
+  fi
 }
 
 # ------------------ Firewall ----------------- #

@@ -79,8 +79,12 @@ configure_panel_auto_updater() {
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
     local is_private=""
-    bool_input is_private "Is this a private repository?" "n"
-    PANEL_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+    bool_input is_private "Is this a private repository?" "n" || true
+    if [ "$is_private" == "y" ]; then
+      PANEL_REPO_PRIVATE="true"
+    else
+      PANEL_REPO_PRIVATE="false"
+    fi
 
     if [ "$PANEL_REPO_PRIVATE" == "true" ]; then
       echo ""
@@ -174,8 +178,12 @@ configure_elytra_auto_updater() {
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
     local is_private=""
-    bool_input is_private "Is this a private repository?" "n"
-    ELYTRA_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+    bool_input is_private "Is this a private repository?" "n" || true
+    if [ "$is_private" == "y" ]; then
+      ELYTRA_REPO_PRIVATE="true"
+    else
+      ELYTRA_REPO_PRIVATE="false"
+    fi
 
     if [ "$ELYTRA_REPO_PRIVATE" == "true" ]; then
       echo ""
