@@ -125,7 +125,7 @@ patch_pyrodactyl_node_api() {
   # Check if the new file format with daemonType/daemonDisk in rules
   if grep -q "'daemonType'" "$target_file"; then
     output "Detected new StoreNodeRequest format with daemonType field"
-    
+
     # Add transformations for daemonType and daemonDisk in validated() method
     if grep -q "unset.*daemon_base" "$target_file"; then
       # Add daemonType and daemonDisk transformations before the unset line
@@ -143,7 +143,7 @@ patch_pyrodactyl_node_api() {
       # Add daemonType and backupDisk after daemonBase in rules
       sed -i "/'daemonBase',/a\            'daemonType',\n            'daemonDisk'," "$target_file"
       output "Added daemonType and daemonDisk to only() array"
-      
+
       # Add transformations in validated() method
       if grep -q "unset.*daemon_base" "$target_file"; then
         sed -i "/unset.*daemon_base/i\        \$response['daemonType'] = \$response['daemon_type'] ?? 'elytra';\n        \$response['daemonDisk'] = \$response['daemon_disk'] ?? 'rustic_local';" "$target_file"
@@ -250,23 +250,23 @@ welcome() {
   detect_os
 
   echo -e "  ${COLOR_ORANGE}Operating System:${COLOR_NC} $OS $OS_VER_MAJOR ($ARCH)"
-  
+
   # Display system resources
   local cpu_cores=$(nproc 2>/dev/null || echo "1")
   local ram_human=$(free -h 2>/dev/null | awk '/^Mem:/{print $2}' || echo "Unknown")
   local disk_human=$(df -h / 2>/dev/null | awk 'NR==2 {print $4}' || echo "Unknown")
   local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
   local swap_human=$(free -h 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
-  
+
   echo -e "  ${COLOR_ORANGE}System Resources:${COLOR_NC} ${cpu_cores} cores, ${ram_human} RAM, ${disk_human} disk, ${swap_human} swap"
-  
+
   # Warn if no swap configured
   if [ "$swap_mb" -eq 0 ]; then
     echo ""
     echo -e "  ${COLOR_YELLOW}⚠ Warning: No swap configured. Consider setting up swap for system stability.${COLOR_NC}"
     echo -e "     Use the Repair Tool (option 7) to configure swap."
   fi
-  
+
   echo ""
 
   # Check installed components
@@ -506,11 +506,11 @@ check_system_resources() {
 
 check_swap() {
   local swap_total=$(get_swap_mb)
-  
+
   if [ "$swap_total" -eq 0 ]; then
     return 1
   fi
-  
+
   return 0
 }
 
@@ -574,7 +574,7 @@ setup_swap() {
   # Lower values make kernel less likely to use swap
   output "Optimizing swappiness setting..."
   sysctl vm.swappiness=10 2>/dev/null || true
-  
+
   # Make swappiness persistent
   if ! grep -q "^vm.swappiness" /etc/sysctl.conf 2>/dev/null; then
     echo "vm.swappiness=10" >> /etc/sysctl.conf
@@ -608,12 +608,12 @@ show_system_resources() {
 # Check if system can run Docker (important for Elytra)
 check_docker_compatibility() {
   local has_warnings=false
-  
+
   # Check for virtualization
   if command -v systemd-detect-virt >/dev/null 2>&1; then
     local virt_type
     virt_type=$(systemd-detect-virt 2>/dev/null || echo "unknown")
-    
+
     case "$virt_type" in
       openvz|lxc|lxc-libvirt)
         warning "Detected $virt_type virtualization - Docker may not work properly"
@@ -628,7 +628,7 @@ check_docker_compatibility() {
         ;;
     esac
   fi
-  
+
   # Check if swap is disabled (affects Docker memory limits)
   local swap_total
   swap_total=$(get_swap_mb)
@@ -637,7 +637,7 @@ check_docker_compatibility() {
     output "  Consider enabling swap for better container stability"
     has_warnings=true
   fi
-  
+
   # Check cgroup version (cgroup v2 is preferred)
   if [ -f /proc/filesystems ]; then
     if grep -q "cgroup2" /proc/filesystems 2>/dev/null; then
@@ -646,11 +646,11 @@ check_docker_compatibility() {
       info "Cgroup v1 detected - Docker will work but cgroup v2 is preferred"
     fi
   fi
-  
+
   if [ "$has_warnings" == true ]; then
     return 1
   fi
-  
+
   return 0
 }
 
@@ -1770,7 +1770,7 @@ install_letsencrypt() {
   }
 
   success "SSL certificate installed"
-  
+
   # Setup automatic renewal
   setup_certbot_renewal
 }
@@ -1812,26 +1812,26 @@ EOF
   else
     # Setup cron job for certbot renewal
     output "Installing certbot renewal cron job..."
-    
+
     # Remove any existing certbot cron jobs from user crontab
     (crontab -l 2>/dev/null | grep -v "certbot renew") | crontab - 2>/dev/null || true
-    
+
     # Also remove from system crontab if exists
     if [ -f /etc/crontab ]; then
       grep -v "certbot renew" /etc/crontab > /etc/crontab.tmp 2>/dev/null && mv /etc/crontab.tmp /etc/crontab || true
     fi
-    
+
     # Add renewal cron job with randomization (twice daily as recommended by Let's Encrypt)
     # Random sleep prevents thundering herd against Let's Encrypt servers
     local random_sleep=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}')
     echo "0 0,12 * * * root sleep ${random_sleep} && certbot renew --quiet >> /var/log/pyrodactyl-certbot-renewal.log 2>&1" >> /etc/crontab
-    
+
     output "Cron job installed: Certbot will check for renewals twice daily (with ${random_sleep}s random delay)"
   fi
 
   # Create log file
   touch /var/log/pyrodactyl-certbot-renewal.log
-  
+
   # Log initial setup
   echo "[$(date)] Certbot auto-renewal configured for Pyrodactyl" >> /var/log/pyrodactyl-certbot-renewal.log
 
@@ -1843,22 +1843,22 @@ EOF
 # Verify certbot renewal configuration
 verify_certbot_renewal() {
   local has_errors=false
-  
+
   echo ""
   output "${COLOR_ORANGE}Certbot Renewal Check${COLOR_NC}"
   echo ""
-  
+
   # Check if certbot is installed
   if ! command -v certbot >/dev/null 2>&1; then
     warning "Certbot is not installed"
     return 1
   fi
   output "✓ Certbot is installed"
-  
+
   # Check for renewal hooks
   if [ -f "/etc/letsencrypt/renewal-hooks/deploy/pyrodactyl-services.sh" ]; then
     output "✓ Pyrodactyl renewal hook script exists"
-    
+
     if [ -x "/etc/letsencrypt/renewal-hooks/deploy/pyrodactyl-services.sh" ]; then
       output "✓ Renewal hook script is executable"
     else
@@ -1869,29 +1869,29 @@ verify_certbot_renewal() {
     warning "Pyrodactyl renewal hook script not found"
     has_errors=true
   fi
-  
+
   # Check for cron job or systemd timer
   local renewal_configured=false
-  
+
   if crontab -l 2>/dev/null | grep -q "certbot renew"; then
     output "✓ Certbot renewal cron job is configured"
     renewal_configured=true
   fi
-  
+
   if systemctl list-timers 2>/dev/null | grep -q certbot; then
     output "✓ Certbot systemd timer is active"
     renewal_configured=true
   fi
-  
+
   if [ "$renewal_configured" == false ]; then
     warning "No certbot renewal mechanism found (cron or systemd timer)"
     has_errors=true
   fi
-  
+
   # Check renewal logs
   if [ -f "/var/log/pyrodactyl-certbot-renewal.log" ]; then
     output "✓ Renewal log file exists"
-    
+
     # Show last renewal
     local last_renewal
     last_renewal=$(grep "Certificate renewed" /var/log/pyrodactyl-certbot-renewal.log 2>/dev/null | tail -1)
@@ -1901,7 +1901,7 @@ verify_certbot_renewal() {
   else
     info "No renewal log file yet (certificates may not have been renewed)"
   fi
-  
+
   # Test certbot renewal (dry run)
   output "Testing certbot renewal (dry run)..."
   if certbot renew --dry-run --quiet 2>/dev/null; then
@@ -1910,7 +1910,7 @@ verify_certbot_renewal() {
     warning "Certbot renewal dry-run failed - check certbot configuration"
     has_errors=true
   fi
-  
+
   echo ""
   if [ "$has_errors" == true ]; then
     warning "Certbot renewal check completed with warnings"
@@ -1982,7 +1982,7 @@ install_pyroq() {
     warning "Queue worker service failed to start - attempting restart..."
     systemctl restart pyroq
     sleep 2
-    
+
     if ! systemctl is-active --quiet pyroq 2>/dev/null; then
       warning "Queue worker service failed to start. Check logs with: journalctl -u pyroq"
     fi
@@ -1995,7 +1995,7 @@ install_pyroq() {
 verify_pyroq() {
   local panel_dir="${1:-$INSTALL_DIR}"
   local has_errors=false
-  
+
   # Check if service is active
   if ! systemctl is-active --quiet pyroq 2>/dev/null; then
     warning "Queue worker (pyroq) is not running"
@@ -2003,7 +2003,7 @@ verify_pyroq() {
   else
     output "✓ Queue worker (pyroq) is running"
   fi
-  
+
   # Check if service is enabled
   if ! systemctl is-enabled --quiet pyroq 2>/dev/null; then
     warning "Queue worker (pyroq) is not enabled to start on boot"
@@ -2011,7 +2011,7 @@ verify_pyroq() {
   else
     output "✓ Queue worker (pyroq) is enabled"
   fi
-  
+
   # Check for failed jobs if panel is installed
   if [ -f "$panel_dir/artisan" ]; then
     local failed_jobs
@@ -2024,11 +2024,11 @@ verify_pyroq() {
       output "✓ No failed jobs in queue"
     fi
   fi
-  
+
   if [ "$has_errors" == true ]; then
     return 1
   fi
-  
+
   return 0
 }
 
@@ -2036,34 +2036,34 @@ verify_pyroq() {
 get_pyroq_status() {
   local status="unknown"
   local enabled="unknown"
-  
+
   if systemctl is-active --quiet pyroq 2>/dev/null; then
     status="running"
   else
     status="stopped"
   fi
-  
+
   if systemctl is-enabled --quiet pyroq 2>/dev/null; then
     enabled="enabled"
   else
     enabled="disabled"
   fi
-  
+
   echo "Queue worker: $status ($enabled)"
 }
 
 # Restart queue worker and verify
 restart_pyroq() {
   output "Restarting queue worker..."
-  
+
   systemctl restart pyroq 2>/dev/null || {
     error "Failed to restart queue worker"
     return 1
   }
-  
+
   # Wait a moment for service to start
   sleep 2
-  
+
   # Verify it's running
   if systemctl is-active --quiet pyroq 2>/dev/null; then
     success "Queue worker restarted successfully"
@@ -2395,7 +2395,7 @@ create_minecraft_server() {
       --arg name "Minecraft Vanilla Server" \
       --arg desc "Automatically created Minecraft Vanilla Server" \
       --argjson user 1 \
-      --argjson egg 6 \
+      --argjson egg 7 \
       --arg docker_image "ghcr.io/pterodactyl/yolks:java_17" \
       --arg startup 'java -Xms128M -Xmx4096M -jar {{SERVER_JARFILE}}' \
       --argjson allocation_id "$allocation_id" \
@@ -2853,7 +2853,7 @@ create_node_via_api() {
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false}' > "$json_file" 2>&1; then
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "elytra", daemon_disk: "rustic_local"}' > "$json_file" 2>&1; then
       error "Failed to build JSON with jq"
       error "jq error: $(cat "$json_file")"
       rm -f "$json_file"
@@ -2861,7 +2861,7 @@ create_node_via_api() {
     fi
   else
     # Fallback: write JSON directly to file
-    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false}' \
+    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"elytra","daemon_disk":"rustic_local"}' \
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
@@ -3302,18 +3302,18 @@ show_both_completion() {
 check_panel_health() {
   local panel_dir="${1:-$INSTALL_DIR}"
   local has_errors=false
-  
+
   echo ""
   output "${COLOR_ORANGE}Panel Health Check${COLOR_NC}"
   echo ""
-  
+
   # Check directory exists
   if [ ! -d "$panel_dir" ]; then
     error "Panel directory not found: $panel_dir"
     return 1
   fi
   output "✓ Panel directory exists"
-  
+
   # Check artisan exists
   if [ ! -f "$panel_dir/artisan" ]; then
     error "artisan command not found"
@@ -3321,7 +3321,7 @@ check_panel_health() {
   else
     output "✓ artisan command exists"
   fi
-  
+
   # Check .env exists
   if [ ! -f "$panel_dir/.env" ]; then
     warning ".env file not found"
@@ -3329,7 +3329,7 @@ check_panel_health() {
   else
     output "✓ .env file exists"
   fi
-  
+
   # Check storage permissions
   if [ -d "$panel_dir/storage" ]; then
     local storage_owner
@@ -3344,7 +3344,7 @@ check_panel_health() {
     warning "Storage directory not found"
     has_errors=true
   fi
-  
+
   # Check bootstrap/cache permissions
   if [ -d "$panel_dir/bootstrap/cache" ]; then
     local cache_owner
@@ -3359,7 +3359,7 @@ check_panel_health() {
     warning "Cache directory not found"
     has_errors=true
   fi
-  
+
   # Check services
   if systemctl is-active --quiet nginx 2>/dev/null; then
     output "✓ nginx is running"
@@ -3367,7 +3367,7 @@ check_panel_health() {
     warning "nginx is not running"
     has_errors=true
   fi
-  
+
   # Check PHP-FPM (try multiple versions)
   local php_fpm_running=false
   for version in 8.4 8.3 8.2 8.1 8.0; do
@@ -3386,7 +3386,7 @@ check_panel_health() {
       has_errors=true
     fi
   fi
-  
+
   # Check Redis
   if systemctl is-active --quiet redis-server 2>/dev/null || systemctl is-active --quiet redis 2>/dev/null; then
     output "✓ Redis is running"
@@ -3394,7 +3394,7 @@ check_panel_health() {
     warning "Redis is not running"
     has_errors=true
   fi
-  
+
   # Check database
   if systemctl is-active --quiet mariadb 2>/dev/null || systemctl is-active --quiet mysql 2>/dev/null; then
     output "✓ Database is running"
@@ -3402,12 +3402,12 @@ check_panel_health() {
     warning "Database is not running"
     has_errors=true
   fi
-  
+
   # Check queue worker with detailed verification
   if ! verify_pyroq "$panel_dir"; then
     has_errors=true
   fi
-  
+
   # Try to check if panel is responding (optional)
   if [ -f "$panel_dir/.env" ]; then
     local app_url
@@ -3420,29 +3420,29 @@ check_panel_health() {
       fi
     fi
   fi
-  
+
   echo ""
   if [ "$has_errors" == true ]; then
     warning "Health check completed with warnings/errors"
   else
     success "Panel health check passed!"
   fi
-  
+
   return 0
 }
 
 # Check Elytra health
 check_elytra_health() {
   local has_errors=false
-  
+
   echo ""
   output "${COLOR_ORANGE}Elytra Health Check${COLOR_NC}"
   echo ""
-  
+
   # Check binary exists
   if [ -f "/usr/local/bin/elytra" ]; then
     output "✓ Elytra binary exists at /usr/local/bin/elytra"
-    
+
     # Check binary is executable
     if [ -x "/usr/local/bin/elytra" ]; then
       output "✓ Elytra binary is executable"
@@ -3450,7 +3450,7 @@ check_elytra_health() {
       warning "Elytra binary is not executable"
       has_errors=true
     fi
-    
+
     # Check binary version
     local version
     version=$(/usr/local/bin/elytra --version 2>/dev/null | head -1)
@@ -3461,11 +3461,11 @@ check_elytra_health() {
     error "Elytra binary not found at /usr/local/bin/elytra"
     has_errors=true
   fi
-  
+
   # Check config directory
   if [ -d "/etc/elytra" ]; then
     output "✓ Elytra config directory exists"
-    
+
     if [ -f "/etc/elytra/config.yml" ]; then
       output "✓ Elytra config file exists"
     else
@@ -3476,7 +3476,7 @@ check_elytra_health() {
     warning "Elytra config directory not found"
     has_errors=true
   fi
-  
+
   # Check data directories
   for dir in /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups; do
     if [ -d "$dir" ]; then
@@ -3485,7 +3485,7 @@ check_elytra_health() {
       warning "Data directory missing: $dir"
     fi
   done
-  
+
   # Check Docker
   if systemctl is-active --quiet docker 2>/dev/null; then
     output "✓ Docker is running"
@@ -3493,7 +3493,7 @@ check_elytra_health() {
     warning "Docker is not running"
     has_errors=true
   fi
-  
+
   # Check service
   if systemctl is-active --quiet elytra 2>/dev/null; then
     output "✓ Elytra service is running"
@@ -3502,14 +3502,14 @@ check_elytra_health() {
   else
     warning "Elytra service is not enabled"
   fi
-  
+
   echo ""
   if [ "$has_errors" == true ]; then
     warning "Health check completed with warnings/errors"
   else
     success "Elytra health check passed!"
   fi
-  
+
   return 0
 }
 
