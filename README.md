@@ -153,8 +153,10 @@ During installation, select "Use custom repository" and provide:
 ```
 /var/www/pyrodactyl/         # Panel installation
 /etc/elytra/                 # Elytra configuration
-/etc/pyrodactyl/             # Panel configuration (Elytra)
-/var/lib/pyrodactyl/         # Game server data
+/etc/pyrodactyl/             # Panel configuration
+/var/lib/elytra/volumes      # Game server data (containers)
+/var/lib/elytra/archives     # Server archives
+/var/lib/elytra/backups      # Server backups
 /var/log/pyrodactyl-*.log    # Installation/update logs
 /var/backups/pyrodactyl/     # Panel backups
 /var/backups/elytra/         # Elytra backups

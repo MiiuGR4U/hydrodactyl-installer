@@ -651,6 +651,12 @@ install_elytra_daemon() {
   mkdir -p /var/lib/elytra/archives
   mkdir -p /var/lib/elytra/backups
 
+  # Create pyrodactyl group first (required for user creation)
+  output "Creating pyrodactyl system group..."
+  if ! getent group pyrodactyl >/dev/null 2>&1; then
+    groupadd --gid 8888 pyrodactyl 2>/dev/null || true
+  fi
+
   # Create pyrodactyl user for Elytra (UID/GID 8888) if it doesn't exist
   output "Creating pyrodactyl system user..."
   if ! id -u pyrodactyl >/dev/null 2>&1; then
@@ -659,9 +665,10 @@ install_elytra_daemon() {
     useradd --system --no-create-home --shell /bin/false --uid 8888 pyrodactyl
   fi
 
-  # Ensure pyrodactyl group exists
-  if ! getent group pyrodactyl >/dev/null 2>&1; then
-    groupadd --gid 8888 pyrodactyl 2>/dev/null || true
+  # Add pyrodactyl user to docker group for container management
+  if getent group docker >/dev/null 2>&1; then
+    output "Adding pyrodactyl user to docker group..."
+    usermod -aG docker pyrodactyl 2>/dev/null || true
   fi
 
   # Determine architecture

@@ -14,9 +14,9 @@ api:
     trusted-proxies: <TRUSTED_PROXIES>
 
 system:
-    data: /var/lib/pyrodactyl/volumes
-    archive: /var/lib/pyrodactyl/archives
-    backup: /var/lib/pyrodactyl/backups
+    data: /var/lib/elytra/volumes
+    archive: /var/lib/elytra/archives
+    backup: /var/lib/elytra/backups
     tmpfs_size: 100
     websocket_log_count: 150
 
