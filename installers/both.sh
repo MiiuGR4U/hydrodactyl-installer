@@ -614,9 +614,9 @@ create_node_in_panel() {
     --name="$NODE_NAME" \
     --description="$NODE_DESCRIPTION" \
     --locationId="$location_id" \
-    --fqdn="localhost" \
+    --fqdn="$PANEL_FQDN" \
     --public=1 \
-    --scheme=http \
+    --scheme=https \
     --proxy=$([ "$BEHIND_PROXY" == "true" ] && echo "yes" || echo "no") \
     --maxMemory="$max_memory" \
     --overallocateMemory=0 \
