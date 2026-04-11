@@ -2853,7 +2853,7 @@ create_node_via_api() {
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "elytra", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false}' > "$json_file" 2>&1; then
       error "Failed to build JSON with jq"
       error "jq error: $(cat "$json_file")"
       rm -f "$json_file"
@@ -2861,7 +2861,7 @@ create_node_via_api() {
     fi
   else
     # Fallback: write JSON directly to file
-    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"elytra","backup_disk":"rustic_local"}' \
+    printf '{"name":"%s","description":"Elytra node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false}' \
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
