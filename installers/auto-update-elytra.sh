@@ -635,13 +635,13 @@ auto_fix_elytra_issues() {
   # Create directories if they don't exist
   mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
   
-  # Set secure permissions - directories 755, files 644
-  find /var/lib/elytra/volumes -type d -exec chmod 755 {} \; 2>/dev/null || true
-  find /var/lib/elytra/volumes -type f -exec chmod 644 {} \; 2>/dev/null || true
-  find /var/lib/elytra/archives -type d -exec chmod 755 {} \; 2>/dev/null || true
-  find /var/lib/elytra/archives -type f -exec chmod 644 {} \; 2>/dev/null || true
-  find /var/lib/elytra/backups -type d -exec chmod 755 {} \; 2>/dev/null || true
-  find /var/lib/elytra/backups -type f -exec chmod 644 {} \; 2>/dev/null || true
+  # Set permissions for containerized game servers
+  # Note: 777 is required because game server containers run as arbitrary UIDs
+  # and must be able to read/write/execute in these directories
+  info "Setting 777 permissions on data directories for container access..."
+  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
   
   # Elytra config directory - create if needed and set more restrictive permissions
   mkdir -p /etc/elytra

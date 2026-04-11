@@ -455,7 +455,16 @@ setup_services() {
   # Set permissions
   output "Setting file permissions..."
   chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"
-  chmod -R 755 "$INSTALL_DIR"/storage "$INSTALL_DIR"/bootstrap/cache
+  
+  # Apply correct permissions: 755 for directories, 644 for files
+  if [ -d "$INSTALL_DIR/storage" ]; then
+    find "$INSTALL_DIR/storage" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$INSTALL_DIR/storage" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
+  if [ -d "$INSTALL_DIR/bootstrap/cache" ]; then
+    find "$INSTALL_DIR/bootstrap/cache" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$INSTALL_DIR/bootstrap/cache" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
 
   # Enable Redis
   enable_redis

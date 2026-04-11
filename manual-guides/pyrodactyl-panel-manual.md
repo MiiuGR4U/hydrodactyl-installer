@@ -568,7 +568,11 @@ php artisan queue:monitor
 Fix permissions:
 ```bash
 chown -R www-data:www-data /var/www/pyrodactyl
-chmod -R 755 /var/www/pyrodactyl/storage /var/www/pyrodactyl/bootstrap/cache
+# Set 755 on directories and 644 on files
+find /var/www/pyrodactyl/storage -type d -exec chmod 755 {} \;
+find /var/www/pyrodactyl/storage -type f -exec chmod 644 {} \;
+find /var/www/pyrodactyl/bootstrap/cache -type d -exec chmod 755 {} \;
+find /var/www/pyrodactyl/bootstrap/cache -type f -exec chmod 644 {} \;
 ```
 
 ### Database Connection Errors

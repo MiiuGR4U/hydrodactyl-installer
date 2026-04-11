@@ -3498,3 +3498,58 @@ check_both_health() {
   check_panel_health "$INSTALL_DIR"
   check_elytra_health
 }
+
+# Auto-fix Elytra permission issues
+auto_fix_elytra_issues() {
+  info "Attempting to auto-fix Elytra issues..."
+
+  # Fix binary permissions
+  if [ -f "/usr/local/bin/elytra" ]; then
+    info "Fixing binary permissions..."
+    chmod +x /usr/local/bin/elytra
+  fi
+
+  # Fix data directory permissions
+  info "Fixing data directory permissions..."
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+
+  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
+  chown -R 8888:8888 /etc/elytra 2>/dev/null || true
+
+  # Fix permissions
+  info "Fixing Elytra permissions..."
+  
+  # Create directories if they don't exist
+  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+  
+  # Set permissions for containerized game servers
+  # Note: 777 is required because game server containers run as arbitrary UIDs
+  # and must be able to read/write/execute in these directories
+  info "Setting 777 permissions on data directories for container access..."
+  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
+  
+  # Elytra config directory - create if needed and set more restrictive permissions
+  mkdir -p /etc/elytra
+  find /etc/elytra -type d -exec chmod 755 {} \; 2>/dev/null || true
+  # SECURITY: Config contains daemon credentials - restrict to owner-only
+  find /etc/elytra -type f -name "config.yml" -exec chmod 600 {} \; 2>/dev/null || true
+  find /etc/elytra -type f ! -name "config.yml" -exec chmod 640 {} \; 2>/dev/null || true
+
+  # Restart Elytra service
+  info "Restarting Elytra service..."
+  systemctl restart elytra 2>/dev/null || true
+
+  # Verify Elytra started
+  sleep 3
+  if systemctl is-active --quiet elytra 2>/dev/null; then
+    success "Elytra is now running"
+  else
+    warning "Elytra may still have issues - manual intervention may be required"
+  fi
+
+  success "Auto-fix completed"
+}

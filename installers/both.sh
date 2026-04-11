@@ -506,7 +506,16 @@ setup_panel_services() {
   # Set permissions
   output "Setting ownership to $WEBUSER:$WEBGROUP..."
   chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"
-  chmod -R 755 "$INSTALL_DIR"/storage "$INSTALL_DIR"/bootstrap/cache
+  
+  # Apply correct permissions: 755 for directories, 644 for files
+  if [ -d "$INSTALL_DIR/storage" ]; then
+    find "$INSTALL_DIR/storage" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$INSTALL_DIR/storage" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
+  if [ -d "$INSTALL_DIR/bootstrap/cache" ]; then
+    find "$INSTALL_DIR/bootstrap/cache" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$INSTALL_DIR/bootstrap/cache" -type f -exec chmod 644 {} \; 2>/dev/null || true
+  fi
 
   # Enable Redis
   enable_redis
@@ -779,6 +788,10 @@ install_elytra_daemon() {
   chmod -R 777 /var/lib/elytra/backups
   chmod -R 755 "$ELYTRA_DIR" 2>/dev/null || true
   [ -f "$ELYTRA_DIR/config.yml" ] && chmod 600 "$ELYTRA_DIR/config.yml" 2>/dev/null || true
+
+  # Run auto-fix to ensure proper permissions (fixes container access issues)
+  output "Running Elytra permission fix..."
+  auto_fix_elytra_issues || true
 
   success "Elytra installed and started"
 }
