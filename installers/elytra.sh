@@ -397,6 +397,16 @@ configure_elytra() {
     return 1
   fi
 
+  # Disable permission checking to prevent Elytra from resetting permissions
+  output "Disabling permission checks in Elytra config..."
+  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
+  
+  # Update container limits for better game server compatibility
+  output "Updating container limits in Elytra config..."
+  sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/memory: 1024/memory: 2048/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/cpu: 100/cpu: 200/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
+
   # Configure SSL for Elytra using Let's Encrypt certificates
   output "Configuring SSL for Elytra..."
   # Extract FQDN from PANEL_URL (remove https:// prefix)
@@ -566,12 +576,24 @@ main() {
 
   # Set full permissions so containers can read/write/execute
   # Note: 777 is required for containerized game servers to access these directories
-  chmod -R 777 /var/lib/elytra/volumes
-  chmod -R 777 /var/lib/elytra/archives
-  chmod -R 777 /var/lib/elytra/backups
+  # Ensure parent /var/lib/elytra is accessible
+  chmod 755 /var/lib/elytra 2>/dev/null || true
+  # Ensure the volumes directory itself and all contents have 777
+  chmod 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/volumes/* 2>/dev/null || true
+  chmod 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives/* 2>/dev/null || true
+  chmod 777 /var/lib/elytra/backups 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups/* 2>/dev/null || true
   chmod -R 755 "$INSTALL_DIR" 2>/dev/null || true
   # SECURITY: Config contains daemon credentials - restrict to owner-only
   [ -f "$INSTALL_DIR/config.yml" ] && chmod 600 "$INSTALL_DIR/config.yml" 2>/dev/null || true
+  
+  # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
+  if [ -f "$INSTALL_DIR/config.yml" ]; then
+    output "Disabling permission checks in Elytra config..."
+    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$INSTALL_DIR/config.yml" 2>/dev/null || true
+  fi
 
   configure_firewall
   install_auto_updater_if_requested

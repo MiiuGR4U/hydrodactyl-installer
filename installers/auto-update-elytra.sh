@@ -639,9 +639,21 @@ auto_fix_elytra_issues() {
   # Note: 777 is required because game server containers run as arbitrary UIDs
   # and must be able to read/write/execute in these directories
   info "Setting 777 permissions on data directories for container access..."
-  chmod -R 777 /var/lib/elytra/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/backups 2>/dev/null || true
+  # Ensure parent /var/lib/elytra is accessible
+  chmod 755 /var/lib/elytra 2>/dev/null || true
+  # Ensure the volumes directory itself and all contents have 777
+  chmod 777 /var/lib/elytra/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/volumes/* 2>/dev/null || true
+  chmod 777 /var/lib/elytra/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/archives/* 2>/dev/null || true
+  chmod 777 /var/lib/elytra/backups 2>/dev/null || true
+  chmod -R 777 /var/lib/elytra/backups/* 2>/dev/null || true
+  
+  # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
+  if [ -f "/etc/elytra/config.yml" ]; then
+    info "Disabling permission checks in Elytra config..."
+    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/elytra/config.yml 2>/dev/null || true
+  fi
   
   # Elytra config directory - create if needed and set more restrictive permissions
   mkdir -p /etc/elytra

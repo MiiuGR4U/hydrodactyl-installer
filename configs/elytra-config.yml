@@ -19,6 +19,7 @@ system:
     backup: /var/lib/elytra/backups
     tmpfs_size: 100
     websocket_log_count: 150
+    check_permissions_on_boot: false
 
 allowed-mounts: []
 allowed-origins: []
@@ -40,8 +41,7 @@ docker:
     tmpfs:
         size: 100
         mode: 1777
-    container:
-        pid_limit: 2048
+    container_pid_limit: 2048
     installer_limits:
         memory: 2048
         cpu: 200
