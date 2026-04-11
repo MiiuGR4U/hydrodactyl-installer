@@ -97,62 +97,85 @@ lib_loaded() {
 
 # ------------------ Pyrodactyl API Patch ----------------- #
 
-# Copy custom StoreNodeRequest.php with daemonType and backupDisk support
+# Copy custom StoreNodeRequest.php and Node.php with daemonType and backupDisk support
 # This fixes the "The daemon type field is required" API error
 patch_pyrodactyl_node_api() {
   local install_dir="${1:-$INSTALL_DIR}"
-  local target_file="$install_dir/app/Http/Requests/Api/Application/Nodes/StoreNodeRequest.php"
-  local source_file="${SCRIPT_DIR:-/tmp}/configs/StoreNodeRequest.php"
+  local store_request_target="$install_dir/app/Http/Requests/Api/Application/Nodes/StoreNodeRequest.php"
+  local store_request_source="${SCRIPT_DIR:-/tmp}/configs/StoreNodeRequest.php"
+  local node_model_target="$install_dir/app/Models/Node.php"
+  local node_model_source="${SCRIPT_DIR:-/tmp}/configs/Node.php"
 
   output "Checking Pyrodactyl API patch..."
 
-  # Check if target directory exists
-  if [ ! -d "$install_dir/app/Http/Requests/Api/Application/Nodes" ]; then
-    warning "Target directory not found: $install_dir/app/Http/Requests/Api/Application/Nodes"
-    return 0
-  fi
-
-  # Check if source file exists
-  if [ ! -f "$source_file" ]; then
+  # Check if StoreNodeRequest source exists
+  if [ ! -f "$store_request_source" ]; then
     # Try alternate locations
     if [ -f "/tmp/pyrodactyl-installer/configs/StoreNodeRequest.php" ]; then
-      source_file="/tmp/pyrodactyl-installer/configs/StoreNodeRequest.php"
+      store_request_source="/tmp/pyrodactyl-installer/configs/StoreNodeRequest.php"
     elif [ -f "/root/pyrodactyl-installer/configs/StoreNodeRequest.php" ]; then
-      source_file="/root/pyrodactyl-installer/configs/StoreNodeRequest.php"
+      store_request_source="/root/pyrodactyl-installer/configs/StoreNodeRequest.php"
     else
       warning "Source StoreNodeRequest.php not found in configs/"
       return 0
     fi
   fi
 
-  # Backup existing file if it exists
-  if [ -f "$target_file" ]; then
-    cp "$target_file" "$target_file.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  # Check if Node.php source exists
+  if [ ! -f "$node_model_source" ]; then
+    # Try alternate locations
+    if [ -f "/tmp/pyrodactyl-installer/configs/Node.php" ]; then
+      node_model_source="/tmp/pyrodactyl-installer/configs/Node.php"
+    elif [ -f "/root/pyrodactyl-installer/configs/Node.php" ]; then
+      node_model_source="/root/pyrodactyl-installer/configs/Node.php"
+    else
+      warning "Source Node.php not found in configs/"
+      return 0
+    fi
   fi
 
-  # Copy the patched StoreNodeRequest.php
+  # Backup and copy StoreNodeRequest.php
+  if [ -f "$store_request_target" ]; then
+    cp "$store_request_target" "$store_request_target.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  fi
+
   output "Installing patched StoreNodeRequest.php..."
-  if cp "$source_file" "$target_file"; then
-    # Set proper ownership and permissions
-    chown www-data:www-data "$target_file" 2>/dev/null || \
-    chown nginx:nginx "$target_file" 2>/dev/null || true
-    chmod 644 "$target_file" 2>/dev/null || true
-    
-    success "Pyrodactyl API patch applied successfully"
-
-    # Clear caches to apply changes
-    if [ -f "$install_dir/artisan" ]; then
-      output "Clearing Laravel caches..."
-      cd "$install_dir"
-      php artisan config:clear 2>/dev/null || true
-      php artisan cache:clear 2>/dev/null || true
-    fi
-
-    return 0
+  if cp "$store_request_source" "$store_request_target"; then
+    chown www-data:www-data "$store_request_target" 2>/dev/null || \
+    chown nginx:nginx "$store_request_target" 2>/dev/null || true
+    chmod 644 "$store_request_target" 2>/dev/null || true
+    success "StoreNodeRequest.php patched successfully"
   else
     warning "Failed to copy StoreNodeRequest.php"
     return 1
   fi
+
+  # Backup and copy Node.php
+  if [ -f "$node_model_target" ]; then
+    cp "$node_model_target" "$node_model_target.backup.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  fi
+
+  output "Installing patched Node.php..."
+  if cp "$node_model_source" "$node_model_target"; then
+    chown www-data:www-data "$node_model_target" 2>/dev/null || \
+    chown nginx:nginx "$node_model_target" 2>/dev/null || true
+    chmod 644 "$node_model_target" 2>/dev/null || true
+    success "Node.php patched successfully"
+  else
+    warning "Failed to copy Node.php"
+    return 1
+  fi
+
+  # Clear caches to apply changes
+  if [ -f "$install_dir/artisan" ]; then
+    output "Clearing Laravel caches..."
+    cd "$install_dir"
+    php artisan config:clear 2>/dev/null || true
+    php artisan cache:clear 2>/dev/null || true
+  fi
+
+  success "Pyrodactyl API patch applied successfully"
+  return 0
 }
 
 # ------------------ Visual Functions ----------------- #
