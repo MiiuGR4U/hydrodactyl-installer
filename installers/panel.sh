@@ -649,6 +649,11 @@ main() {
   # Save installation information
   save_panel_install_info "install"
 
+  # Pause to let user review logs before showing completion screen
+  echo ""
+  output "Installation finished, press Enter to view details..."
+  read -r
+
   # Show completion screen
   show_panel_completion "install"
 

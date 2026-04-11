@@ -617,6 +617,11 @@ main() {
   # Save installation information
   save_elytra_install_info "install"
 
+  # Pause to let user review logs before showing completion screen
+  echo ""
+  output "Installation finished, press Enter to view details..."
+  read -r
+
   # Show completion screen
   show_elytra_completion "install"
 

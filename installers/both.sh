@@ -918,6 +918,11 @@ main() {
   # Auto-updaters
   install_auto_updaters
 
+  # Pause to let user review logs before showing completion screen
+  echo ""
+  output "Installation finished, press Enter to view details..."
+  read -r
+
   print_header
   print_flame "Installation Complete!"
 
