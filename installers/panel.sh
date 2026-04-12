@@ -328,10 +328,6 @@ install_panel_release() {
 
   cp .env.example .env
 
-  # Apply Pyrodactyl API patch for daemonType and backupDisk fields
-  # This fixes the "daemon type field is required" API error
-  patch_pyrodactyl_node_api "$INSTALL_DIR"
-
   # Install composer and dependencies
   install_composer
 
@@ -372,10 +368,6 @@ install_panel_clone() {
 
   cd "$INSTALL_DIR"
   cp .env.example .env
-
-  # Apply Pyrodactyl API patch for daemonType and backupDisk fields
-  # This fixes the "daemon type field is required" API error
-  patch_pyrodactyl_node_api "$INSTALL_DIR"
 
   # Install composer and dependencies
   install_composer
