@@ -215,6 +215,19 @@ configure_panel_settings() {
   fi
 
   echo ""
+  output "This timezone setting is used by PHP for all date/time functions."
+  output "Format: Continent/City (e.g., Europe/Berlin, America/New_York, Asia/Tokyo)"
+  output "Examples:"
+  output "  Europe/Berlin       - Central European Time"
+  output "  Europe/London       - Greenwich Mean Time / British Summer Time"
+  output "  America/New_York    - Eastern Time (US)"
+  output "  America/Los_Angeles - Pacific Time (US)"
+  output "  Asia/Tokyo          - Japan Standard Time"
+  output "  Australia/Sydney    - Australian Eastern Time"
+  output "  UTC                 - Coordinated Universal Time (default)"
+  echo ""
+  output "Full list: https://www.php.net/manual/en/timezones.php"
+  echo ""
   required_input PANEL_TIMEZONE "Timezone [UTC]: " "" "UTC"
 
   echo ""
