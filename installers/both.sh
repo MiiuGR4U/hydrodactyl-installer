@@ -34,6 +34,7 @@ fi
 # Panel configuration
 PANEL_REPO="${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}"
 PANEL_INSTALL_METHOD="${PANEL_INSTALL_METHOD:-release}"
+PANEL_RELEASE_VERSION="${PANEL_RELEASE_VERSION:-latest}"
 PANEL_FQDN="${PANEL_FQDN:-}"
 PANEL_TIMEZONE="${PANEL_TIMEZONE:-UTC}"
 PANEL_ADMIN_EMAIL="${PANEL_ADMIN_EMAIL:-}"
@@ -229,7 +230,14 @@ install_panel_release() {
     exit 1
   fi
 
-  output "Fetching latest release from ${PANEL_REPO}..."
+  # Determine which release to fetch
+  local release_endpoint="latest"
+  if [ "$PANEL_RELEASE_VERSION" != "latest" ]; then
+    release_endpoint="tags/${PANEL_RELEASE_VERSION}"
+    output "Fetching release ${PANEL_RELEASE_VERSION} from ${PANEL_REPO}..."
+  else
+    output "Fetching latest release from ${PANEL_REPO}..."
+  fi
 
   # Build curl headers based on whether we have a token
   local curl_headers=(
@@ -241,10 +249,10 @@ install_panel_release() {
     curl_headers+=("--header" "Authorization: Bearer $GITHUB_TOKEN")
   fi
 
-  # Get the latest release info from GitHub API
+  # Get the release info from GitHub API
   local release_data
   release_data=$(curl -sS "${curl_headers[@]}" \
-    "https://api.github.com/repos/${PANEL_REPO}/releases/latest")
+    "https://api.github.com/repos/${PANEL_REPO}/releases/${release_endpoint}")
 
   # Check if we got a valid response
   if echo "$release_data" | grep -q '"message"'; then
@@ -265,7 +273,13 @@ install_panel_release() {
 
   local release_tag
   release_tag=$(echo "$release_data" | jq -r '.tag_name')
-  info "Latest release: $release_tag"
+  info "Installing release: $release_tag"
+
+  # Save version from GitHub release tag to persistent location
+  output "Recording version from GitHub: $release_tag"
+  mkdir -p /etc/pyrodactyl
+  echo "$release_tag" > /etc/pyrodactyl/panel-version
+  chmod 644 /etc/pyrodactyl/panel-version
 
   output "Creating installation directory..."
   mkdir -p "$INSTALL_DIR"
@@ -288,6 +302,9 @@ install_panel_release() {
     --output panel.tar.gz \
     "$asset_api_url"; then
     error "Failed to download panel from repository"
+    if [ "$PANEL_RELEASE_VERSION" != "latest" ]; then
+      error "Release ${PANEL_RELEASE_VERSION} may not exist or the asset 'panel.tar.gz' is not available."
+    fi
     if [ "$PANEL_REPO_PRIVATE" == "true" ]; then
       error "Please check that your GitHub token has 'repo' scope and the release exists."
     else
@@ -369,6 +386,15 @@ install_panel_clone() {
 
   # Build frontend assets
   build_panel_assets "$INSTALL_DIR"
+
+  # Save commit hash for auto-updater tracking
+  # Git installs use commit hash as version identifier
+  local commit_hash
+  commit_hash=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+  output "Recording git commit hash: ${commit_hash:0:8}"
+  mkdir -p /etc/pyrodactyl
+  echo "git:${commit_hash}" > /etc/pyrodactyl/panel-version
+  chmod 644 /etc/pyrodactyl/panel-version
 
   success "Panel cloned to $INSTALL_DIR"
 }
@@ -498,7 +524,7 @@ setup_panel_services() {
   # Set permissions
   output "Setting ownership to $WEBUSER:$WEBGROUP..."
   chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"
-  
+
   # Apply correct permissions: 755 for directories, 644 for files
   if [ -d "$INSTALL_DIR/storage" ]; then
     find "$INSTALL_DIR/storage" -type d -exec chmod 755 {} \; 2>/dev/null || true
@@ -700,9 +726,10 @@ install_elytra_daemon() {
 
   chmod +x /usr/local/bin/elytra
 
-  # Save version for auto-updater
+  # Save version from GitHub release tag for auto-updater tracking
   mkdir -p /etc/pyrodactyl
   echo "$latest_release" > /etc/pyrodactyl/elytra-version
+  chmod 644 /etc/pyrodactyl/elytra-version
 
   # Create Elytra config directory
   mkdir -p "${ELYTRA_DIR}"
@@ -730,7 +757,7 @@ install_elytra_daemon() {
   # Disable permission checking to prevent Elytra from resetting permissions
   output "Disabling permission checks in Elytra config..."
   sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${ELYTRA_DIR}/config.yml" 2>/dev/null || true
-  
+
   # Update container limits for better game server compatibility
   output "Updating container limits in Elytra config..."
   sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${ELYTRA_DIR}/config.yml" 2>/dev/null || true
@@ -783,7 +810,7 @@ install_elytra_daemon() {
 
   output "Setting final permissions on Elytra data directories..."
   chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$ELYTRA_DIR" 2>/dev/null || true
-  
+
   # Set full permissions so containers can read/write/execute
   # Note: 777 is required for containerized game servers to access these directories
   # Ensure parent /var/lib/elytra is accessible
@@ -797,7 +824,7 @@ install_elytra_daemon() {
   chmod -R 777 /var/lib/elytra/backups/* 2>/dev/null || true
   chmod -R 755 "$ELYTRA_DIR" 2>/dev/null || true
   [ -f "$ELYTRA_DIR/config.yml" ] && chmod 600 "$ELYTRA_DIR/config.yml" 2>/dev/null || true
-  
+
   # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
   if [ -f "$ELYTRA_DIR/config.yml" ]; then
     output "Disabling permission checks in Elytra config..."

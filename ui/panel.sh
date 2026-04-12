@@ -38,6 +38,7 @@ PANEL_REPO=""
 PANEL_REPO_PRIVATE=false
 GITHUB_TOKEN=""
 PANEL_INSTALL_METHOD="release"
+PANEL_RELEASE_VERSION="latest"
 PANEL_FQDN=""
 PANEL_TIMEZONE="UTC"
 PANEL_ADMIN_EMAIL=""
@@ -123,7 +124,32 @@ configure_github_repository() {
 
   local latest_release
   latest_release=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN")
-  success "Found release: ${latest_release}"
+  success "Found releases in repository"
+}
+
+# ------------------ Release Version Selection ----------------- #
+
+configure_release_version() {
+  print_header
+  print_flame "Release Version Selection"
+
+  local selected_version
+  selected_version=$(select_release_version "$PANEL_REPO" "panel" "$GITHUB_TOKEN")
+
+  if [ -z "$selected_version" ]; then
+    error "Failed to select release version"
+    exit 1
+  fi
+
+  PANEL_RELEASE_VERSION="$selected_version"
+
+  if [ "$PANEL_RELEASE_VERSION" == "latest" ]; then
+    local latest
+    latest=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN")
+    success "Will install latest release: ${latest}"
+  else
+    success "Will install release: ${PANEL_RELEASE_VERSION}"
+  fi
 }
 
 # ------------------ Installation Method ----------------- #
@@ -146,7 +172,9 @@ configure_installation_method() {
 
   if [ "$method_choice" == "0" ]; then
     PANEL_INSTALL_METHOD="release"
-    output "Will download latest release tarball"
+    output "Will download release tarball"
+    # Configure which release version to use
+    configure_release_version
   else
     PANEL_INSTALL_METHOD="clone"
     output "Will clone from Git repository"
@@ -361,6 +389,7 @@ export_variables() {
   export PANEL_REPO_PRIVATE
   export GITHUB_TOKEN
   export PANEL_INSTALL_METHOD
+  export PANEL_RELEASE_VERSION
   export PANEL_FQDN
   export PANEL_TIMEZONE
   export PANEL_ADMIN_EMAIL
@@ -387,6 +416,7 @@ main() {
 
   configure_github_repository
   configure_installation_method
+  # Note: configure_release_version is called within configure_installation_method when release method is selected
   configure_fqdn
   configure_ssl
   configure_database

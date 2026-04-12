@@ -367,6 +367,30 @@ trigger_panel_update() {
   output "Update method: $([ -d "/var/www/pyrodactyl/.git" ] && echo "git-based" || echo "release-based")"
   echo ""
 
+  # Get current and latest versions for display
+  local current_version="unknown"
+  local latest_version="unknown"
+  
+  if [ -f "/var/www/pyrodactyl/config/app.php" ]; then
+    current_version=$(grep "'version'" "/var/www/pyrodactyl/config/app.php" 2>/dev/null | head -1 | sed -E "s/.*'version' => '([^']+)'.*/\1/" || echo "unknown")
+  fi
+  
+  # Get latest version from GitHub
+  local panel_repo="${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}"
+  local github_token="${GITHUB_TOKEN_PANEL:-$GITHUB_TOKEN}"
+  latest_version=$(curl -sL --max-time 10 -H "Authorization: Bearer $github_token" "https://api.github.com/repos/$panel_repo/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
+  
+  output "Current version: ${COLOR_ORANGE}${current_version}${COLOR_NC}"
+  if [ "$latest_version" != "unknown" ] && [ "$latest_version" != "null" ]; then
+    output "Latest version:  ${COLOR_ORANGE}${latest_version}${COLOR_NC}"
+    if [ "$current_version" == "$latest_version" ]; then
+      output "${COLOR_GREEN}You are already on the latest version!${COLOR_NC}"
+    fi
+  else
+    output "Latest version:  ${COLOR_YELLOW}Could not fetch${COLOR_NC}"
+  fi
+  echo ""
+
   local confirm=""
   bool_input confirm "Run update check now?" "y"
 
@@ -399,6 +423,32 @@ trigger_elytra_update() {
   fi
 
   output "This will manually trigger the Elytra update check."
+  echo ""
+
+  # Get current and latest versions for display
+  local current_version="unknown"
+  local latest_version="unknown"
+  
+  if [ -f "/etc/pyrodactyl/elytra-version" ]; then
+    current_version=$(cat "/etc/pyrodactyl/elytra-version" 2>/dev/null || echo "unknown")
+  elif [ -x "/usr/local/bin/elytra" ]; then
+    current_version=$(/usr/local/bin/elytra --version 2>/dev/null || echo "unknown")
+  fi
+  
+  # Get latest version from GitHub
+  local elytra_repo="${ELYTRA_REPO:-pyrohost/elytra}"
+  local github_token="${GITHUB_TOKEN_ELYTRA:-$GITHUB_TOKEN}"
+  latest_version=$(curl -sL --max-time 10 -H "Authorization: Bearer $github_token" "https://api.github.com/repos/$elytra_repo/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
+  
+  output "Current version: ${COLOR_ORANGE}${current_version}${COLOR_NC}"
+  if [ "$latest_version" != "unknown" ] && [ "$latest_version" != "null" ]; then
+    output "Latest version:  ${COLOR_ORANGE}${latest_version}${COLOR_NC}"
+    if [ "$current_version" == "$latest_version" ]; then
+      output "${COLOR_GREEN}You are already on the latest version!${COLOR_NC}"
+    fi
+  else
+    output "Latest version:  ${COLOR_YELLOW}Could not fetch${COLOR_NC}"
+  fi
   echo ""
 
   local confirm=""

@@ -36,6 +36,7 @@ PANEL_REPO=""
 PANEL_REPO_PRIVATE=false
 GITHUB_TOKEN_PANEL=""
 PANEL_INSTALL_METHOD="release"
+PANEL_RELEASE_VERSION="latest"
 PANEL_FQDN=""
 PANEL_TIMEZONE="UTC"
 PANEL_ADMIN_EMAIL=""
@@ -59,6 +60,7 @@ DB_PASSWORD=""
 ELYTRA_REPO=""
 ELYTRA_REPO_PRIVATE=false
 GITHUB_TOKEN_ELYTRA=""
+ELYTRA_RELEASE_VERSION="latest"
 NODE_NAME="local"
 NODE_DESCRIPTION="Local Node"
 BEHIND_PROXY=false
@@ -134,7 +136,32 @@ configure_panel_repository() {
 
   local latest_release
   latest_release=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN_PANEL")
-  success "Found release: ${latest_release}"
+  success "Found releases in repository"
+}
+
+# ------------------ Elytra Release Version ----------------- #
+
+configure_elytra_release_version() {
+  print_header
+  print_flame "Elytra Release Version"
+
+  local selected_version
+  selected_version=$(select_release_version "$ELYTRA_REPO" "elytra" "$GITHUB_TOKEN_ELYTRA")
+
+  if [ -z "$selected_version" ]; then
+    error "Failed to select release version"
+    exit 1
+  fi
+
+  ELYTRA_RELEASE_VERSION="$selected_version"
+
+  if [ "$ELYTRA_RELEASE_VERSION" == "latest" ]; then
+    local latest
+    latest=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN_ELYTRA")
+    success "Will install latest release: ${latest}"
+  else
+    success "Will install release: ${ELYTRA_RELEASE_VERSION}"
+  fi
 }
 
 # ------------------ Panel Settings ----------------- #
@@ -157,6 +184,23 @@ configure_panel_settings() {
 
   if [ "$method_choice" == "0" ]; then
     PANEL_INSTALL_METHOD="release"
+    # Select release version
+    echo ""
+    local selected_version
+    selected_version=$(select_release_version "$PANEL_REPO" "panel" "$GITHUB_TOKEN_PANEL")
+    if [ -z "$selected_version" ]; then
+      error "Failed to select release version"
+      exit 1
+    fi
+    PANEL_RELEASE_VERSION="$selected_version"
+    if [ "$PANEL_RELEASE_VERSION" == "latest" ]; then
+      local latest
+      latest=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN_PANEL")
+      success "Will install latest release: ${latest}"
+    else
+      success "Will install release: ${PANEL_RELEASE_VERSION}"
+    fi
+    echo ""
   else
     PANEL_INSTALL_METHOD="clone"
   fi
@@ -321,7 +365,22 @@ configure_elytra_settings() {
 
   local latest_release
   latest_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN_ELYTRA")
-  success "Found release: ${latest_release}"
+  success "Found releases in repository"
+
+  # Select Elytra release version
+  echo ""
+  local selected_version
+  selected_version=$(select_release_version "$ELYTRA_REPO" "elytra" "$GITHUB_TOKEN_ELYTRA")
+  if [ -z "$selected_version" ]; then
+    error "Failed to select release version"
+    exit 1
+  fi
+  ELYTRA_RELEASE_VERSION="$selected_version"
+  if [ "$ELYTRA_RELEASE_VERSION" == "latest" ]; then
+    success "Will install latest Elytra release: ${latest_release}"
+  else
+    success "Will install Elytra release: ${ELYTRA_RELEASE_VERSION}"
+  fi
 
   echo ""
   print_flame "Elytra Node Configuration"
@@ -407,6 +466,7 @@ show_summary() {
   output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${PANEL_REPO} $([ "$PANEL_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
   echo -e "  ${COLOR_ORANGE}Install Method:${COLOR_NC}    ${PANEL_INSTALL_METHOD}"
+  echo -e "  ${COLOR_ORANGE}Release Version:${COLOR_NC}   ${PANEL_RELEASE_VERSION}"
   echo -e "  ${COLOR_ORANGE}Domain:${COLOR_NC}            ${PANEL_FQDN}"
   echo -e "  ${COLOR_ORANGE}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
   echo -e "  ${COLOR_ORANGE}Timezone:${COLOR_NC}          ${PANEL_TIMEZONE}"
@@ -418,6 +478,7 @@ show_summary() {
   output "  Elytra Configuration"
   output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${ELYTRA_REPO} $([ "$ELYTRA_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_ORANGE}Release Version:${COLOR_NC}   ${ELYTRA_RELEASE_VERSION}"
   echo -e "  ${COLOR_ORANGE}Panel URL:${COLOR_NC}         https://${PANEL_FQDN} (auto-configured)"
   echo -e "  ${COLOR_ORANGE}Node Name:${COLOR_NC}         ${NODE_NAME}"
   echo -e "  ${COLOR_ORANGE}Node Description:${COLOR_NC}  ${NODE_DESCRIPTION}"
@@ -461,6 +522,7 @@ export_variables() {
   export PANEL_REPO_PRIVATE
   export GITHUB_TOKEN="$GITHUB_TOKEN_PANEL"
   export PANEL_INSTALL_METHOD
+  export PANEL_RELEASE_VERSION
   export PANEL_FQDN
   export PANEL_TIMEZONE
   export PANEL_ADMIN_EMAIL
@@ -485,6 +547,7 @@ export_variables() {
   export ELYTRA_REPO
   export ELYTRA_REPO_PRIVATE
   export GITHUB_TOKEN_ELYTRA
+  export ELYTRA_RELEASE_VERSION
   export NODE_NAME
   export NODE_DESCRIPTION
   export BEHIND_PROXY

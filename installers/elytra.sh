@@ -169,7 +169,7 @@ Options:
 Examples:
   # Automatic setup with API key (no prompts)
   elytra.sh --fqdn node.example.com --panel-url https://panel.example.com --api-key pyro_xxx --configure-firewall
-  
+
   # With all options specified (completely unattended)
   elytra.sh --fqdn node.example.com --panel-url https://panel.example.com --api-key pyro_xxx \
     --node-name "My Node" --memory 8192 --disk 100000 --configure-firewall --install-auto-updater
@@ -213,6 +213,7 @@ INSTALL_AUTO_UPDATER="${INSTALL_AUTO_UPDATER:-false}"
 # GitHub
 ELYTRA_REPO_PRIVATE="${ELYTRA_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+ELYTRA_RELEASE_VERSION="${ELYTRA_RELEASE_VERSION:-latest}"
 
 # Node configuration
 NODE_NAME="${NODE_NAME:-}"
@@ -299,30 +300,38 @@ install_elytra() {
 
   local asset_name="elytra_linux_${arch}"
 
-  # Get latest release
-  output "Fetching latest Elytra release..."
-  local latest_release
-  latest_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN")
+  # Determine which release to fetch
+  local target_release="$ELYTRA_RELEASE_VERSION"
+  if [ "$target_release" == "latest" ]; then
+    output "Fetching latest Elytra release..."
+    target_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN")
+  else
+    output "Fetching Elytra release ${ELYTRA_RELEASE_VERSION}..."
+  fi
 
-  if [ -z "$latest_release" ] || [ "$latest_release" == "null" ]; then
-    error "Could not fetch latest release from $ELYTRA_REPO"
+  if [ -z "$target_release" ] || [ "$target_release" == "null" ]; then
+    error "Could not fetch release from $ELYTRA_REPO"
+    if [ "$ELYTRA_RELEASE_VERSION" != "latest" ]; then
+      error "Release ${ELYTRA_RELEASE_VERSION} may not exist."
+    fi
     exit 1
   fi
 
-  info "Latest release: $latest_release"
+  info "Installing release: $target_release"
 
   # Download binary
   output "Downloading Elytra binary..."
-  if ! download_release_asset "$ELYTRA_REPO" "$asset_name" "/usr/local/bin/elytra" "$GITHUB_TOKEN"; then
+  if ! download_release_asset "$ELYTRA_REPO" "$asset_name" "/usr/local/bin/elytra" "$GITHUB_TOKEN" "$target_release"; then
     error "Failed to download Elytra binary"
     exit 1
   fi
 
   chmod +x /usr/local/bin/elytra
 
-  # Save version for auto-updater
+  # Save version from GitHub release tag for auto-updater tracking
   mkdir -p /etc/pyrodactyl
-  echo "$latest_release" > /etc/pyrodactyl/elytra-version
+  echo "$target_release" > /etc/pyrodactyl/elytra-version
+  chmod 644 /etc/pyrodactyl/elytra-version
 
   success "Elytra installed to /usr/local/bin/elytra"
 }
@@ -400,7 +409,7 @@ configure_elytra() {
   # Disable permission checking to prevent Elytra from resetting permissions
   output "Disabling permission checks in Elytra config..."
   sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
-  
+
   # Update container limits for better game server compatibility
   output "Updating container limits in Elytra config..."
   sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
@@ -588,7 +597,7 @@ main() {
   chmod -R 755 "$INSTALL_DIR" 2>/dev/null || true
   # SECURITY: Config contains daemon credentials - restrict to owner-only
   [ -f "$INSTALL_DIR/config.yml" ] && chmod 600 "$INSTALL_DIR/config.yml" 2>/dev/null || true
-  
+
   # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
   if [ -f "$INSTALL_DIR/config.yml" ]; then
     output "Disabling permission checks in Elytra config..."

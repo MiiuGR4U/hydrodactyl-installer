@@ -677,13 +677,17 @@ get_latest_release() {
   local repo="$1"
   local token="${2:-$GITHUB_TOKEN}"
 
+  # URL encode the repo parameter
+  local encoded_repo
+  encoded_repo=$(printf '%s' "$repo" | jq -sRr @uri 2>/dev/null || echo "$repo")
+
   local curl_opts=(-sL --max-time 30)
   if [ -n "$token" ]; then
     curl_opts+=(-H "Authorization: Bearer $token")
   fi
 
   local release_json
-  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
+  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$encoded_repo/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message":"Not Found"'; then
     return 1
@@ -696,15 +700,19 @@ check_releases_exist() {
   local repo="$1"
   local token="${2:-$GITHUB_TOKEN}"
 
+  # URL encode the repo parameter
+  local encoded_repo
+  encoded_repo=$(printf '%s' "$repo" | jq -sRr @uri 2>/dev/null || echo "$repo")
+
   local curl_opts=(-sL --max-time 30)
   if [ -n "$token" ]; then
     curl_opts+=(-H "Authorization: Bearer $token")
   fi
 
   local release_json
-  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
+  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$encoded_repo/releases/latest" 2>/dev/null)
 
-  if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message":"Not Found"'; then
+  if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message"'; then
     return 1
   fi
 
@@ -712,6 +720,231 @@ check_releases_exist() {
   tag_name=$(echo "$release_json" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
   [ -n "$tag_name" ] && [ "$tag_name" != "null" ]
+}
+
+# Get the last N releases from a GitHub repository
+# Usage: get_recent_releases <repo> [count] [token]
+# Returns: List of release tags (one per line), most recent first
+get_recent_releases() {
+  local repo="$1"
+  local count="${2:-4}"
+  local token="${3:-$GITHUB_TOKEN}"
+
+  # Ensure jq is available
+  if ! cmd_exists jq; then
+    error "jq is required but not installed"
+    return 1
+  fi
+
+  # URL encode the repo parameter
+  local encoded_repo
+  encoded_repo=$(printf '%s' "$repo" | jq -sRr @uri 2>/dev/null || echo "$repo")
+
+  # Request more releases than needed since we filter out drafts/prereleases
+  local requested_count=$((count * 2))
+  [ "$requested_count" -lt 10 ] && requested_count=10
+
+  local curl_opts=(-sL --max-time 30)
+  if [ -n "$token" ]; then
+    curl_opts+=(-H "Authorization: Bearer $token")
+  fi
+
+  local releases_json
+  releases_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$encoded_repo/releases?per_page=$requested_count" 2>/dev/null)
+
+  if [ -z "$releases_json" ]; then
+    return 1
+  fi
+
+  # Check for API errors (including Not Found, rate limit, etc.)
+  if echo "$releases_json" | grep -q '"message"'; then
+    return 1
+  fi
+
+  # Extract tag names, exclude drafts and prereleases
+  echo "$releases_json" | jq -r '.[] | select(.draft == false and .prerelease == false) | .tag_name' 2>/dev/null | head -n "$count"
+}
+
+# Validate a release tag exists for a repository
+# Usage: validate_release_tag <repo> <tag> [token]
+# Returns: 0 if valid, 1 otherwise
+# Outputs: The normalized tag name to stdout on success
+validate_release_tag() {
+  local repo="$1"
+  local tag="$2"
+  local token="${3:-$GITHUB_TOKEN}"
+
+  # Normalize tag - add 'v' prefix if missing and user provided x.x.x format
+  if [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+    tag="v$tag"
+  fi
+
+  # URL encode the tag for the API call
+  local encoded_tag
+  encoded_tag=$(printf '%s' "$tag" | jq -sRr @uri 2>/dev/null || echo "$tag")
+
+  local curl_opts=(-sL --max-time 30)
+  if [ -n "$token" ]; then
+    curl_opts+=(-H "Authorization: Bearer $token")
+  fi
+
+  local release_json
+  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/tags/$encoded_tag" 2>/dev/null)
+
+  if [ -z "$release_json" ]; then
+    return 1
+  fi
+
+  # Check for any API error message (Not Found, rate limit, etc.)
+  if echo "$release_json" | grep -q '"message"'; then
+    return 1
+  fi
+
+  # Return the normalized tag
+  echo "$tag"
+  return 0
+}
+
+# Prompt user to select a release version
+# For panel: shows last 4 releases, accepts "latest", tag, or "Release <tag>"
+# For Elytra: asks latest vs specific, accepts "latest" or "vX.X.X"
+# Usage: select_release_version <repo> [component_name] [token]
+# Returns: Selected version (tag_name or "latest") via stdout
+# User can press Ctrl+C to cancel at any prompt
+select_release_version() {
+  local repo="$1"
+  local component="${2:-panel}"
+  local token="${3:-$GITHUB_TOKEN}"
+
+  local releases=()
+  local latest=""
+  local selection=""
+  local valid_selection=false
+
+  # Get latest release
+  latest=$(get_latest_release "$repo" "$token")
+  if [ -z "$latest" ]; then
+    error "Could not fetch latest release information"
+    return 1
+  fi
+
+  if [ "$component" == "panel" ]; then
+    # Panel: Show last 4 releases
+    local recent_releases
+    recent_releases=$(get_recent_releases "$repo" 4 "$token")
+
+    echo ""
+    output "Available releases for ${COLOR_ORANGE}${repo}${COLOR_NC}:"
+    echo ""
+    output "[${COLOR_ORANGE}latest${COLOR_NC}] Latest release (${latest})"
+
+    while IFS= read -r tag; do
+      [ -z "$tag" ] && continue
+      releases+=("$tag")
+      output "[${COLOR_ORANGE}${tag}${COLOR_NC}] Release ${tag}"
+    done <<< "$recent_releases"
+
+    echo ""
+    output "You can enter: ${COLOR_ORANGE}latest${COLOR_NC}, a specific tag (e.g., ${COLOR_ORANGE}v1.2.3${COLOR_NC}),"
+    output "or ${COLOR_ORANGE}Release v1.2.3${COLOR_NC}"
+    output "Press Ctrl+C to cancel"
+    echo ""
+
+    while [ "$valid_selection" == false ]; do
+      echo -n "* Select version: "
+      read -r selection
+
+      # Handle empty input
+      if [ -z "$selection" ]; then
+        error "Please enter a selection"
+        continue
+      fi
+
+      # Normalize input - handle "Release <tag>" format
+      local normalized_selection="$selection"
+      normalized_selection=$(echo "$normalized_selection" | sed -E 's/^[Rr]elease[[:space:]]+//')
+
+      # Check for "latest"
+      if [[ "$normalized_selection" == "latest" ]]; then
+        echo "latest"
+        return 0
+      fi
+
+      # Add 'v' prefix if user provided x.x.x format
+      if [[ "$normalized_selection" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+        normalized_selection="v$normalized_selection"
+      fi
+
+      # Validate the tag exists
+      if validate_release_tag "$repo" "$normalized_selection" "$token" >/dev/null 2>&1; then
+        echo "$normalized_selection"
+        return 0
+      fi
+
+      error "Invalid selection: '$selection' is not a valid release"
+      output "Please choose from the list above or enter a valid tag (or press Ctrl+C to cancel)"
+    done
+
+  else
+    # Elytra: Simple latest vs specific
+    echo ""
+    output "Elytra is installed from binary releases."
+    output "Latest release: ${COLOR_ORANGE}${latest}${COLOR_NC}"
+    echo ""
+    output "[${COLOR_ORANGE}0${COLOR_NC}] Latest release (${latest})"
+    output "[${COLOR_ORANGE}1${COLOR_NC}] Specific version"
+    output "Press Ctrl+C to cancel"
+    echo ""
+
+    local choice=""
+    while [[ "$choice" != "0" && "$choice" != "1" ]]; do
+      echo -n "* Select [0-1]: "
+      read -r choice
+
+      if [[ "$choice" != "0" && "$choice" != "1" ]]; then
+        error "Invalid selection. Please enter 0 or 1."
+      fi
+    done
+
+    if [ "$choice" == "0" ]; then
+      echo "latest"
+      return 0
+    fi
+
+    # User wants specific version
+    echo ""
+    output "Enter the version tag you want to install."
+    output "Format: ${COLOR_ORANGE}vX.X.X${COLOR_NC} (e.g., v1.0.0, v1.2.3)"
+    output "Press Ctrl+C to cancel"
+    echo ""
+
+    while [ "$valid_selection" == false ]; do
+      echo -n "* Version tag: "
+      read -r selection
+
+      if [ -z "$selection" ]; then
+        error "Please enter a version tag"
+        continue
+      fi
+
+      # Normalize - add 'v' prefix if missing and user provided x.x.x format
+      local normalized_selection="$selection"
+      if [[ "$normalized_selection" =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+        normalized_selection="v$normalized_selection"
+      fi
+
+      # Validate the tag exists
+      if validate_release_tag "$repo" "$normalized_selection" "$token" >/dev/null 2>&1; then
+        echo "$normalized_selection"
+        return 0
+      fi
+
+      error "Invalid tag: '$selection' is not a valid release"
+      output "Please enter a valid tag (e.g., v1.0.0) or check available releases at:"
+      output "  https://github.com/${repo}/releases"
+      output "(Press Ctrl+C to cancel)"
+    done
+  fi
 }
 
 validate_github_token() {
@@ -748,6 +981,7 @@ get_release_asset_url() {
   local repo="$1"
   local asset_name="$2"
   local token="${3:-$GITHUB_TOKEN}"
+  local version="${4:-latest}"
 
   # Ensure jq is installed
   if ! cmd_exists jq; then
@@ -756,18 +990,27 @@ get_release_asset_url() {
     return 1
   fi
 
+  # Determine API endpoint
+  local release_endpoint="latest"
+  if [ "$version" != "latest" ]; then
+    # URL encode the version tag for the API path
+    local encoded_version
+    encoded_version=$(printf '%s' "$version" | jq -sRr @uri 2>/dev/null || echo "$version")
+    release_endpoint="tags/${encoded_version}"
+  fi
+
   local release_json
   if [ -n "$token" ]; then
     release_json=$(curl -sS \
       --header "Accept: application/vnd.github+json" \
       --header "Authorization: Bearer $token" \
       --header "X-GitHub-Api-Version: 2022-11-28" \
-      "https://api.github.com/repos/$repo/releases/latest" 2>&1)
+      "https://api.github.com/repos/$repo/releases/${release_endpoint}" 2>&1)
   else
     release_json=$(curl -sS \
       --header "Accept: application/vnd.github+json" \
       --header "X-GitHub-Api-Version: 2022-11-28" \
-      "https://api.github.com/repos/$repo/releases/latest" 2>&1)
+      "https://api.github.com/repos/$repo/releases/${release_endpoint}" 2>&1)
   fi
 
   if [ -z "$release_json" ]; then
@@ -790,12 +1033,17 @@ download_release_asset() {
   local asset_name="$2"
   local output_path="$3"
   local token="${4:-$GITHUB_TOKEN}"
+  local version="${5:-latest}"
 
   local asset_url
-  asset_url=$(get_release_asset_url "$repo" "$asset_name" "$token")
+  asset_url=$(get_release_asset_url "$repo" "$asset_name" "$token" "$version")
 
   if [ -z "$asset_url" ] || [ "$asset_url" == "null" ]; then
-    error "Could not find asset '$asset_name' in latest release of $repo"
+    if [ "$version" == "latest" ]; then
+      error "Could not find asset '$asset_name' in latest release"
+    else
+      error "Could not find asset '$asset_name' in release $version"
+    fi
     error "Make sure the release exists and the asset is attached to it."
     return 1
   fi
@@ -3462,10 +3710,10 @@ auto_fix_elytra_issues() {
 
   # Fix permissions
   info "Fixing Elytra permissions..."
-  
+
   # Create directories if they don't exist
   mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
-  
+
   # Set permissions for containerized game servers
   # Note: 777 is required because game server containers run as arbitrary UIDs
   # and must be able to read/write/execute in these directories
@@ -3479,20 +3727,20 @@ auto_fix_elytra_issues() {
   chmod -R 777 /var/lib/elytra/archives/* 2>/dev/null || true
   chmod 777 /var/lib/elytra/backups 2>/dev/null || true
   chmod -R 777 /var/lib/elytra/backups/* 2>/dev/null || true
-  
+
   # Set ACL default permissions so new directories inherit 777
   if command -v setfacl >/dev/null 2>&1; then
     info "Setting default ACL permissions for new files..."
     setfacl -R -m d:o:rx /var/lib/elytra/volumes 2>/dev/null || true
     setfacl -R -m d:g:rx /var/lib/elytra/volumes 2>/dev/null || true
   fi
-  
+
   # Disable check_permissions_on_boot in Elytra config to prevent permission resets
   if [ -f "/etc/elytra/config.yml" ]; then
     info "Disabling permission checks in Elytra config..."
     sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/elytra/config.yml 2>/dev/null || true
   fi
-  
+
   # Elytra config directory - create if needed and set more restrictive permissions
   mkdir -p /etc/elytra
   find /etc/elytra -type d -exec chmod 755 {} \; 2>/dev/null || true
