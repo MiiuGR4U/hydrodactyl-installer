@@ -364,13 +364,29 @@ install_panel_clone() {
     exit 1
   fi
 
-  output "Cloning from https://github.com/${PANEL_REPO}.git"
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
-  if [ -n "$GITHUB_TOKEN" ] && [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    git -c http.extraHeader="Authorization: Bearer $GITHUB_TOKEN" clone "https://github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
+  # Build git URL with embedded token for private repos
+  local git_url
+  if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
+    # Embed token in URL for authentication (token is cleared from URL after clone)
+    git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
+    output "Cloning from private repository (using token authentication)..."
   else
-    git clone "https://github.com/${PANEL_REPO}.git" "$INSTALL_DIR"
+    git_url="https://github.com/${PANEL_REPO}.git"
+    output "Cloning from https://github.com/${PANEL_REPO}.git"
+  fi
+
+  if ! git clone "$git_url" "$INSTALL_DIR"; then
+    error "Failed to clone repository"
+    exit 1
+  fi
+
+  # Clear token from git config if it was embedded
+  if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
+    cd "$INSTALL_DIR"
+    git remote set-url origin "https://github.com/${PANEL_REPO}.git" 2>/dev/null || true
+    output "Token removed from git remote URL"
   fi
 
   cd "$INSTALL_DIR"
