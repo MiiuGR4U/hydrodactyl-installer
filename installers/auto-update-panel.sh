@@ -156,8 +156,12 @@ load_config() {
 get_current_version() {
   # Primary: Read from version file (written by installer from GitHub release tag)
   if [ -f "/etc/pyrodactyl/panel-version" ]; then
-    cat "/etc/pyrodactyl/panel-version" 2>/dev/null || echo "unknown"
-    return 0
+    local version
+    version=$(cat "/etc/pyrodactyl/panel-version" 2>/dev/null)
+    if [ -n "$version" ]; then
+      echo "$version"
+      return 0
+    fi
   fi
 
   # Fallback: Extract from panel config

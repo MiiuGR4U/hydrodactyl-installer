@@ -677,17 +677,13 @@ get_latest_release() {
   local repo="$1"
   local token="${2:-$GITHUB_TOKEN}"
 
-  # URL encode the repo parameter
-  local encoded_repo
-  encoded_repo=$(printf '%s' "$repo" | jq -sRr @uri 2>/dev/null || echo "$repo")
-
   local curl_opts=(-sL --max-time 30)
   if [ -n "$token" ]; then
     curl_opts+=(-H "Authorization: Bearer $token")
   fi
 
   local release_json
-  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$encoded_repo/releases/latest" 2>/dev/null)
+  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message":"Not Found"'; then
     return 1
@@ -700,17 +696,13 @@ check_releases_exist() {
   local repo="$1"
   local token="${2:-$GITHUB_TOKEN}"
 
-  # URL encode the repo parameter
-  local encoded_repo
-  encoded_repo=$(printf '%s' "$repo" | jq -sRr @uri 2>/dev/null || echo "$repo")
-
   local curl_opts=(-sL --max-time 30)
   if [ -n "$token" ]; then
     curl_opts+=(-H "Authorization: Bearer $token")
   fi
 
   local release_json
-  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$encoded_repo/releases/latest" 2>/dev/null)
+  release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message"'; then
     return 1
@@ -736,10 +728,6 @@ get_recent_releases() {
     return 1
   fi
 
-  # URL encode the repo parameter
-  local encoded_repo
-  encoded_repo=$(printf '%s' "$repo" | jq -sRr @uri 2>/dev/null || echo "$repo")
-
   # Request more releases than needed since we filter out drafts/prereleases
   local requested_count=$((count * 2))
   [ "$requested_count" -lt 10 ] && requested_count=10
@@ -750,7 +738,7 @@ get_recent_releases() {
   fi
 
   local releases_json
-  releases_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$encoded_repo/releases?per_page=$requested_count" 2>/dev/null)
+  releases_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases?per_page=$requested_count" 2>/dev/null)
 
   if [ -z "$releases_json" ]; then
     return 1

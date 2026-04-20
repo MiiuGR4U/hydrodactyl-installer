@@ -36,7 +36,7 @@ PANEL_REPO=""
 PANEL_REPO_PRIVATE=false
 GITHUB_TOKEN_PANEL=""
 PANEL_INSTALL_METHOD="release"
-PANEL_RELEASE_VERSION="latest"
+PANEL_RELEASE_VERSION="${PANEL_RELEASE_VERSION:-latest}"
 PANEL_FQDN=""
 PANEL_TIMEZONE="UTC"
 PANEL_ADMIN_EMAIL=""
@@ -60,7 +60,7 @@ DB_PASSWORD=""
 ELYTRA_REPO=""
 ELYTRA_REPO_PRIVATE=false
 GITHUB_TOKEN_ELYTRA=""
-ELYTRA_RELEASE_VERSION="latest"
+ELYTRA_RELEASE_VERSION="${ELYTRA_RELEASE_VERSION:-latest}"
 NODE_NAME="local"
 NODE_DESCRIPTION="Local Node"
 BEHIND_PROXY=false
@@ -137,31 +137,6 @@ configure_panel_repository() {
   local latest_release
   latest_release=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN_PANEL")
   success "Found releases in repository"
-}
-
-# ------------------ Elytra Release Version ----------------- #
-
-configure_elytra_release_version() {
-  print_header
-  print_flame "Elytra Release Version"
-
-  local selected_version
-  selected_version=$(select_release_version "$ELYTRA_REPO" "elytra" "$GITHUB_TOKEN_ELYTRA")
-
-  if [ -z "$selected_version" ]; then
-    error "Failed to select release version"
-    exit 1
-  fi
-
-  ELYTRA_RELEASE_VERSION="$selected_version"
-
-  if [ "$ELYTRA_RELEASE_VERSION" == "latest" ]; then
-    local latest
-    latest=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN_ELYTRA")
-    success "Will install latest release: ${latest}"
-  else
-    success "Will install release: ${ELYTRA_RELEASE_VERSION}"
-  fi
 }
 
 # ------------------ Panel Settings ----------------- #

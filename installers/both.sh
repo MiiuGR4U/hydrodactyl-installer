@@ -233,7 +233,10 @@ install_panel_release() {
   # Determine which release to fetch
   local release_endpoint="latest"
   if [ "$PANEL_RELEASE_VERSION" != "latest" ]; then
-    release_endpoint="tags/${PANEL_RELEASE_VERSION}"
+    # URL-encode the version tag for the API path (handles special characters like +, spaces, etc.)
+    local encoded_version
+    encoded_version=$(printf '%s' "$PANEL_RELEASE_VERSION" | jq -sRr @uri 2>/dev/null || echo "$PANEL_RELEASE_VERSION")
+    release_endpoint="tags/${encoded_version}"
     output "Fetching release ${PANEL_RELEASE_VERSION} from ${PANEL_REPO}..."
   else
     output "Fetching latest release from ${PANEL_REPO}..."
@@ -366,27 +369,14 @@ install_panel_clone() {
 
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
-  # Build git URL with embedded token for private repos
-  local git_url
-  if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-    # Embed token in URL for authentication (token is cleared from URL after clone)
-    git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
-    output "Cloning from private repository (using token authentication)..."
-  else
-    git_url="https://github.com/${PANEL_REPO}.git"
-    output "Cloning from https://github.com/${PANEL_REPO}.git"
-  fi
+  # Simple token-based auth: embed token in URL if provided
+  local git_url="https://github.com/${PANEL_REPO}.git"
+  [ -n "$GITHUB_TOKEN" ] && git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
 
+  output "Cloning from https://github.com/${PANEL_REPO}.git"
   if ! git clone "$git_url" "$INSTALL_DIR"; then
     error "Failed to clone repository"
     exit 1
-  fi
-
-  # Clear token from git config if it was embedded
-  if [ "$PANEL_REPO_PRIVATE" == "true" ] && [ -n "$GITHUB_TOKEN" ]; then
-    cd "$INSTALL_DIR"
-    git remote set-url origin "https://github.com/${PANEL_REPO}.git" 2>/dev/null || true
-    output "Token removed from git remote URL"
   fi
 
   cd "$INSTALL_DIR"
