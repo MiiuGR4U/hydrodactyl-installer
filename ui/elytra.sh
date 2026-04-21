@@ -40,7 +40,10 @@ NODE_TOKEN=""
 NODE_ID=""
 CONFIGURE_FIREWALL=false
 INSTALL_AUTO_UPDATER=false
-USE_SSL=false
+CONFIGURE_LETSENCRYPT=false
+SSL_CERT_PATH=""
+SSL_KEY_PATH=""
+SSL_EMAIL=""
 BEHIND_PROXY=false
 FQDN=""
 ELYTRA_INSTALL_DIR="/etc/elytra"
@@ -221,6 +224,67 @@ configure_network() {
   fi
 }
 
+# ------------------ SSL Configuration ----------------- #
+
+configure_ssl() {
+  print_header
+  print_flame "SSL/TLS Configuration"
+
+  output "SSL secures connections between the panel and this node."
+  output "If this node's FQDN points to this server, Let's Encrypt can auto-generate a certificate."
+  echo ""
+
+  local use_ssl=""
+  bool_input use_ssl "Would you like to configure SSL/HTTPS?" "y"
+
+  if [ "$use_ssl" == "y" ]; then
+    echo ""
+    output "[${COLOR_ORANGE}0${COLOR_NC}] Let's Encrypt (auto-generated, requires FQDN to point to this server)"
+    output "[${COLOR_ORANGE}1${COLOR_NC}] Use existing SSL certificate"
+    output "[${COLOR_ORANGE}2${COLOR_NC}] No SSL (not recommended for production)"
+    echo ""
+
+    local ssl_choice=""
+    while [[ "$ssl_choice" != "0" && "$ssl_choice" != "1" && "$ssl_choice" != "2" ]]; do
+      echo -n "* Select [0-2]: "
+      read -r ssl_choice
+    done
+
+    case "$ssl_choice" in
+      0)
+        CONFIGURE_LETSENCRYPT=true
+        output "Will use Let's Encrypt for SSL"
+
+        # Prompt for FQDN if not already set
+        if [ -z "$FQDN" ]; then
+          echo ""
+          output "Let's Encrypt requires a fully qualified domain name (FQDN)."
+          required_input FQDN "Enter this node's FQDN (e.g., node.example.com): " "FQDN is required for Let's Encrypt"
+        fi
+
+        # Prompt for email (optional but recommended)
+        echo ""
+        output "An email address is recommended for Let's Encrypt (expiry notifications)."
+        local ssl_email_input=""
+        bool_input ssl_email_input "Provide an email for Let's Encrypt?" "y"
+        if [ "$ssl_email_input" == "y" ]; then
+          required_input SSL_EMAIL "Email address: " "Email is required"
+        fi
+        ;;
+      1)
+        required_input SSL_CERT_PATH "Path to SSL certificate: " "Path is required"
+        required_input SSL_KEY_PATH "Path to SSL key: " "Path is required"
+        output "Will use existing SSL certificate"
+        ;;
+      2)
+        output "SSL will not be configured"
+        ;;
+    esac
+  else
+    output "SSL will not be configured"
+  fi
+}
+
 # ------------------ Auto-Updater ----------------- #
 
 configure_auto_updater() {
@@ -271,6 +335,8 @@ show_summary() {
     echo -e "  ${COLOR_ORANGE}Node ID:${COLOR_NC}           ${NODE_ID}"
   fi
   echo -e "  ${COLOR_ORANGE}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_ORANGE}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
+  echo -e "  ${COLOR_ORANGE}FQDN:${COLOR_NC}              $([ -n "$FQDN" ] && echo "$FQDN" || echo 'Not set')"
   echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER" == "true" ] && echo 'Yes' || echo 'No')"
   echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
@@ -298,10 +364,20 @@ export_variables() {
   export NODE_ID
   export CONFIGURE_FIREWALL
   export INSTALL_AUTO_UPDATER
-  export USE_SSL
+  export CONFIGURE_LETSENCRYPT
+  export SSL_EMAIL
+  export SSL_CERT_PATH
+  export SSL_KEY_PATH
   export BEHIND_PROXY
   export FQDN
   export ELYTRA_INSTALL_DIR
+
+  # Set ASSUME_SSL=true when SSL is configured (matches panel.sh/both.sh behavior)
+  if [ "$CONFIGURE_LETSENCRYPT" == true ] || { [ -n "$SSL_CERT_PATH" ] && [ -n "$SSL_KEY_PATH" ]; }; then
+    export ASSUME_SSL=true
+  else
+    export ASSUME_SSL=false
+  fi
 }
 
 # ------------------ Main ----------------- #
@@ -314,6 +390,7 @@ main() {
   configure_api_key
   configure_panel_connection
   configure_network
+  configure_ssl
   configure_auto_updater
   configure_firewall
   show_summary

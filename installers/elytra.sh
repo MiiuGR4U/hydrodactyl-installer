@@ -121,6 +121,14 @@ parse_arguments() {
         ASSUME_SSL="true"
         shift
         ;;
+      --configure-letsencrypt)
+        CONFIGURE_LETSENCRYPT="true"
+        shift
+        ;;
+      --ssl-email)
+        SSL_EMAIL="$2"
+        shift 2
+        ;;
       --help|-h)
         show_help
         exit 0
@@ -161,6 +169,8 @@ Options:
   --no-auto-updater              Don't install auto-updater
   --behind-proxy                 Node is behind a proxy
   --assume-ssl                   Assume SSL is already configured
+  --configure-letsencrypt        Obtain SSL certificate via Let's Encrypt
+  --ssl-email <email>            Email for Let's Encrypt registration
   --github-token, -g <token>     GitHub token for private repos
   --elytra-repo <repo>           Elytra repo (default: pyrohost/elytra)
   --skip-wings-setup             Skip Wings detection/setup
@@ -225,6 +235,10 @@ PANEL_FQDN="${PANEL_FQDN:-}"
 # Mode flags
 export SKIP_WINGS_SETUP="${SKIP_WINGS_SETUP:-false}"
 export ASSUME_SSL="${ASSUME_SSL:-false}"
+export CONFIGURE_LETSENCRYPT="${CONFIGURE_LETSENCRYPT:-false}"
+export SSL_EMAIL="${SSL_EMAIL:-}"
+export SSL_CERT_PATH="${SSL_CERT_PATH:-}"
+export SSL_KEY_PATH="${SSL_KEY_PATH:-}"
 
 # Validation - credentials are optional, but if provided must be complete
 # User can skip configuration and configure later
@@ -440,6 +454,95 @@ auto_configure_elytra() {
   return 0
 }
 
+# ---------------- SSL Certificate (Let's Encrypt) ----------------- #
+
+# Install Let's Encrypt certificate for Elytra (standalone mode)
+# Unlike the panel which uses certbot --nginx, Elytra doesn't use nginx,
+# so we use certbot certonly --standalone to obtain the certificate.
+install_letsencrypt_elytra() {
+  local fqdn="$1"
+  local email="$2"
+
+  output "Installing Certbot and obtaining SSL certificate..."
+
+  case "$OS" in
+    ubuntu|debian)
+      install_packages "certbot"
+      ;;
+    rocky|almalinux|fedora|rhel|centos)
+      install_packages "certbot"
+      ;;
+  esac
+
+  # Use standalone mode since Elytra doesn't use nginx as a reverse proxy
+  # Standalone mode spins up its own temporary web server on port 80
+  # If something is already using port 80, we need to stop it temporarily
+  local stopped_service=""
+  if ss -tlnp 2>/dev/null | grep -q ':80 '; then
+    output "Port 80 is in use - attempting to free it for certbot verification..."
+
+    # Try to identify and stop the service using port 80
+    local port_80_pid
+    port_80_pid=$(ss -tlnp 2>/dev/null | grep ':80 ' | head -1 | grep -oP 'pid=\K[0-9]+' || true)
+    if [ -n "$port_80_pid" ]; then
+      local port_80_service
+      port_80_service=$(systemctl status "$port_80_pid" 2>/dev/null | grep -oP '.*\.service' | head -1 || true)
+      if [ -n "$port_80_service" ]; then
+        output "Temporarily stopping ${port_80_service} for certbot verification..."
+        if systemctl stop "$port_80_service" 2>/dev/null; then
+          stopped_service="$port_80_service"
+          sleep 2
+        fi
+      fi
+    fi
+
+    if [ -z "$stopped_service" ]; then
+      # Fallback: try common services that typically use port 80
+      for svc in nginx apache2 httpd caddy; do
+        if systemctl is-active --quiet "$svc" 2>/dev/null; then
+          output "Temporarily stopping ${svc} for certbot verification..."
+          if systemctl stop "$svc" 2>/dev/null; then
+            stopped_service="$svc"
+            sleep 2
+            break
+          fi
+        fi
+      done
+    fi
+  fi
+
+  # Build the certbot command
+  local certbot_args="certonly --standalone -d $fqdn --non-interactive --agree-tos"
+  if [ -n "$email" ]; then
+    certbot_args="$certbot_args --email $email"
+  else
+    certbot_args="$certbot_args --register-unsafely-without-email"
+  fi
+
+  # Obtain the certificate
+  if ! certbot $certbot_args; then
+    warning "Certbot failed to obtain certificate for ${fqdn}"
+    # Restart any service we stopped
+    if [ -n "$stopped_service" ]; then
+      output "Restarting ${stopped_service}..."
+      systemctl start "$stopped_service" 2>/dev/null || true
+    fi
+    return 1
+  fi
+
+  # Restart any service we stopped on port 80
+  if [ -n "$stopped_service" ]; then
+    output "Restarting ${stopped_service}..."
+    systemctl start "$stopped_service" 2>/dev/null || true
+  fi
+
+  success "SSL certificate obtained for ${fqdn}"
+
+  # Setup automatic renewal using the shared function from lib.sh
+  # This creates renewal hooks that restart nginx and Elytra after cert renewal
+  setup_certbot_renewal
+}
+
 configure_elytra() {
   local panel_url="${1:-$PANEL_URL}"
   local api_key="${2:-$PANEL_API_KEY}"
@@ -481,8 +584,10 @@ configure_elytra() {
   if [ -n "$FQDN" ]; then
     node_fqdn="$FQDN"
   else
-    warning "Node FQDN not set - cannot locate SSL certificates"
-    warning "Set FQDN via --fqdn flag or FQDN environment variable for SSL configuration"
+    if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
+      warning "Let's Encrypt requested but node FQDN not set"
+      warning "Set FQDN via --fqdn flag or FQDN environment variable"
+    fi
     node_fqdn=""
   fi
 
@@ -516,22 +621,63 @@ configure_elytra() {
   sed -i 's/memory: 1024/memory: 2048/' "${ELYTRA_INSTALL_DIR}/config.yml" 2>/dev/null || true
   sed -i 's/cpu: 100/cpu: 200/' "${ELYTRA_INSTALL_DIR}/config.yml" 2>/dev/null || true
 
-  # Configure SSL for Elytra using Let's Encrypt certificates
+  # Configure SSL for Elytra
+  # This mirrors the panel.sh/both.sh SSL approach:
+  #   1. CONFIGURE_LETSENCRYPT=true → obtain cert via certbot (standalone mode)
+  #   2. SSL_CERT_PATH/SSL_KEY_PATH → use custom certificate
+  #   3. Pre-existing Let's Encrypt certs → use them
+  #   4. Otherwise → warn and tell user how to set up later
   output "Configuring SSL for Elytra..."
-  if [ -n "$node_fqdn" ] && [ -f "/etc/letsencrypt/live/${node_fqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${node_fqdn}/privkey.pem" ]; then
-    output "Found certificates at /etc/letsencrypt/live/${node_fqdn}/"
-    # Enable SSL and set certificate paths
+
+  # Step 1: If Let's Encrypt is requested, obtain the certificate
+  if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
+    if [ -n "$node_fqdn" ]; then
+      output "Obtaining Let's Encrypt certificate for ${node_fqdn}..."
+      install_letsencrypt_elytra "$node_fqdn" "${SSL_EMAIL:-}"
+    else
+      warning "Cannot obtain Let's Encrypt certificate - node FQDN not configured"
+      warning "Set FQDN via --fqdn flag or FQDN environment variable"
+    fi
+  fi
+
+  # Step 2: Determine certificate paths and configure Elytra
+  local ssl_cert_path=""
+  local ssl_key_path=""
+
+  if [ -n "$SSL_CERT_PATH" ] && [ -n "$SSL_KEY_PATH" ] && [ -f "$SSL_CERT_PATH" ] && [ -f "$SSL_KEY_PATH" ]; then
+    # Custom certificate paths provided
+    ssl_cert_path="$SSL_CERT_PATH"
+    ssl_key_path="$SSL_KEY_PATH"
+    output "Using custom SSL certificate: ${ssl_cert_path}"
+  elif [ -n "$node_fqdn" ] && [ -f "/etc/letsencrypt/live/${node_fqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${node_fqdn}/privkey.pem" ]; then
+    # Let's Encrypt certificates found (either just obtained or pre-existing)
+    ssl_cert_path="/etc/letsencrypt/live/${node_fqdn}/fullchain.pem"
+    ssl_key_path="/etc/letsencrypt/live/${node_fqdn}/privkey.pem"
+    output "Found Let's Encrypt certificates at /etc/letsencrypt/live/${node_fqdn}/"
+  fi
+
+  if [ -n "$ssl_cert_path" ] && [ -n "$ssl_key_path" ]; then
+    # Enable SSL and set certificate paths in Elytra config
     sed -i 's/enabled: false/enabled: true/' "${ELYTRA_INSTALL_DIR}/config.yml"
-    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${node_fqdn}/fullchain.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
-    sed -i "s|key: .*|key: /etc/letsencrypt/live/${node_fqdn}/privkey.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
-    success "SSL configured for Elytra using Let's Encrypt certificates"
+    sed -i "s|certificate: .*|certificate: ${ssl_cert_path}|" "${ELYTRA_INSTALL_DIR}/config.yml"
+    sed -i "s|key: .*|key: ${ssl_key_path}|" "${ELYTRA_INSTALL_DIR}/config.yml"
+    success "SSL configured for Elytra"
   else
     if [ -z "$node_fqdn" ]; then
       warning "Skipping SSL - node FQDN not configured"
     else
-      warning "Let's Encrypt certificates not found at /etc/letsencrypt/live/${node_fqdn}/"
+      warning "SSL certificates not found for ${node_fqdn}"
     fi
-    output "To set up SSL later, obtain a certificate and configure ${ELYTRA_INSTALL_DIR}/config.yml"
+    output ""
+    output "To set up SSL later, you can:"
+    output "  1. Obtain a Let's Encrypt certificate:"
+    output "     ${COLOR_ORANGE}certbot certonly --standalone -d ${node_fqdn:-'<fqdn>'}${COLOR_NC}"
+    output "  2. Or provide custom certificate paths in ${ELYTRA_INSTALL_DIR}/config.yml"
+  fi
+
+  # Also set ASSUME_SSL if SSL is configured (for URL construction elsewhere)
+  if [ -n "$ssl_cert_path" ] && [ -n "$ssl_key_path" ]; then
+    ASSUME_SSL="true"
   fi
 
   # Create allocations (after Elytra configure)
@@ -617,6 +763,10 @@ configure_firewall() {
 
     output "Opening ports for Elytra daemon and game servers..."
     output "  • 22 (SSH)"
+    output "  • 80 (HTTP - needed for certbot renewal)"
+    if [ "$CONFIGURE_LETSENCRYPT" == true ] || [ "$ASSUME_SSL" == true ] || [ -n "$SSL_CERT_PATH" ]; then
+      output "  • 443 (HTTPS/SSL)"
+    fi
     output "  • 8080 (Elytra API)"
     output "  • 2022 (SFTP)"
     output "  • 25565-25665 (Minecraft)"
@@ -628,6 +778,7 @@ configure_firewall() {
     output "  • ${GAME_PORT_START}-${GAME_PORT_END} (Additional range)"
 
     # Configure firewall with all game ports
+    # Pass SSL flag so port 443 is opened when SSL is configured
     configure_firewall_rules true true true "$GAME_PORT_START" "$GAME_PORT_END"
   fi
 }
@@ -746,33 +897,12 @@ main() {
     setup_systemd_service
     start_elytra
 
-    # Set proper ownership on Elytra data directories (after service starts)
-    output "Ensuring Elytra data directories exist..."
-    mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
-
-    output "Setting final permissions on Elytra data directories..."
-    chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$ELYTRA_INSTALL_DIR" 2>/dev/null || true
-
-    # Set full permissions so containers can read/write/execute
-    # Note: 777 is required for containerized game servers to access these directories
-    # Ensure parent /var/lib/elytra is accessible
-    chmod 755 /var/lib/elytra 2>/dev/null || true
-    # Ensure the volumes directory itself and all contents have 777
-    chmod 777 /var/lib/elytra/volumes 2>/dev/null || true
-    chmod -R 777 /var/lib/elytra/volumes/* 2>/dev/null || true
-    chmod 777 /var/lib/elytra/archives 2>/dev/null || true
-    chmod -R 777 /var/lib/elytra/archives/* 2>/dev/null || true
-    chmod 777 /var/lib/elytra/backups 2>/dev/null || true
-    chmod -R 777 /var/lib/elytra/backups/* 2>/dev/null || true
-    chmod -R 755 "$ELYTRA_INSTALL_DIR" 2>/dev/null || true
-    # SECURITY: Config contains daemon credentials - restrict to owner-only
-    [ -f "$ELYTRA_INSTALL_DIR/config.yml" ] && chmod 600 "$ELYTRA_INSTALL_DIR/config.yml" 2>/dev/null || true
-
-    # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
-    if [ -f "$ELYTRA_INSTALL_DIR/config.yml" ]; then
-      output "Disabling permission checks in Elytra config..."
-      sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$ELYTRA_INSTALL_DIR/config.yml" 2>/dev/null || true
-    fi
+    # Run auto-fix to ensure proper permissions, ACL defaults, and service restart
+    # This handles: ownership, chmod, config permissions, ACL inheritance,
+    # check_permissions_on_boot disable, and Elytra service restart+verify
+    # (matches both.sh behavior)
+    output "Running Elytra permission fix..."
+    auto_fix_elytra_issues || true
 
     configure_firewall
     install_auto_updater_if_requested
@@ -799,6 +929,16 @@ main() {
       output "Setup Method: ${COLOR_ORANGE}Manual${COLOR_NC}"
     fi
     output "Configuration: ${COLOR_ORANGE}${ELYTRA_INSTALL_DIR}/config.yml${COLOR_NC}"
+    output "Node FQDN: ${COLOR_ORANGE}${FQDN:-Not configured}${COLOR_NC}"
+    if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
+      output "SSL: ${COLOR_ORANGE}Let's Encrypt${COLOR_NC}"
+    elif [ -n "$SSL_CERT_PATH" ] && [ -n "$SSL_KEY_PATH" ]; then
+      output "SSL: ${COLOR_ORANGE}Custom Certificate${COLOR_NC}"
+    elif [ "$ASSUME_SSL" == true ]; then
+      output "SSL: ${COLOR_ORANGE}Assumed (external)${COLOR_NC}"
+    else
+      output "SSL: ${COLOR_ORANGE}None${COLOR_NC}"
+    fi
     echo ""
 
     if [ "$CONFIGURE_FIREWALL" == "true" ]; then
