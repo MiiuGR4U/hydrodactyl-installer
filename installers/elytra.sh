@@ -169,7 +169,7 @@ Options:
 Examples:
   # Automatic setup with API key (no prompts)
   elytra.sh --fqdn node.example.com --panel-url https://panel.example.com --api-key pyro_xxx --configure-firewall
-  
+
   # With all options specified (completely unattended)
   elytra.sh --fqdn node.example.com --panel-url https://panel.example.com --api-key pyro_xxx \
     --node-name "My Node" --memory 8192 --disk 100000 --configure-firewall --install-auto-updater
@@ -213,6 +213,7 @@ INSTALL_AUTO_UPDATER="${INSTALL_AUTO_UPDATER:-false}"
 # GitHub
 ELYTRA_REPO_PRIVATE="${ELYTRA_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+ELYTRA_RELEASE_VERSION="${ELYTRA_RELEASE_VERSION:-latest}"
 
 # Node configuration
 NODE_NAME="${NODE_NAME:-}"
@@ -303,13 +304,20 @@ install_elytra() {
 
   local asset_name="elytra_linux_${arch}"
 
-  # Get latest release
-  output "Fetching latest Elytra release..."
-  local latest_release
-  latest_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN")
+  # Determine which release to fetch
+  local target_release="$ELYTRA_RELEASE_VERSION"
+  if [ "$target_release" == "latest" ]; then
+    output "Fetching latest Elytra release..."
+    target_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN")
+  else
+    output "Fetching Elytra release ${ELYTRA_RELEASE_VERSION}..."
+  fi
 
-  if [ -z "$latest_release" ] || [ "$latest_release" == "null" ]; then
-    error "Could not fetch latest release from $ELYTRA_REPO"
+  if [ -z "$target_release" ] || [ "$target_release" == "null" ]; then
+    error "Could not fetch release from $ELYTRA_REPO"
+    if [ "$ELYTRA_RELEASE_VERSION" != "latest" ]; then
+      error "Release ${ELYTRA_RELEASE_VERSION} may not exist."
+    fi
     exit 1
   fi
 
@@ -317,16 +325,17 @@ install_elytra() {
 
   # Download binary
   output "Downloading Elytra binary..."
-  if ! download_release_asset "$ELYTRA_REPO" "$asset_name" "/usr/local/bin/elytra" "$GITHUB_TOKEN"; then
+  if ! download_release_asset "$ELYTRA_REPO" "$asset_name" "/usr/local/bin/elytra" "$GITHUB_TOKEN" "$target_release"; then
     error "Failed to download Elytra binary"
     exit 1
   fi
 
   chmod +x /usr/local/bin/elytra
 
-  # Save version for auto-updater
+  # Save version from GitHub release tag for auto-updater tracking
   mkdir -p /etc/pyrodactyl
-  echo "$latest_release" > /etc/pyrodactyl/elytra-version
+  echo "$target_release" > /etc/pyrodactyl/elytra-version
+  chmod 644 /etc/pyrodactyl/elytra-version
 
   # Verify Elytra binary works
   if /usr/local/bin/elytra --version >/dev/null 2>&1; then
@@ -339,16 +348,16 @@ install_elytra() {
 # Ask user if they want to skip auto-configuration
 ask_skip_auto_config() {
   local skip_auto=""
-  
+
   echo ""
   output "Auto-configuration will:"
   output "  • Create a new location (or use existing) in your panel"
   output "  • Create a new node in your panel"
   output "  • Automatically configure Elytra with the new node"
   echo ""
-  
+
   bool_input skip_auto "Would you like to skip auto-configuration and configure manually?" "n"
-  
+
   if [ "$skip_auto" == "y" ]; then
     return 0  # Yes, skip
   else
@@ -472,7 +481,7 @@ configure_elytra() {
   # Disable permission checking to prevent Elytra from resetting permissions
   output "Disabling permission checks in Elytra config..."
   sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
-  
+
   # Update container limits for better game server compatibility
   output "Updating container limits in Elytra config..."
   sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
@@ -661,17 +670,17 @@ main() {
     output "  2. Panel API Key"
     output "  3. Node ID (create a node in your panel first)"
     output ""
-    
+
     local do_manual=""
     bool_input do_manual "Would you like to enter configuration details now?" "y"
-    
+
     if [ "$do_manual" == "y" ]; then
       echo ""
       read -rp "* Enter Panel URL: " PANEL_URL
       read -rp "* Enter Panel API Key: " PANEL_API_KEY
       read -rp "* Enter Node ID: " NODE_ID
       echo ""
-      
+
       configure_elytra "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
     else
       output ""
@@ -686,7 +695,8 @@ main() {
   fi
 
   install_rustic
-  
+<<<<<<< HEAD
+
   # Setup systemd service only if Elytra is configured
   if [ -f "${INSTALL_DIR}/config.yml" ]; then
     setup_systemd_service
@@ -700,7 +710,10 @@ main() {
     chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$INSTALL_DIR" 2>/dev/null || true
 
     # Set full permissions so containers can read/write/execute
+    # Note: 777 is required for containerized game servers to access these directories
+    # Ensure parent /var/lib/elytra is accessible
     chmod 755 /var/lib/elytra 2>/dev/null || true
+    # Ensure the volumes directory itself and all contents have 777
     chmod 777 /var/lib/elytra/volumes 2>/dev/null || true
     chmod -R 777 /var/lib/elytra/volumes/* 2>/dev/null || true
     chmod 777 /var/lib/elytra/archives 2>/dev/null || true
@@ -710,7 +723,7 @@ main() {
     chmod -R 755 "$INSTALL_DIR" 2>/dev/null || true
     # SECURITY: Config contains daemon credentials - restrict to owner-only
     [ -f "$INSTALL_DIR/config.yml" ] && chmod 600 "$INSTALL_DIR/config.yml" 2>/dev/null || true
-    
+
     # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
     if [ -f "$INSTALL_DIR/config.yml" ]; then
       output "Disabling permission checks in Elytra config..."

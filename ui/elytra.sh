@@ -34,6 +34,7 @@ fi
 ELYTRA_REPO=""
 ELYTRA_REPO_PRIVATE=false
 GITHUB_TOKEN=""
+ELYTRA_RELEASE_VERSION="${ELYTRA_RELEASE_VERSION:-latest}"
 PANEL_URL=""
 NODE_TOKEN=""
 NODE_ID=""
@@ -111,7 +112,32 @@ configure_github_repository() {
 
   local latest_release
   latest_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN")
-  success "Found release: ${latest_release}"
+  success "Found releases in repository"
+}
+
+# ------------------ Release Version Selection ----------------- #
+
+configure_release_version() {
+  print_header
+  print_flame "Release Version Selection"
+
+  local selected_version
+  selected_version=$(select_release_version "$ELYTRA_REPO" "elytra" "$GITHUB_TOKEN")
+
+  if [ -z "$selected_version" ]; then
+    error "Failed to select release version"
+    exit 1
+  fi
+
+  ELYTRA_RELEASE_VERSION="$selected_version"
+
+  if [ "$ELYTRA_RELEASE_VERSION" == "latest" ]; then
+    local latest
+    latest=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN")
+    success "Will install latest release: ${latest}"
+  else
+    success "Will install release: ${ELYTRA_RELEASE_VERSION}"
+  fi
 }
 
 # ------------------ API Key Configuration ----------------- #
@@ -264,6 +290,7 @@ export_variables() {
   export ELYTRA_REPO
   export ELYTRA_REPO_PRIVATE
   export GITHUB_TOKEN
+  export ELYTRA_RELEASE_VERSION
   export PANEL_URL
   export PANEL_API_KEY
   export NODE_NAME
@@ -283,6 +310,7 @@ main() {
   print_flame "Welcome to the Elytra Daemon Installer"
 
   configure_github_repository
+  configure_release_version
   configure_api_key
   configure_panel_connection
   configure_network

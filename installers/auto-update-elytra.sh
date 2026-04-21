@@ -156,8 +156,13 @@ load_config() {
 get_current_version() {
   # First check version file
   if [ -f "$VERSION_FILE" ]; then
-    cat "$VERSION_FILE" 2>/dev/null
-    return 0
+    local version
+    version=$(cat "$VERSION_FILE" 2>/dev/null)
+    if [ -n "$version" ]; then
+      echo "$version"
+      return 0
+    fi
+    # File exists but is empty, continue to fallback
   fi
 
   # Fall back to binary --version (for backwards compatibility)
@@ -211,8 +216,12 @@ get_release_asset_info() {
     curl_opts+=("-H" "Authorization: Bearer $GITHUB_TOKEN")
   fi
 
+  # URL-encode version for API path
+  local encoded_version
+  encoded_version=$(printf '%s' "$version" | jq -sRr @uri 2>/dev/null || echo "$version")
+
   curl "${curl_opts[@]}" \
-    "https://api.github.com/repos/$ELYTRA_REPO/releases/tags/$version" 2>/dev/null
+    "https://api.github.com/repos/$ELYTRA_REPO/releases/tags/$encoded_version" 2>/dev/null
 }
 
 # Version comparison

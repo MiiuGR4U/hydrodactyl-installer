@@ -40,6 +40,7 @@ PANEL_ADMIN_USERNAME="${PANEL_ADMIN_USERNAME:-}"
 PANEL_ADMIN_FIRSTNAME="${PANEL_ADMIN_FIRSTNAME:-}"
 PANEL_ADMIN_LASTNAME="${PANEL_ADMIN_LASTNAME:-}"
 PANEL_ADMIN_PASSWORD="${PANEL_ADMIN_PASSWORD:-}"
+PANEL_RELEASE_VERSION="${PANEL_RELEASE_VERSION:-latest}"
 ASSUME_SSL="${ASSUME_SSL:-false}"
 CONFIGURE_LETSENCRYPT="${CONFIGURE_LETSENCRYPT:-false}"
 SSL_CERT_PATH="${SSL_CERT_PATH:-}"
@@ -230,7 +231,17 @@ install_panel_release() {
     exit 1
   fi
 
-  output "Fetching latest release from ${PANEL_REPO}..."
+  # Determine which release to fetch
+  local release_endpoint="latest"
+  if [ "$PANEL_RELEASE_VERSION" != "latest" ]; then
+    # URL-encode the version tag for the API path (handles special characters like +, spaces, etc.)
+    local encoded_version
+    encoded_version=$(printf '%s' "$PANEL_RELEASE_VERSION" | jq -sRr @uri 2>/dev/null || echo "$PANEL_RELEASE_VERSION")
+    release_endpoint="tags/${encoded_version}"
+    output "Fetching release ${PANEL_RELEASE_VERSION} from ${PANEL_REPO}..."
+  else
+    output "Fetching latest release from ${PANEL_REPO}..."
+  fi
 
   # Build curl headers based on whether we have a token
   local curl_headers=(
@@ -242,10 +253,10 @@ install_panel_release() {
     curl_headers+=("--header" "Authorization: Bearer $GITHUB_TOKEN")
   fi
 
-  # Get the latest release info from GitHub API
+  # Get the release info from GitHub API
   local release_data
   release_data=$(curl -sS "${curl_headers[@]}" \
-    "https://api.github.com/repos/${PANEL_REPO}/releases/latest")
+    "https://api.github.com/repos/${PANEL_REPO}/releases/${release_endpoint}")
 
   # Check if we got a valid response
   if echo "$release_data" | grep -q '"message"'; then
@@ -269,7 +280,13 @@ install_panel_release() {
 
   local release_tag
   release_tag=$(echo "$release_data" | jq -r '.tag_name')
-  info "Latest release: $release_tag"
+  info "Installing release: $release_tag"
+
+  # Save version from GitHub release tag to persistent location
+  output "Recording version from GitHub: $release_tag"
+  mkdir -p /etc/pyrodactyl
+  echo "$release_tag" > /etc/pyrodactyl/panel-version
+  chmod 644 /etc/pyrodactyl/panel-version
 
   output "Creating installation directory..."
   mkdir -p "$INSTALL_DIR"
@@ -292,6 +309,9 @@ install_panel_release() {
     --output panel.tar.gz \
     "$asset_api_url"; then
     error "Failed to download panel from repository"
+    if [ "$PANEL_RELEASE_VERSION" != "latest" ]; then
+      error "Release ${PANEL_RELEASE_VERSION} may not exist or the asset 'panel.tar.gz' is not available."
+    fi
     if [ "$PANEL_REPO_PRIVATE" == "true" ]; then
       error "Please check that your GitHub token has 'repo' scope and the release exists."
     else
@@ -350,23 +370,28 @@ install_panel_clone() {
     exit 1
   fi
 
-  output "Cloning from https://github.com/${PANEL_REPO}.git"
   mkdir -p "$(dirname "$INSTALL_DIR")"
 
+  # Simple token-based auth: embed token in URL if provided
   local git_url="https://github.com/${PANEL_REPO}.git"
-  
-  # Clone with http.extraHeader for private repos to avoid persisting token
-  local git_clone_cmd=("git" "clone")
-  if [ -n "$GITHUB_TOKEN" ] && [ "$PANEL_REPO_PRIVATE" == "true" ]; then
-    git_clone_cmd=("git" "-c" "http.extraHeader=Authorization: Bearer ${GITHUB_TOKEN}" "clone")
-  fi
+  [ -n "$GITHUB_TOKEN" ] && git_url="https://${GITHUB_TOKEN}@github.com/${PANEL_REPO}.git"
 
-  if ! "${git_clone_cmd[@]}" "$git_url" "$INSTALL_DIR"; then
+  output "Cloning from https://github.com/${PANEL_REPO}.git"
+  if ! git clone "$git_url" "$INSTALL_DIR"; then
     error "Failed to clone repository"
     exit 1
   fi
 
   cd "$INSTALL_DIR"
+
+  # Save commit hash for auto-updater tracking
+  local commit_hash
+  commit_hash=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+  output "Recording git commit hash: ${commit_hash:0:8}"
+  mkdir -p /etc/pyrodactyl
+  echo "git:${commit_hash}" > /etc/pyrodactyl/panel-version
+  chmod 644 /etc/pyrodactyl/panel-version
+
   cp .env.example .env
 
   # Install composer and dependencies
@@ -447,7 +472,7 @@ setup_services() {
   # Set permissions
   output "Setting file permissions..."
   chown -R "$WEBUSER":"$WEBGROUP" "$INSTALL_DIR"
-  
+
   # Apply correct permissions: 755 for directories, 644 for files
   if [ -d "$INSTALL_DIR/storage" ]; then
     find "$INSTALL_DIR/storage" -type d -exec chmod 755 {} \; 2>/dev/null || true

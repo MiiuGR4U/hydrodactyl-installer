@@ -154,14 +154,26 @@ load_config() {
 # ------------------ Version Functions ----------------- #
 
 get_current_version() {
+  # Primary: Read from version file (written by installer from GitHub release tag)
+  if [ -f "/etc/pyrodactyl/panel-version" ]; then
+    local version
+    version=$(cat "/etc/pyrodactyl/panel-version" 2>/dev/null)
+    if [ -n "$version" ]; then
+      echo "$version"
+      return 0
+    fi
+  fi
+
+  # Fallback: Extract from panel config
   if [ -f "${INSTALL_DIR}/config/app.php" ]; then
     grep "'version'" "${INSTALL_DIR}/config/app.php" 2>/dev/null | \
       head -1 | \
       sed -E "s/.*'version' => '([^']+)'.*/\1/" || \
       echo "unknown"
-  else
-    echo "unknown"
+    return 0
   fi
+
+  echo "unknown"
 }
 
 get_latest_release() {
@@ -681,8 +693,13 @@ EOF
     fi
   fi
 
+  # Save new version to version file
+  mkdir -p /etc/pyrodactyl
+  echo "$new_version" > /etc/pyrodactyl/panel-version
+  chmod 644 /etc/pyrodactyl/panel-version
+
   # Log update
-  echo "[$(date)] Updated from $(get_current_version) to ${new_version}" >> "${BACKUP_DIR}/update-history.log"
+  echo "[$(date)] Updated to ${new_version}" >> "${BACKUP_DIR}/update-history.log"
 
   success "Update to $new_version completed successfully!"
   return 0
@@ -908,6 +925,13 @@ EOF
     fi
   fi
 
+  # Save git commit hash as version
+  local new_commit
+  new_commit=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+  mkdir -p /etc/pyrodactyl
+  echo "git:${new_commit}" > /etc/pyrodactyl/panel-version
+  chmod 644 /etc/pyrodactyl/panel-version
+
   success "Update to latest git commit completed successfully!"
   return 0
 }
@@ -986,7 +1010,7 @@ auto_fix_panel_issues() {
   info "Fixing file permissions..."
   chown -R www-data:www-data "$INSTALL_DIR" 2>/dev/null || \
   chown -R nginx:nginx "$INSTALL_DIR" 2>/dev/null || true
-  
+
   # Apply correct permissions: 755 for directories, 644 for files
   if [ -d "$INSTALL_DIR/storage" ]; then
     find "$INSTALL_DIR/storage" -type d -exec chmod 755 {} \; 2>/dev/null || true
