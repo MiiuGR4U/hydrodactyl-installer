@@ -382,7 +382,8 @@ trigger_panel_update() {
   if [ -n "$github_token" ]; then
     curl_opts+=(-H "Authorization: Bearer $github_token")
   fi
-  latest_version=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$panel_repo/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
+  latest_version=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$panel_repo/releases/latest" 2>/dev/null | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -1)
+  [ -z "$latest_version" ] && latest_version="unknown"
   
   output "Current version: ${COLOR_ORANGE}${current_version}${COLOR_NC}"
   if [ "$latest_version" != "unknown" ] && [ "$latest_version" != "null" ]; then
