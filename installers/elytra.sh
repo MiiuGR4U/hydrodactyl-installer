@@ -186,8 +186,8 @@ parse_arguments "$@"
 # ------------------ Variables ----------------- #
 
 # Installation paths
-# Override INSTALL_DIR unconditionally - lib.sh exports this as /var/www/pyrodactyl for the panel
-INSTALL_DIR="/etc/elytra"
+# Use ELYTRA_INSTALL_DIR to avoid collision with lib.sh's INSTALL_DIR (which is /var/www/pyrodactyl for the panel)
+ELYTRA_INSTALL_DIR="/etc/elytra"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/pyrodactyl}"
 ELYTRA_REPO="${ELYTRA_REPO:-pyrohost/elytra}"
 
@@ -279,7 +279,7 @@ install_elytra() {
 
   # Create directories with proper permissions
   output "Creating Elytra directories..."
-  mkdir -p "$INSTALL_DIR" || { error "Failed to create $INSTALL_DIR"; return 1; }
+  mkdir -p "$ELYTRA_INSTALL_DIR" || { error "Failed to create $ELYTRA_INSTALL_DIR"; return 1; }
   mkdir -p "$PANEL_CONFIG_DIR" || { error "Failed to create $PANEL_CONFIG_DIR"; return 1; }
   mkdir -p /var/lib/elytra/volumes || { error "Failed to create /var/lib/elytra/volumes"; return 1; }
   mkdir -p /var/lib/elytra/archives || { error "Failed to create /var/lib/elytra/archives"; return 1; }
@@ -454,10 +454,10 @@ configure_elytra() {
   print_flame "Configuring Elytra"
 
   # Create Elytra config directory with verification
-  output "Creating Elytra config directory at ${INSTALL_DIR}..."
-  mkdir -p "${INSTALL_DIR}"
-  if [ ! -d "${INSTALL_DIR}" ]; then
-    error "Failed to create Elytra config directory at ${INSTALL_DIR}"
+  output "Creating Elytra config directory at ${ELYTRA_INSTALL_DIR}..."
+  mkdir -p "${ELYTRA_INSTALL_DIR}"
+  if [ ! -d "${ELYTRA_INSTALL_DIR}" ]; then
+    error "Failed to create Elytra config directory at ${ELYTRA_INSTALL_DIR}"
     return 1
   fi
 
@@ -472,11 +472,11 @@ configure_elytra() {
   # Configure Elytra using the official configure command
   # Note: Uses Panel API key, not node daemon token
   # Run in a subshell to avoid changing the working directory of the caller
-  if ! (cd "${INSTALL_DIR}" && elytra configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then
+  if ! (cd "${ELYTRA_INSTALL_DIR}" && elytra configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then
     error "Failed to configure Elytra"
     error ""
     error "To manually configure later, run:"
-    error "  cd ${INSTALL_DIR} && sudo elytra configure \\"
+    error "  cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\"
     error "    --panel-url '${panel_url}' \\"
     error "    --token '<your-api-key>' \\"
     error "    --node '${node_id}'"
@@ -487,21 +487,21 @@ configure_elytra() {
 
   # Disable permission checking to prevent Elytra from resetting permissions
   output "Disabling permission checks in Elytra config..."
-  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${ELYTRA_INSTALL_DIR}/config.yml" 2>/dev/null || true
 
   # Update container limits for better game server compatibility
   output "Updating container limits in Elytra config..."
-  sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
-  sed -i 's/memory: 1024/memory: 2048/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
-  sed -i 's/cpu: 100/cpu: 200/' "${INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${ELYTRA_INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/memory: 1024/memory: 2048/' "${ELYTRA_INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/cpu: 100/cpu: 200/' "${ELYTRA_INSTALL_DIR}/config.yml" 2>/dev/null || true
 
   # Configure SSL for Elytra using Let's Encrypt certificates
   output "Configuring SSL for Elytra..."
   if [ -f "/etc/letsencrypt/live/${panel_fqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${panel_fqdn}/privkey.pem" ]; then
     # Enable SSL and set certificate paths
-    sed -i 's/enabled: false/enabled: true/' "${INSTALL_DIR}/config.yml"
-    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${panel_fqdn}/fullchain.pem|" "${INSTALL_DIR}/config.yml"
-    sed -i "s|key: .*|key: /etc/letsencrypt/live/${panel_fqdn}/privkey.pem|" "${INSTALL_DIR}/config.yml"
+    sed -i 's/enabled: false/enabled: true/' "${ELYTRA_INSTALL_DIR}/config.yml"
+    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${panel_fqdn}/fullchain.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
+    sed -i "s|key: .*|key: /etc/letsencrypt/live/${panel_fqdn}/privkey.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
     success "SSL configured for Elytra using Let's Encrypt certificates"
   else
     warning "Let's Encrypt certificates not found, SSL may need manual configuration"
@@ -637,7 +637,7 @@ main() {
       output "Skipping auto-configuration."
       output ""
       output "You chose to manually configure Elytra. To configure later, run:"
-      output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
+      output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -652,7 +652,7 @@ main() {
         error "Auto-configuration failed."
         error ""
         error "You can manually configure Elytra later by running:"
-        error "  cd ${INSTALL_DIR} && sudo elytra configure \\"
+        error "  cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
         error "    --panel-url '${PANEL_URL}' \\"
         error "    --token '<your-api-key>' \\"
         error "    --node '<node-id>'"
@@ -693,7 +693,7 @@ main() {
       output "Skipping configuration. Elytra is installed but not configured."
       output ""
       output "To configure later, run:"
-      output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
+      output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -702,7 +702,7 @@ main() {
 
   # ---- Post-configuration phase ----
   # Only run config-dependent steps if Elytra is configured
-  if [ -f "${INSTALL_DIR}/config.yml" ]; then
+  if [ -f "${ELYTRA_INSTALL_DIR}/config.yml" ]; then
     install_rustic
     setup_systemd_service
     start_elytra
@@ -712,7 +712,7 @@ main() {
     mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
 
     output "Setting final permissions on Elytra data directories..."
-    chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$INSTALL_DIR" 2>/dev/null || true
+    chown -R 8888:8888 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups "$ELYTRA_INSTALL_DIR" 2>/dev/null || true
 
     # Set full permissions so containers can read/write/execute
     # Note: 777 is required for containerized game servers to access these directories
@@ -725,14 +725,14 @@ main() {
     chmod -R 777 /var/lib/elytra/archives/* 2>/dev/null || true
     chmod 777 /var/lib/elytra/backups 2>/dev/null || true
     chmod -R 777 /var/lib/elytra/backups/* 2>/dev/null || true
-    chmod -R 755 "$INSTALL_DIR" 2>/dev/null || true
+    chmod -R 755 "$ELYTRA_INSTALL_DIR" 2>/dev/null || true
     # SECURITY: Config contains daemon credentials - restrict to owner-only
-    [ -f "$INSTALL_DIR/config.yml" ] && chmod 600 "$INSTALL_DIR/config.yml" 2>/dev/null || true
+    [ -f "$ELYTRA_INSTALL_DIR/config.yml" ] && chmod 600 "$ELYTRA_INSTALL_DIR/config.yml" 2>/dev/null || true
 
     # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
-    if [ -f "$INSTALL_DIR/config.yml" ]; then
+    if [ -f "$ELYTRA_INSTALL_DIR/config.yml" ]; then
       output "Disabling permission checks in Elytra config..."
-      sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$INSTALL_DIR/config.yml" 2>/dev/null || true
+      sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$ELYTRA_INSTALL_DIR/config.yml" 2>/dev/null || true
     fi
 
     configure_firewall
@@ -748,7 +748,7 @@ main() {
   output "Elytra has been installed successfully!"
   echo ""
 
-  if [ -f "${INSTALL_DIR}/config.yml" ]; then
+  if [ -f "${ELYTRA_INSTALL_DIR}/config.yml" ]; then
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     output "  Connection Details"
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -759,7 +759,7 @@ main() {
     else
       output "Setup Method: ${COLOR_ORANGE}Manual${COLOR_NC}"
     fi
-    output "Configuration: ${COLOR_ORANGE}${INSTALL_DIR}/config.yml${COLOR_NC}"
+    output "Configuration: ${COLOR_ORANGE}${ELYTRA_INSTALL_DIR}/config.yml${COLOR_NC}"
     echo ""
 
     if [ "$CONFIGURE_FIREWALL" == "true" ]; then
@@ -785,7 +785,7 @@ main() {
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     output "If you need to reconfigure Elytra manually, run:"
     output ""
-    output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
+    output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
     output "    --panel-url '${PANEL_URL}' \\"
     output "    --token '<your-api-key>' \\"
     output "    --node '${NODE_ID}'${COLOR_NC}"
@@ -799,10 +799,10 @@ main() {
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     output "Elytra is installed but NOT configured."
     output ""
-    output "The config directory has been created at ${INSTALL_DIR}."
+    output "The config directory has been created at ${ELYTRA_INSTALL_DIR}."
     output "To complete setup, run:"
     output ""
-    output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
+    output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\"
     output "    --panel-url 'https://your-panel.com' \\"
     output "    --token 'your-api-key' \\"
     output "    --node 'your-node-id'${COLOR_NC}"
@@ -831,7 +831,7 @@ main() {
   show_elytra_completion "install"
 
   # Run health check only if configured
-  if [ -f "${INSTALL_DIR}/config.yml" ]; then
+  if [ -f "${ELYTRA_INSTALL_DIR}/config.yml" ]; then
     echo ""
     output "Running post-installation health check..."
     check_elytra_health
