@@ -695,8 +695,6 @@ main() {
   fi
 
   install_rustic
-<<<<<<< HEAD
-
   # Setup systemd service only if Elytra is configured
   if [ -f "${INSTALL_DIR}/config.yml" ]; then
     setup_systemd_service
