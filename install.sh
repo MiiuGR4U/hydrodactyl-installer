@@ -45,7 +45,7 @@ done
 ######################################################################################
 
 export GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
-export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.2.0}"
+export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.3.0}"
 export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer}"
 
 LOG_PATH="/var/log/pyrodactyl-installer.log"
