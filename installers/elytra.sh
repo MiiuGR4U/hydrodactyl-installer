@@ -638,7 +638,7 @@ main() {
       output "Skipping auto-configuration."
       output ""
       output "You chose to manually configure Elytra. To configure later, run:"
-      output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
+      output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -655,7 +655,7 @@ main() {
         error "Auto-configuration failed."
         error ""
         error "You can manually configure Elytra later by running:"
-        error "  cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
+        error "  cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\"
         error "    --panel-url '${PANEL_URL}' \\"
         error "    --token '<your-api-key>' \\"
         error "    --node '<node-id>'"
@@ -696,7 +696,7 @@ main() {
       output "Skipping configuration. Elytra is installed but not configured."
       output ""
       output "To configure later, run:"
-      output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
+      output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -788,7 +788,7 @@ main() {
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     output "If you need to reconfigure Elytra manually, run:"
     output ""
-    output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\
+    output "  ${COLOR_ORANGE}cd ${ELYTRA_INSTALL_DIR} && sudo elytra configure \\"
     output "    --panel-url '${PANEL_URL}' \\"
     output "    --token '<your-api-key>' \\"
     output "    --node '${NODE_ID}'${COLOR_NC}"
