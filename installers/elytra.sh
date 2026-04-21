@@ -406,11 +406,24 @@ auto_configure_elytra() {
   memory_mb=$(get_system_memory)
   disk_mb=$(df -m / | awk 'NR==2 {print $2}')
 
-  # Extract FQDN from panel_url for node configuration
-  local panel_fqdn
-  panel_fqdn=$(echo "$panel_url" | sed 's|https://||' | sed 's|http://||')
+  # Determine node FQDN - must be set explicitly or detectable via hostname
+  local node_fqdn
+  if [ -n "$FQDN" ]; then
+    node_fqdn="$FQDN"
+    info "Using configured node FQDN: ${node_fqdn}"
+  else
+    node_fqdn=$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "")
+    if [ -z "$node_fqdn" ] || [ "$node_fqdn" == "localhost" ]; then
+      error "Could not determine node FQDN"
+      error "Set FQDN via --fqdn flag or FQDN environment variable"
+      error "Example: elytra.sh --fqdn node.example.com"
+      return 1
+    else
+      info "Detected node FQDN from hostname: ${node_fqdn}"
+    fi
+  fi
 
-  if ! NODE_ID=$(create_node_via_api "$api_key" "$panel_url" "$location_id" "$node_name" "$memory_mb" "$disk_mb" "false" "$panel_fqdn"); then
+  if ! NODE_ID=$(create_node_via_api "$api_key" "$panel_url" "$location_id" "$node_name" "$memory_mb" "$disk_mb" "false" "$node_fqdn"); then
     error "Failed to create node"
     return 1
   fi
@@ -462,9 +475,16 @@ configure_elytra() {
     return 1
   fi
 
-  # Determine panel FQDN from URL for SSL certificate paths
-  local panel_fqdn
-  panel_fqdn=$(echo "${panel_url}" | sed 's|https://||' | sed 's|http://||')
+  # Determine FQDN for SSL certificate paths
+  # Must be set explicitly - the panel FQDN is NOT the same as the node FQDN
+  local node_fqdn
+  if [ -n "$FQDN" ]; then
+    node_fqdn="$FQDN"
+  else
+    warning "Node FQDN not set - cannot locate SSL certificates"
+    warning "Set FQDN via --fqdn flag or FQDN environment variable for SSL configuration"
+    node_fqdn=""
+  fi
 
   output "Configuring Elytra using 'elytra configure' command..."
   output "Panel URL: ${panel_url}"
@@ -498,14 +518,20 @@ configure_elytra() {
 
   # Configure SSL for Elytra using Let's Encrypt certificates
   output "Configuring SSL for Elytra..."
-  if [ -f "/etc/letsencrypt/live/${panel_fqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${panel_fqdn}/privkey.pem" ]; then
+  if [ -n "$node_fqdn" ] && [ -f "/etc/letsencrypt/live/${node_fqdn}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${node_fqdn}/privkey.pem" ]; then
+    output "Found certificates at /etc/letsencrypt/live/${node_fqdn}/"
     # Enable SSL and set certificate paths
     sed -i 's/enabled: false/enabled: true/' "${ELYTRA_INSTALL_DIR}/config.yml"
-    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${panel_fqdn}/fullchain.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
-    sed -i "s|key: .*|key: /etc/letsencrypt/live/${panel_fqdn}/privkey.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
+    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${node_fqdn}/fullchain.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
+    sed -i "s|key: .*|key: /etc/letsencrypt/live/${node_fqdn}/privkey.pem|" "${ELYTRA_INSTALL_DIR}/config.yml"
     success "SSL configured for Elytra using Let's Encrypt certificates"
   else
-    warning "Let's Encrypt certificates not found, SSL may need manual configuration"
+    if [ -z "$node_fqdn" ]; then
+      warning "Skipping SSL - node FQDN not configured"
+    else
+      warning "Let's Encrypt certificates not found at /etc/letsencrypt/live/${node_fqdn}/"
+    fi
+    output "To set up SSL later, obtain a certificate and configure ${ELYTRA_INSTALL_DIR}/config.yml"
   fi
 
   # Create allocations (after Elytra configure)
@@ -678,6 +704,7 @@ main() {
     output "  1. Panel URL (e.g., https://panel.example.com)"
     output "  2. Panel API Key"
     output "  3. Node ID (create a node in your panel first)"
+    output "  4. This node's FQDN (for SSL certificate setup)"
     output ""
 
     local do_manual=""
@@ -688,6 +715,15 @@ main() {
       read -rp "* Enter Panel URL: " PANEL_URL
       read -rp "* Enter Panel API Key: " PANEL_API_KEY
       read -rp "* Enter Node ID: " NODE_ID
+      echo ""
+
+      # Ask for node FQDN if not already set
+      if [ -z "$FQDN" ]; then
+        output ""
+        output "Enter the FQDN for this node (e.g., node.example.com)"
+        output "This is used to locate SSL certificates for secure connections."
+        read -rp "* Node FQDN: " FQDN
+      fi
       echo ""
 
       configure_elytra "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
