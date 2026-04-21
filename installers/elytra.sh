@@ -186,7 +186,8 @@ parse_arguments "$@"
 # ------------------ Variables ----------------- #
 
 # Installation paths
-INSTALL_DIR="${INSTALL_DIR:-/etc/elytra}"
+# Override INSTALL_DIR unconditionally - lib.sh exports this as /var/www/pyrodactyl for the panel
+INSTALL_DIR="/etc/elytra"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/pyrodactyl}"
 ELYTRA_REPO="${ELYTRA_REPO:-pyrohost/elytra}"
 
