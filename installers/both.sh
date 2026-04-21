@@ -705,7 +705,12 @@ install_elytra_daemon() {
   echo "$latest_release" > /etc/pyrodactyl/elytra-version
 
   # Create Elytra config directory
+  output "Creating Elytra config directory at ${ELYTRA_DIR}..."
   mkdir -p "${ELYTRA_DIR}"
+  if [ ! -d "${ELYTRA_DIR}" ]; then
+    error "Failed to create Elytra config directory at ${ELYTRA_DIR}"
+    exit 1
+  fi
 
   # Determine panel URL - always use HTTPS for API
   local panel_url="https://${PANEL_FQDN}"
@@ -1025,6 +1030,20 @@ main() {
   output "  ${COLOR_ORANGE}systemctl status pyroq${COLOR_NC}    - Panel queue worker"
   output "  ${COLOR_ORANGE}systemctl status elytra${COLOR_NC}    - Elytra daemon"
   output "  ${COLOR_ORANGE}journalctl -u elytra -f${COLOR_NC}   - View Elytra logs"
+  echo ""
+
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "  Manual Reconfiguration"
+  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "If you need to reconfigure Elytra manually, run:"
+  output ""
+  output "  ${COLOR_ORANGE}cd /etc/elytra && sudo elytra configure \\"
+  output "    --panel-url 'https://${PANEL_FQDN}' \\"
+  output "    --token '<your-api-key>' \\"
+  output "    --node '${NODE_ID}'${COLOR_NC}"
+  output ""
+  output "Or use the installer function (if running the installer):"
+  output "  ${COLOR_ORANGE}configure_elytra 'https://${PANEL_FQDN}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
   echo ""
 
   print_brake 70

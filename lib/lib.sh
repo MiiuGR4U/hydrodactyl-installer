@@ -613,14 +613,14 @@ load_existing_db_credentials() {
   local creds_file="/root/.config/pyrodactyl/db-credentials"
 
   if [ -f "$creds_file" ]; then
-    output "Found existing database credentials, loading..."
+    output "Found existing database credentials, loading..." >&2
     local saved_root_pass
     saved_root_pass=$(grep '^root:' "$creds_file" | cut -d':' -f2)
 
     # Test if saved credentials work
     if mysql -u root -p"${saved_root_pass}" -e "SELECT 1" >/dev/null 2>&1; then
       echo "${saved_root_pass}"
-      success "Existing database credentials validated"
+      success "Existing database credentials validated" >&2
       return 0
     else
       error "Saved database credentials don't work!"
@@ -2891,7 +2891,7 @@ get_node_configuration() {
   local panel_url="$2"
   local node_id="$3"
 
-  output "Retrieving node configuration..."
+  output "Retrieving node configuration..." >&2
 
   local config_response
   config_response=$(curl -s \
