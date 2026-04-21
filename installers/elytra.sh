@@ -379,7 +379,8 @@ auto_configure_elytra() {
 
   local api_key="$1"
   local panel_url="$2"
-  local node_name="${3:-Elytra-Node-$(hostname -s)}"
+  local node_name="${3:-}"
+  [ -z "$node_name" ] && node_name="Elytra-Node-$(hostname -s)"
 
   output "Starting automatic Elytra configuration..."
   output "Node name: ${COLOR_ORANGE}${node_name}${COLOR_NC}"
@@ -646,7 +647,9 @@ main() {
       read -r
     else
       # User wants auto-configuration
-      if auto_configure_elytra "$PANEL_API_KEY" "$PANEL_URL" "${NODE_NAME:-Elytra-Node-$(hostname -s)}"; then
+      local _node_name="${NODE_NAME:-}"
+      [ -z "$_node_name" ] && _node_name="Elytra-Node-$(hostname -s)"
+      if auto_configure_elytra "$PANEL_API_KEY" "$PANEL_URL" "$_node_name"; then
         success "Elytra auto-configured via API"
       else
         error "Auto-configuration failed."
