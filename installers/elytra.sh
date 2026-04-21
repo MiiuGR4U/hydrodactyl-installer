@@ -225,25 +225,34 @@ PANEL_FQDN="${PANEL_FQDN:-}"
 export SKIP_WINGS_SETUP="${SKIP_WINGS_SETUP:-false}"
 export ASSUME_SSL="${ASSUME_SSL:-false}"
 
-# Validation - either API key OR manual credentials required
+# Validation - credentials are optional, but if provided must be complete
+# User can skip configuration and configure later
 missing=()
+partial_creds=false
 
-if [[ -z "$PANEL_API_KEY" ]]; then
-  # No API key, require manual credentials
+if [[ -n "$PANEL_API_KEY" ]]; then
+  # API key provided - will use automatic setup
+  :
+elif [[ -n "$PANEL_URL" || -n "$NODE_TOKEN" || -n "$NODE_ID" ]]; then
+  # Partial manual credentials provided - require all
   for var in PANEL_URL NODE_TOKEN NODE_ID; do
     if [[ -z "${!var}" ]]; then
       missing+=("$var")
     fi
   done
-
   if (( ${#missing[@]} > 0 )); then
-    print_header
-    print_flame "Missing Required Variables"
-    for m in "${missing[@]}"; do
-      error "${m} is required (or provide PANEL_API_KEY for automatic setup)"
-    done
-    exit 1
+    partial_creds=true
   fi
+fi
+
+# Only error if partial credentials were provided
+if [[ "$partial_creds" == true ]]; then
+  print_header
+  print_flame "Missing Required Variables"
+  for m in "${missing[@]}"; do
+    error "${m} is required (or provide PANEL_API_KEY for automatic setup)"
+  done
+  exit 1
 fi
 
 # ---------------- Installation Functions ---------------- #
@@ -260,8 +269,6 @@ check_existing() {
     systemctl stop elytra 2>/dev/null || true
   fi
 }
-
-
 
 install_elytra() {
   print_flame "Installing Elytra Daemon"
@@ -321,7 +328,7 @@ install_elytra() {
     exit 1
   fi
 
-  info "Installing release: $latest_release"
+  info "Installing release: $target_release"
 
   # Download binary
   output "Downloading Elytra binary..."
@@ -463,13 +470,12 @@ configure_elytra() {
 
   # Configure Elytra using the official configure command
   # Note: Uses Panel API key, not node daemon token
-  cd "${INSTALL_DIR}" && elytra configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"
-
-  if [ $? -ne 0 ]; then
+  # Run in a subshell to avoid changing the working directory of the caller
+  if ! (cd "${INSTALL_DIR}" && elytra configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then
     error "Failed to configure Elytra"
     error ""
     error "To manually configure later, run:"
-    error "  cd /etc/elytra && sudo elytra configure \\"
+    error "  cd ${INSTALL_DIR} && sudo elytra configure \\"
     error "    --panel-url '${panel_url}' \\"
     error "    --token '<your-api-key>' \\"
     error "    --node '${node_id}'"
@@ -507,8 +513,6 @@ configure_elytra() {
 
   success "Elytra configured"
 }
-
-
 
 setup_systemd_service() {
   print_flame "Setting up Systemd Service"
@@ -623,7 +627,8 @@ main() {
   check_existing
   install_elytra
 
-  # Check if we should use API-based auto-configuration
+  # ---- Configuration phase ----
+  # Three paths: auto-configure with API key, manual credentials, or skip entirely
   if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_URL" ]; then
     # API credentials provided - ask if user wants to skip auto-config
     if ask_skip_auto_config; then
@@ -631,7 +636,7 @@ main() {
       output "Skipping auto-configuration."
       output ""
       output "You chose to manually configure Elytra. To configure later, run:"
-      output "  ${COLOR_ORANGE}cd /etc/elytra && sudo elytra configure \\"
+      output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -646,7 +651,7 @@ main() {
         error "Auto-configuration failed."
         error ""
         error "You can manually configure Elytra later by running:"
-        error "  cd /etc/elytra && sudo elytra configure \\"
+        error "  cd ${INSTALL_DIR} && sudo elytra configure \\"
         error "    --panel-url '${PANEL_URL}' \\"
         error "    --token '<your-api-key>' \\"
         error "    --node '<node-id>'"
@@ -656,14 +661,14 @@ main() {
         exit 1
       fi
     fi
-  elif [ -n "$PANEL_URL" ] && [ -n "$NODE_ID" ]; then
+  elif [ -n "$PANEL_URL" ] && [ -n "$PANEL_API_KEY" ] && [ -n "$NODE_ID" ]; then
     # Manual configuration credentials provided via environment/args
     output "Manual configuration credentials detected."
     configure_elytra "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
   else
-    # No credentials - prompt for manual configuration
+    # No credentials - ask if user wants to configure now or skip
     output ""
-    output "No API credentials provided. Manual configuration required."
+    output "No API credentials provided."
     output ""
     output "To configure Elytra, you need:"
     output "  1. Panel URL (e.g., https://panel.example.com)"
@@ -687,16 +692,17 @@ main() {
       output "Skipping configuration. Elytra is installed but not configured."
       output ""
       output "To configure later, run:"
-      output "  ${COLOR_ORANGE}cd /etc/elytra && sudo elytra configure \\"
+      output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
     fi
   fi
 
-  install_rustic
-  # Setup systemd service only if Elytra is configured
+  # ---- Post-configuration phase ----
+  # Only run config-dependent steps if Elytra is configured
   if [ -f "${INSTALL_DIR}/config.yml" ]; then
+    install_rustic
     setup_systemd_service
     start_elytra
 
@@ -727,23 +733,20 @@ main() {
       output "Disabling permission checks in Elytra config..."
       sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$INSTALL_DIR/config.yml" 2>/dev/null || true
     fi
-  else
-    output ""
-    warning "Elytra is not configured - skipping service setup"
-    output "Run the configuration command above, then enable the service with:"
-    output "  ${COLOR_ORANGE}systemctl enable --now elytra${COLOR_NC}"
+
+    configure_firewall
+    install_auto_updater_if_requested
+    verify_connection
   fi
 
-  configure_firewall
-  install_auto_updater_if_requested
-  verify_connection
-
+  # ---- Completion summary ----
   print_header
   print_flame "Installation Complete!"
 
   echo ""
-  output "🎉 Elytra has been installed successfully!"
+  output "Elytra has been installed successfully!"
   echo ""
+
   if [ -f "${INSTALL_DIR}/config.yml" ]; then
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     output "  Connection Details"
@@ -757,14 +760,48 @@ main() {
     fi
     output "Configuration: ${COLOR_ORANGE}${INSTALL_DIR}/config.yml${COLOR_NC}"
     echo ""
+
+    if [ "$CONFIGURE_FIREWALL" == "true" ]; then
+      output "Game Server Ports Configured (TCP & UDP):"
+      output "  ${COLOR_ORANGE}25565-25665${COLOR_NC}: Minecraft"
+      output "  ${COLOR_ORANGE}27015-27150${COLOR_NC}: Source Engine (CS:GO, TF2, GMod)"
+      output "  ${COLOR_ORANGE}7777-8000${COLOR_NC}: ARK, Satisfactory, etc."
+      output "  ${COLOR_ORANGE}28015-28025${COLOR_NC}: Rust"
+      output "  ${COLOR_ORANGE}2456-2466${COLOR_NC}: Valheim"
+      output "  ${COLOR_ORANGE}30120-30130${COLOR_NC}: FiveM/GTA"
+      output "  ${COLOR_ORANGE}$GAME_PORT_START-$GAME_PORT_END${COLOR_NC}: General range"
+      echo ""
+    fi
+
+    output "Service Commands:"
+    output "  ${COLOR_ORANGE}systemctl status elytra${COLOR_NC}    - Check service status"
+    output "  ${COLOR_ORANGE}systemctl restart elytra${COLOR_NC}   - Restart service"
+    output "  ${COLOR_ORANGE}journalctl -u elytra -f${COLOR_NC}   - View logs"
+    echo ""
+
+    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    output "  Manual Reconfiguration"
+    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    output "If you need to reconfigure Elytra manually, run:"
+    output ""
+    output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
+    output "    --panel-url '${PANEL_URL}' \\"
+    output "    --token '<your-api-key>' \\"
+    output "    --node '${NODE_ID}'${COLOR_NC}"
+    output ""
+    output "Or use the installer function with parameters:"
+    output "  ${COLOR_ORANGE}configure_elytra '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
+    echo ""
   else
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    output "  ⚠️  Configuration Required"
+    output "  Configuration Required"
     output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     output "Elytra is installed but NOT configured."
     output ""
+    output "The config directory has been created at ${INSTALL_DIR}."
     output "To complete setup, run:"
-    output "  ${COLOR_ORANGE}cd /etc/elytra && sudo elytra configure \\"
+    output ""
+    output "  ${COLOR_ORANGE}cd ${INSTALL_DIR} && sudo elytra configure \\"
     output "    --panel-url 'https://your-panel.com' \\"
     output "    --token 'your-api-key' \\"
     output "    --node 'your-node-id'${COLOR_NC}"
@@ -774,42 +811,8 @@ main() {
     echo ""
   fi
 
-  if [ "$CONFIGURE_FIREWALL" == "true" ]; then
-    output "Game Server Ports Configured (TCP & UDP):"
-    output "  ${COLOR_ORANGE}25565-25665${COLOR_NC}: Minecraft"
-    output "  ${COLOR_ORANGE}27015-27150${COLOR_NC}: Source Engine (CS:GO, TF2, GMod)"
-    output "  ${COLOR_ORANGE}7777-8000${COLOR_NC}: ARK, Satisfactory, etc."
-    output "  ${COLOR_ORANGE}28015-28025${COLOR_NC}: Rust"
-    output "  ${COLOR_ORANGE}2456-2466${COLOR_NC}: Valheim"
-    output "  ${COLOR_ORANGE}30120-30130${COLOR_NC}: FiveM/GTA"
-    output "  ${COLOR_ORANGE}$GAME_PORT_START-$GAME_PORT_END${COLOR_NC}: General range"
-    echo ""
-  fi
-
-  output "Service Commands:"
-  output "  ${COLOR_ORANGE}systemctl status elytra${COLOR_NC}    - Check service status"
-  output "  ${COLOR_ORANGE}systemctl restart elytra${COLOR_NC}   - Restart service"
-  output "  ${COLOR_ORANGE}journalctl -u elytra -f${COLOR_NC}   - View logs"
-  echo ""
-
-  if [ -f "${INSTALL_DIR}/config.yml" ]; then
-    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    output "  Manual Reconfiguration"
-    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    output "If you need to reconfigure Elytra manually, run:"
-    output ""
-    output "  ${COLOR_ORANGE}cd /etc/elytra && sudo elytra configure \\"
-    output "    --panel-url '${PANEL_URL}' \\"
-    output "    --token '<your-api-key>' \\"
-    output "    --node '${NODE_ID}'${COLOR_NC}"
-    output ""
-    output "Or use the installer function with parameters:"
-    output "  ${COLOR_ORANGE}configure_elytra '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
-    echo ""
-  fi
-
   if [ "$INSTALL_AUTO_UPDATER" == true ]; then
-    output "✅ Auto-updater is enabled and will check for updates hourly."
+    output "Auto-updater is enabled and will check for updates hourly."
     echo ""
   fi
 
