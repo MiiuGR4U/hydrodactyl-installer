@@ -812,7 +812,7 @@ select_release_version() {
   # Get latest release
   latest=$(get_latest_release "$repo" "$token")
   if [ -z "$latest" ]; then
-    error "Could not fetch latest release information"
+    error "Could not fetch latest release information" >&2
     return 1
   fi
 
@@ -821,30 +821,30 @@ select_release_version() {
     local recent_releases
     recent_releases=$(get_recent_releases "$repo" 4 "$token")
 
-    echo ""
-    output "Available releases for ${COLOR_ORANGE}${repo}${COLOR_NC}:"
-    echo ""
-    output "[${COLOR_ORANGE}latest${COLOR_NC}] Latest release (${latest})"
+    echo "" >&2
+    output "Available releases for ${COLOR_ORANGE}${repo}${COLOR_NC}:" >&2
+    echo "" >&2
+    output "[${COLOR_ORANGE}latest${COLOR_NC}] Latest release (${latest})" >&2
 
     while IFS= read -r tag; do
       [ -z "$tag" ] && continue
       releases+=("$tag")
-      output "[${COLOR_ORANGE}${tag}${COLOR_NC}] Release ${tag}"
+      output "[${COLOR_ORANGE}${tag}${COLOR_NC}] Release ${tag}" >&2
     done <<< "$recent_releases"
 
-    echo ""
-    output "You can enter: ${COLOR_ORANGE}latest${COLOR_NC}, a specific tag (e.g., ${COLOR_ORANGE}v1.2.3${COLOR_NC}),"
-    output "or ${COLOR_ORANGE}Release v1.2.3${COLOR_NC}"
-    output "Press Ctrl+C to cancel"
-    echo ""
+    echo "" >&2
+    output "You can enter: ${COLOR_ORANGE}latest${COLOR_NC}, a specific tag (e.g., ${COLOR_ORANGE}v1.2.3${COLOR_NC})," >&2
+    output "or ${COLOR_ORANGE}Release v1.2.3${COLOR_NC}" >&2
+    output "Press Ctrl+C to cancel" >&2
+    echo "" >&2
 
     while [ "$valid_selection" == false ]; do
-      echo -n "* Select version: "
+      echo -n "* Select version: " >&2
       read -r selection
 
       # Handle empty input
       if [ -z "$selection" ]; then
-        error "Please enter a selection"
+        error "Please enter a selection" >&2
         continue
       fi
 
@@ -869,28 +869,28 @@ select_release_version() {
         return 0
       fi
 
-      error "Invalid selection: '$selection' is not a valid release"
-      output "Please choose from the list above or enter a valid tag (or press Ctrl+C to cancel)"
+      error "Invalid selection: '$selection' is not a valid release" >&2
+      output "Please choose from the list above or enter a valid tag (or press Ctrl+C to cancel)" >&2
     done
 
   else
     # Elytra: Simple latest vs specific
-    echo ""
-    output "Elytra is installed from binary releases."
-    output "Latest release: ${COLOR_ORANGE}${latest}${COLOR_NC}"
-    echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Latest release (${latest})"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Specific version"
-    output "Press Ctrl+C to cancel"
-    echo ""
+    echo "" >&2
+    output "Elytra is installed from binary releases." >&2
+    output "Latest release: ${COLOR_ORANGE}${latest}${COLOR_NC}" >&2
+    echo "" >&2
+    output "[${COLOR_ORANGE}0${COLOR_NC}] Latest release (${latest})" >&2
+    output "[${COLOR_ORANGE}1${COLOR_NC}] Specific version" >&2
+    output "Press Ctrl+C to cancel" >&2
+    echo "" >&2
 
     local choice=""
     while [[ "$choice" != "0" && "$choice" != "1" ]]; do
-      echo -n "* Select [0-1]: "
+      echo -n "* Select [0-1]: " >&2
       read -r choice
 
       if [[ "$choice" != "0" && "$choice" != "1" ]]; then
-        error "Invalid selection. Please enter 0 or 1."
+        error "Invalid selection. Please enter 0 or 1." >&2
       fi
     done
 
@@ -900,18 +900,18 @@ select_release_version() {
     fi
 
     # User wants specific version
-    echo ""
-    output "Enter the version tag you want to install."
-    output "Format: ${COLOR_ORANGE}vX.X.X${COLOR_NC} (e.g., v1.0.0, v1.2.3)"
-    output "Press Ctrl+C to cancel"
-    echo ""
+    echo "" >&2
+    output "Enter the version tag you want to install." >&2
+    output "Format: ${COLOR_ORANGE}vX.X.X${COLOR_NC} (e.g., v1.0.0, v1.2.3)" >&2
+    output "Press Ctrl+C to cancel" >&2
+    echo "" >&2
 
     while [ "$valid_selection" == false ]; do
-      echo -n "* Version tag: "
+      echo -n "* Version tag: " >&2
       read -r selection
 
       if [ -z "$selection" ]; then
-        error "Please enter a version tag"
+        error "Please enter a version tag" >&2
         continue
       fi
 
@@ -927,10 +927,10 @@ select_release_version() {
         return 0
       fi
 
-      error "Invalid tag: '$selection' is not a valid release"
-      output "Please enter a valid tag (e.g., v1.0.0) or check available releases at:"
-      output "  https://github.com/${repo}/releases"
-      output "(Press Ctrl+C to cancel)"
+      error "Invalid tag: '$selection' is not a valid release" >&2
+      output "Please enter a valid tag (e.g., v1.0.0) or check available releases at:" >&2
+      output "  https://github.com/${repo}/releases" >&2
+      output "(Press Ctrl+C to cancel)" >&2
     done
   fi
 }

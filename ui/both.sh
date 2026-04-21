@@ -159,13 +159,18 @@ configure_panel_settings() {
 
   if [ "$method_choice" == "0" ]; then
     PANEL_INSTALL_METHOD="release"
-    # Select release version
-    echo ""
+    # Select release version (skip interactive if already set via env)
     local selected_version
-    selected_version=$(select_release_version "$PANEL_REPO" "panel" "$GITHUB_TOKEN_PANEL")
-    if [ -z "$selected_version" ]; then
-      error "Failed to select release version"
-      exit 1
+    if [ "$PANEL_RELEASE_VERSION" != "latest" ]; then
+      selected_version="$PANEL_RELEASE_VERSION"
+      info "Using panel release version from environment: $selected_version"
+    else
+      echo ""
+      selected_version=$(select_release_version "$PANEL_REPO" "panel" "$GITHUB_TOKEN_PANEL")
+      if [ -z "$selected_version" ]; then
+        error "Failed to select release version"
+        exit 1
+      fi
     fi
     PANEL_RELEASE_VERSION="$selected_version"
     if [ "$PANEL_RELEASE_VERSION" == "latest" ]; then
@@ -342,13 +347,18 @@ configure_elytra_settings() {
   latest_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN_ELYTRA")
   success "Found releases in repository"
 
-  # Select Elytra release version
-  echo ""
+  # Select Elytra release version (skip interactive if already set via env)
   local selected_version
-  selected_version=$(select_release_version "$ELYTRA_REPO" "elytra" "$GITHUB_TOKEN_ELYTRA")
-  if [ -z "$selected_version" ]; then
-    error "Failed to select release version"
-    exit 1
+  if [ "$ELYTRA_RELEASE_VERSION" != "latest" ]; then
+    selected_version="$ELYTRA_RELEASE_VERSION"
+    info "Using Elytra release version from environment: $selected_version"
+  else
+    echo ""
+    selected_version=$(select_release_version "$ELYTRA_REPO" "elytra" "$GITHUB_TOKEN_ELYTRA")
+    if [ -z "$selected_version" ]; then
+      error "Failed to select release version"
+      exit 1
+    fi
   fi
   ELYTRA_RELEASE_VERSION="$selected_version"
   if [ "$ELYTRA_RELEASE_VERSION" == "latest" ]; then

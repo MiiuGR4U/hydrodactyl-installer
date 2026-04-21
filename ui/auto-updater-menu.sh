@@ -378,7 +378,11 @@ trigger_panel_update() {
   # Get latest version from GitHub
   local panel_repo="${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}"
   local github_token="${GITHUB_TOKEN_PANEL:-$GITHUB_TOKEN}"
-  latest_version=$(curl -sL --max-time 10 -H "Authorization: Bearer $github_token" "https://api.github.com/repos/$panel_repo/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
+  local curl_opts=(-sL --max-time 10)
+  if [ -n "$github_token" ]; then
+    curl_opts+=(-H "Authorization: Bearer $github_token")
+  fi
+  latest_version=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$panel_repo/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
   
   output "Current version: ${COLOR_ORANGE}${current_version}${COLOR_NC}"
   if [ "$latest_version" != "unknown" ] && [ "$latest_version" != "null" ]; then
@@ -438,7 +442,12 @@ trigger_elytra_update() {
   # Get latest version from GitHub
   local elytra_repo="${ELYTRA_REPO:-pyrohost/elytra}"
   local github_token="${GITHUB_TOKEN_ELYTRA:-$GITHUB_TOKEN}"
-  latest_version=$(curl -sL --max-time 10 -H "Authorization: Bearer $github_token" "https://api.github.com/repos/$elytra_repo/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "unknown")
+  local curl_args=(-sL --max-time 10)
+  if [ -n "$github_token" ]; then
+    curl_args+=(-H "Authorization: Bearer $github_token")
+  fi
+  latest_version=$(curl "${curl_args[@]}" "https://api.github.com/repos/$elytra_repo/releases/latest" 2>/dev/null | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -1)
+  [ -z "$latest_version" ] && latest_version="unknown"
   
   output "Current version: ${COLOR_ORANGE}${current_version}${COLOR_NC}"
   if [ "$latest_version" != "unknown" ] && [ "$latest_version" != "null" ]; then

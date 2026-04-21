@@ -124,7 +124,7 @@ configure_github_repository() {
 
   local latest_release
   latest_release=$(get_latest_release "$PANEL_REPO" "$GITHUB_TOKEN")
-  success "Found releases in repository"
+  success "Found releases in repository (latest: ${latest_release})"
 }
 
 # ------------------ Release Version Selection ----------------- #
@@ -200,7 +200,7 @@ configure_fqdn() {
       output "Verifying DNS for ${PANEL_FQDN}..."
       local verify_result=1
       bash <(curl -sSL "$GITHUB_URL/lib/verify-fqdn.sh") "$PANEL_FQDN" && verify_result=0
-      
+
       if [ $verify_result -eq 0 ]; then
         valid_fqdn=true
       else
