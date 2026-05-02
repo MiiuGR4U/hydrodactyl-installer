@@ -1215,7 +1215,7 @@ install_packages() {
 
   read -r -a packages_list <<< "$packages_input"
 
-  if [ "$quiet" = true ]; then
+  if [ "$quiet" == true ]; then
     case "$OS" in
       ubuntu|debian) args="-qq" ;;
       *) args="-q" ;;
@@ -1229,9 +1229,6 @@ install_packages() {
         case "$package" in
           redis-server)
             mapped_packages+=("redis")
-            ;;
-          redis-server=*)
-            mapped_packages+=("redis=${package#redis-server=}")
             ;;
           *)
             mapped_packages+=("$package")
