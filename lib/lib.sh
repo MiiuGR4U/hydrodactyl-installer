@@ -1249,7 +1249,7 @@ install_packages() {
   if [ "$quiet" = true ]; then
     case "$OS" in
       ubuntu|debian) args="-qq" ;;
-      *) args="-q" ;;
+      rocky|almalinux|fedora|rhel|centos) args="-q" ;;
     esac
   fi
 
