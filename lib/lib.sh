@@ -1223,13 +1223,19 @@ install_packages() {
     rocky|almalinux|fedora|rhel|centos|arch)
       local mapped_packages=()
       local package_list=()
-      read -r -a package_list <<< "$packages"
+      IFS=' ' read -r -a package_list <<< "$packages"
       for package in "${package_list[@]}"; do
-        if [ "$package" = "redis-server" ]; then
-          mapped_packages+=("redis")
-        else
-          mapped_packages+=("$package")
-        fi
+        case "$package" in
+          redis-server)
+            mapped_packages+=("redis")
+            ;;
+          redis-server=*)
+            mapped_packages+=("redis${package#redis-server}")
+            ;;
+          *)
+            mapped_packages+=("$package")
+            ;;
+        esac
       done
       packages="${mapped_packages[*]}"
       ;;
