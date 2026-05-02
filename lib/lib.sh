@@ -1223,14 +1223,13 @@ install_packages() {
 
   local last_index=$((${#packages_list[@]} - 1))
   local last_arg="${packages_list[$last_index]}"
-  if [ "$last_arg" == true ] || [ "$last_arg" == false ]; then
+  if [ "$last_arg" = "true" ] || [ "$last_arg" = "false" ]; then
     quiet="$last_arg"
     packages_list=("${packages_list[@]:0:$last_index}")
-  fi
-
-  if [ "${#packages_list[@]}" -eq 0 ]; then
-    error "No packages specified"
-    return 1
+    if [ "${#packages_list[@]}" -eq 0 ]; then
+      error "No packages specified"
+      return 1
+    fi
   fi
 
   packages_display="${packages_list[*]}"
