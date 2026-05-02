@@ -1220,6 +1220,12 @@ install_packages() {
   fi
 
   case "$OS" in
+    rocky|almalinux|fedora|rhel|centos|arch)
+      packages="${packages//redis-server/redis}"
+      ;;
+  esac
+
+  case "$OS" in
     ubuntu|debian)
       apt-get install -y $args $packages || {
         error "Failed to install packages: $packages"
@@ -2127,6 +2133,11 @@ install_pyroq() {
 
   # Replace placeholder with actual user
   sed -i "s|<user>|$WEBUSER|g" /etc/systemd/system/pyroq.service
+  case "$OS" in
+    rocky|almalinux|fedora|rhel|centos|arch)
+      sed -i "s/redis-server.service/redis.service/g" /etc/systemd/system/pyroq.service
+      ;;
+  esac
 
   systemctl daemon-reload
   systemctl enable pyroq
