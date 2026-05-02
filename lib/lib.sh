@@ -1221,7 +1221,16 @@ install_packages() {
 
   case "$OS" in
     rocky|almalinux|fedora|rhel|centos|arch)
-      packages="${packages//redis-server/redis}"
+      local mapped_packages=()
+      local package=""
+      for package in $packages; do
+        if [ "$package" == "redis-server" ]; then
+          mapped_packages+=("redis")
+        else
+          mapped_packages+=("$package")
+        fi
+      done
+      packages="${mapped_packages[*]}"
       ;;
   esac
 
@@ -2135,7 +2144,7 @@ install_pyroq() {
   sed -i "s|<user>|$WEBUSER|g" /etc/systemd/system/pyroq.service
   case "$OS" in
     rocky|almalinux|fedora|rhel|centos|arch)
-      sed -i "s/redis-server.service/redis.service/g" /etc/systemd/system/pyroq.service
+      sed -i "s/redis-server\.service/redis.service/g" /etc/systemd/system/pyroq.service
       ;;
   esac
 
