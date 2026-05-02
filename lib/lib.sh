@@ -1241,11 +1241,10 @@ install_packages() {
     ubuntu|debian)
       is_apt_os=true
       ;;
+    arch)
+      is_arch=true
+      ;;
   esac
-
-  if [ "$OS" = "arch" ]; then
-    is_arch=true
-  fi
 
   if [ "$quiet" = true ]; then
     case "$OS" in
