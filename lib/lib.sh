@@ -1243,18 +1243,18 @@ install_packages() {
       ;;
   esac
 
-  if [ "$OS" == "arch" ]; then
+  if [ "$OS" = "arch" ]; then
     is_arch=true
   fi
 
-  if [ "$quiet" == true ]; then
+  if [ "$quiet" = true ]; then
     case "$OS" in
       ubuntu|debian) args="-qq" ;;
       *) args="-q" ;;
     esac
   fi
 
-  if [ "$is_dnf_os" == true ] || [ "$is_arch" == true ]; then
+  if [ "$is_dnf_os" = true ] || [ "$is_arch" = true ]; then
     local mapped_packages=()
     for package in "${packages_list[@]}"; do
       case "$package" in
@@ -1269,17 +1269,17 @@ install_packages() {
     packages_list=("${mapped_packages[@]}")
   fi
 
-  if [ "$is_dnf_os" == true ]; then
+  if [ "$is_dnf_os" = true ]; then
     dnf install -y $args "${packages_list[@]}" || {
       error "Failed to install packages: $packages_display"
       return 1
     }
-  elif [ "$is_arch" == true ]; then
+  elif [ "$is_arch" = true ]; then
     pacman -S --noconfirm "${packages_list[@]}" || {
       error "Failed to install packages: $packages_display"
       return 1
     }
-  elif [ "$is_apt_os" == true ]; then
+  elif [ "$is_apt_os" = true ]; then
     apt-get install -y $args "${packages_list[@]}" || {
       error "Failed to install packages: $packages_display"
       return 1
