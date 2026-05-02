@@ -1222,7 +1222,6 @@ install_packages() {
   case "$OS" in
     rocky|almalinux|fedora|rhel|centos|arch)
       local mapped_packages=()
-      local package=""
       local package_list=()
       read -r -a package_list <<< "$packages"
       for package in "${package_list[@]}"; do
