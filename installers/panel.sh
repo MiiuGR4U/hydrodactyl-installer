@@ -102,45 +102,45 @@ install_dependencies() {
   case "$OS" in
     ubuntu)
       output "Configuring Ubuntu repositories..."
-      install_packages "software-properties-common apt-transport-https ca-certificates gnupg2"
+      install_packages software-properties-common apt-transport-https ca-certificates gnupg2
       add-apt-repository universe -y
       LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
       update_repos true
 
-      install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis"
+      install_packages php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis
 
       ensure_php_default
       ;;
 
     debian)
       output "Configuring Debian repositories..."
-      install_packages "dirmngr ca-certificates apt-transport-https lsb-release"
+      install_packages dirmngr ca-certificates apt-transport-https lsb-release
       curl -fsSL -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
       echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
       update_repos true
 
-      install_packages "php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis"
+      install_packages php${PHP_VERSION}-fpm php${PHP_VERSION}-cli php${PHP_VERSION}-gd php${PHP_VERSION}-mysql php${PHP_VERSION}-pdo php${PHP_VERSION}-mbstring php${PHP_VERSION}-tokenizer php${PHP_VERSION}-bcmath php${PHP_VERSION}-xml php${PHP_VERSION}-curl php${PHP_VERSION}-zip php${PHP_VERSION}-intl php${PHP_VERSION}-redis
 
       ensure_php_default
       ;;
 
     rocky|almalinux|fedora|rhel|centos)
       output "Configuring RHEL repositories..."
-      install_packages "epel-release"
+      install_packages epel-release
       dnf install -y "https://rpms.remirepo.net/enterprise/remi-release-${OS_VER_MAJOR}.rpm"
       dnf module reset php -y
       dnf module enable php:remi-${PHP_VERSION} -y
 
-      install_packages "php php-fpm php-cli php-gd php-mysqlnd php-pdo php-mbstring php-tokenizer php-bcmath php-xml php-curl php-zip php-intl php-redis"
+      install_packages php php-fpm php-cli php-gd php-mysqlnd php-pdo php-mbstring php-tokenizer php-bcmath php-xml php-curl php-zip php-intl php-redis
       php_fpm_conf
       ;;
   esac
 
   # Install common packages
-  install_packages "nginx mariadb-server redis-server curl tar unzip git jq"
+  install_packages nginx mariadb-server redis-server curl tar unzip git jq
 
   if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
-    install_packages "certbot python3-certbot-nginx"
+    install_packages certbot python3-certbot-nginx
   fi
 
   success "Dependencies installed"
@@ -221,7 +221,7 @@ install_panel_release() {
   # Ensure jq is installed for JSON parsing
   if ! cmd_exists jq; then
     output "Installing jq for JSON parsing..."
-    install_packages "jq" true
+    install_packages jq true
   fi
 
   # Only require token for private repos
