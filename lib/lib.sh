@@ -1208,37 +1208,85 @@ update_repos() {
 }
 
 install_packages() {
-  local packages="$1"
-  local quiet="${2:-false}"
+  local quiet=false
   local args=""
+  local packages_list=("$@")
+  local packages_display=""
+  local is_dnf_os=false
+  local is_apt_os=false
+  local is_arch=false
 
-  if [ "$quiet" == true ]; then
+  if [ "${#packages_list[@]}" -eq 0 ]; then
+    error "No packages specified"
+    return 1
+  fi
+
+  local last_index=$((${#packages_list[@]} - 1))
+  local last_arg="${packages_list[$last_index]}"
+  if [ "$last_arg" = "true" ] || [ "$last_arg" = "false" ]; then
+    quiet="$last_arg"
+    packages_list=("${packages_list[@]:0:$last_index}")
+    if [ "${#packages_list[@]}" -eq 0 ]; then
+      error "No packages specified"
+      return 1
+    fi
+  fi
+
+  packages_display="${packages_list[*]}"
+
+  case "$OS" in
+    rocky|almalinux|fedora|rhel|centos)
+      is_dnf_os=true
+      ;;
+    ubuntu|debian)
+      is_apt_os=true
+      ;;
+    arch)
+      is_arch=true
+      ;;
+  esac
+
+  if [ "$quiet" = true ]; then
     case "$OS" in
       ubuntu|debian) args="-qq" ;;
-      *) args="-q" ;;
+      rocky|almalinux|fedora|rhel|centos) args="-q" ;;
     esac
   fi
 
-  case "$OS" in
-    ubuntu|debian)
-      apt-get install -y $args $packages || {
-        error "Failed to install packages: $packages"
-        return 1
-      }
-      ;;
-    rocky|almalinux|fedora|rhel|centos)
-      dnf install -y $args $packages || {
-        error "Failed to install packages: $packages"
-        return 1
-      }
-      ;;
-    arch)
-      pacman -S --noconfirm $packages || {
-        error "Failed to install packages: $packages"
-        return 1
-      }
-      ;;
-  esac
+  if [ "$is_dnf_os" = true ] || [ "$is_arch" = true ]; then
+    local mapped_packages=()
+    for package in "${packages_list[@]}"; do
+      case "$package" in
+        redis-server)
+          mapped_packages+=("redis")
+          ;;
+        *)
+          mapped_packages+=("$package")
+          ;;
+      esac
+    done
+    packages_list=("${mapped_packages[@]}")
+  fi
+
+  if [ "$is_dnf_os" = true ]; then
+    dnf install -y $args "${packages_list[@]}" || {
+      error "Failed to install packages: $packages_display"
+      return 1
+    }
+  elif [ "$is_arch" = true ]; then
+    pacman -S --noconfirm "${packages_list[@]}" || {
+      error "Failed to install packages: $packages_display"
+      return 1
+    }
+  elif [ "$is_apt_os" = true ]; then
+    apt-get install -y $args "${packages_list[@]}" || {
+      error "Failed to install packages: $packages_display"
+      return 1
+    }
+  else
+    error "Unsupported OS for package installation"
+    return 1
+  fi
 }
 
 # ------------------ MySQL/MariaDB Functions ----------------- #
@@ -1558,7 +1606,7 @@ check_virt() {
   output "Checking virtualization..."
 
   if ! cmd_exists virt-what; then
-    install_packages "virt-what" true
+    install_packages virt-what true
   fi
 
   export PATH="$PATH:/sbin:/usr/sbin"
@@ -1642,12 +1690,12 @@ install_nodejs() {
   case "$OS" in
     ubuntu|debian)
       curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-      install_packages "nodejs"
+      install_packages nodejs
       ;;
     rocky|almalinux|fedora|rhel|centos)
       # Install Node.js from NodeSource on RHEL-based systems
       curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
-      install_packages "nodejs"
+      install_packages nodejs
       ;;
     *)
       error "Unsupported OS for Node.js installation"
@@ -1730,7 +1778,7 @@ install_phpmyadmin() {
   echo 'phpmyadmin phpmyadmin/reconfigure-webserver multiselect' | debconf-set-selections
 
   output "Installing phpMyAdmin and PHP extensions..."
-  install_packages "phpmyadmin php${PHP_VERSION}-mbstring php${PHP_VERSION}-zip php${PHP_VERSION}-gd php${PHP_VERSION}-curl"
+  install_packages phpmyadmin php${PHP_VERSION}-mbstring php${PHP_VERSION}-zip php${PHP_VERSION}-gd php${PHP_VERSION}-curl
 
   output "Creating phpMyAdmin database user..."
   mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
@@ -1915,10 +1963,10 @@ install_letsencrypt() {
 
   case "$OS" in
     ubuntu|debian)
-      install_packages "certbot python3-certbot-nginx"
+      install_packages certbot python3-certbot-nginx
       ;;
     rocky|almalinux|fedora|rhel|centos)
-      install_packages "certbot python3-certbot-nginx"
+      install_packages certbot python3-certbot-nginx
       ;;
   esac
 
@@ -2127,6 +2175,11 @@ install_pyroq() {
 
   # Replace placeholder with actual user
   sed -i "s|<user>|$WEBUSER|g" /etc/systemd/system/pyroq.service
+  case "$OS" in
+    rocky|almalinux|fedora|rhel|centos|arch)
+      sed -i "s/redis-server\.service/redis.service/g" /etc/systemd/system/pyroq.service
+      ;;
+  esac
 
   systemctl daemon-reload
   systemctl enable pyroq
@@ -2440,7 +2493,7 @@ install_docker() {
       apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
 
       # Install prerequisites
-      install_packages "apt-transport-https ca-certificates curl gnupg lsb-release"
+      install_packages apt-transport-https ca-certificates curl gnupg lsb-release
 
       # Add Docker GPG key
       mkdir -p /etc/apt/keyrings
@@ -2452,13 +2505,13 @@ install_docker() {
         $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
       update_repos true
-      install_packages "docker-ce docker-ce-cli containerd.io docker-compose-plugin"
+      install_packages docker-ce docker-ce-cli containerd.io docker-compose-plugin
       ;;
 
     rocky|almalinux|fedora|rhel|centos)
-      install_packages "yum-utils"
+      install_packages yum-utils
       yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-      install_packages "docker-ce docker-ce-cli containerd.io docker-compose-plugin"
+      install_packages docker-ce docker-ce-cli containerd.io docker-compose-plugin
       ;;
   esac
 

@@ -467,10 +467,10 @@ install_letsencrypt_elytra() {
 
   case "$OS" in
     ubuntu|debian)
-      install_packages "certbot"
+      install_packages certbot
       ;;
     rocky|almalinux|fedora|rhel|centos)
-      install_packages "certbot"
+      install_packages certbot
       ;;
   esac
 
