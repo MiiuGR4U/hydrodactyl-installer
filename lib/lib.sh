@@ -1208,11 +1208,14 @@ update_repos() {
 }
 
 install_packages() {
-  local packages="$1"
+  local packages_input="$1"
   local quiet="${2:-false}"
   local args=""
+  local packages_list=()
 
-  if [ "$quiet" == true ]; then
+  read -r -a packages_list <<< "$packages_input"
+
+  if [ "$quiet" = true ]; then
     case "$OS" in
       ubuntu|debian) args="-qq" ;;
       *) args="-q" ;;
@@ -1222,9 +1225,7 @@ install_packages() {
   case "$OS" in
     rocky|almalinux|fedora|rhel|centos|arch)
       local mapped_packages=()
-      local package_list=()
-      IFS=' ' read -r -a package_list <<< "$packages"
-      for package in "${package_list[@]}"; do
+      for package in "${packages_list[@]}"; do
         case "$package" in
           redis-server)
             mapped_packages+=("redis")
@@ -1237,26 +1238,26 @@ install_packages() {
             ;;
         esac
       done
-      packages="${mapped_packages[*]}"
+      packages_list=("${mapped_packages[@]}")
       ;;
   esac
 
   case "$OS" in
     ubuntu|debian)
-      apt-get install -y $args $packages || {
-        error "Failed to install packages: $packages"
+      apt-get install -y $args "${packages_list[@]}" || {
+        error "Failed to install packages: $packages_input"
         return 1
       }
       ;;
     rocky|almalinux|fedora|rhel|centos)
-      dnf install -y $args $packages || {
-        error "Failed to install packages: $packages"
+      dnf install -y $args "${packages_list[@]}" || {
+        error "Failed to install packages: $packages_input"
         return 1
       }
       ;;
     arch)
-      pacman -S --noconfirm $packages || {
-        error "Failed to install packages: $packages"
+      pacman -S --noconfirm "${packages_list[@]}" || {
+        error "Failed to install packages: $packages_input"
         return 1
       }
       ;;
