@@ -17,7 +17,7 @@ Built and optimized by the **Blueprint Framework** team, this installer takes ca
 You can install both the Hydrodactyl Panel and the Wings Daemon using our one-line command on any supported Linux distribution.
 
 ```bash
-bash <(curl -sSL https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer/main/install.sh)
+bash <(curl -sSL https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer/main/install.sh)
 ```
 
 The script will present a menu allowing you to:
