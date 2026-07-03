@@ -1732,6 +1732,35 @@ install_pnpm() {
   fi
 }
 
+setup_swap() {
+  output "Checking system memory for asset compilation..."
+  local total_mem
+  local total_swap
+
+  total_mem=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
+  total_swap=$(awk '/SwapTotal/ {print $2}' /proc/meminfo)
+
+  # If memory is less than ~3GB (3000000 kB) and swap is less than ~2GB (2000000 kB)
+  if [ "$total_mem" -lt 3000000 ] && [ "$total_swap" -lt 2000000 ]; then
+    warning "System has less than 3GB of RAM and insufficient Swap."
+    output "Creating a 2GB swap file to prevent out-of-memory errors during build..."
+    
+    fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    
+    # Add to fstab if not already present
+    if ! grep -q "/swapfile" /etc/fstab; then
+      echo "/swapfile none swap sw 0 0" >> /etc/fstab
+    fi
+    
+    success "2GB Swap file created and activated."
+  else
+    output "System has sufficient memory/swap. Skipping swap creation."
+  fi
+}
+
 build_panel_assets() {
   local install_dir="${1:-$INSTALL_DIR}"
 
@@ -1741,6 +1770,9 @@ build_panel_assets() {
   fi
 
   cd "$install_dir" || return 1
+
+  # Ensure enough swap space for compilation
+  setup_swap
 
   # Install Node.js if needed
   install_nodejs
