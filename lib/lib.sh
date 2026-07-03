@@ -1818,7 +1818,7 @@ PHPEOF
   ln -sf /etc/nginx/sites-available/phpmyadmin.conf /etc/nginx/sites-enabled/phpmyadmin.conf
 
   output "Restarting services..."
-  systemctl reload nginx 2>/dev/null || systemctl restart nginx 2>/dev/null || true
+  systemctl restart nginx 2>/dev/null || systemctl restart nginx 2>/dev/null || true
 
   success "phpMyAdmin installed and accessible at http://$(hostname -I | awk '{print $1}'):8081"
 }
@@ -1946,9 +1946,10 @@ install_nginx_config() {
 
   # Remove default site
   rm -f /etc/nginx/sites-enabled/default
+  rm -f /etc/nginx/conf.d/default.conf
 
   # Test and reload
-  nginx -t && systemctl reload nginx
+  nginx -t && systemctl restart nginx
 
   success "Nginx configured"
 }
