@@ -84,7 +84,7 @@ If you encounter issues with manual installation:
 2. **Review logs**: `journalctl -u <service>` for systemd services
 3. **Check our GitHub Issues**:
    - [Hydrodactyl Issues](https://github.com/blueprintframework/hydrodactyl/issues)
-   - [Wings Issues](https://github.com/pterodactyl/wings/issues)
+   - [Wings Issues](https://github.com/blueprintframework/wings/issues)
 4. **Community Support**: Join our Discord community
 
 ## Ã°Å¸â€œâ€“ Guide Structure

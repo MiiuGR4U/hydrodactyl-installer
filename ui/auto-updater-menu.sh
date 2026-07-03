@@ -45,9 +45,9 @@ check_root
 PANEL_REPO=""
 PANEL_REPO_PRIVATE=false
 GITHUB_TOKEN_PANEL=""
-Wings_REPO=""
-Wings_REPO_PRIVATE=false
-GITHUB_TOKEN_Wings=""
+WINGS_REPO=""
+WINGS_REPO_PRIVATE=false
+GITHUB_TOKEN_WINGS=""
 
 # ------------------ Panel Auto-Updater ----------------- #
 
@@ -155,37 +155,37 @@ configure_Wings_auto_updater() {
   print_flame "Wings Auto-Updater Configuration"
 
   output "The default Wings repository is:"
-  output "  ${COLOR_BLUE_THEME}${DEFAULT_Wings_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_WINGS_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
   bool_input use_default "Use default repository?" "y"
 
   if [ "$use_default" == "y" ]; then
-    Wings_REPO="$DEFAULT_Wings_REPO"
+    WINGS_REPO="$DEFAULT_WINGS_REPO"
   else
-    required_input Wings_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
+    required_input WINGS_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
 
-    if [[ ! "$Wings_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+    if [[ ! "$WINGS_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
       error "Invalid repository format. Must be 'owner/repo'"
       exit 1
     fi
   fi
 
   echo ""
-  output "Repository: ${COLOR_BLUE_THEME}${Wings_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${WINGS_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
     local is_private=""
     bool_input is_private "Is this a private repository?" "n" || true
     if [ "$is_private" == "y" ]; then
-      Wings_REPO_PRIVATE="true"
+      WINGS_REPO_PRIVATE="true"
     else
-      Wings_REPO_PRIVATE="false"
+      WINGS_REPO_PRIVATE="false"
     fi
 
-    if [ "$Wings_REPO_PRIVATE" == "true" ]; then
+    if [ "$WINGS_REPO_PRIVATE" == "true" ]; then
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: https://github.com/settings/tokens"
@@ -194,10 +194,10 @@ configure_Wings_auto_updater() {
 
       local token_valid=false
       while [ "$token_valid" == false ]; do
-        password_input GITHUB_TOKEN_Wings "Enter your GitHub token: " "Token cannot be empty"
+        password_input GITHUB_TOKEN_WINGS "Enter your GitHub token: " "Token cannot be empty"
 
         output "Validating token..."
-        if validate_github_token "$GITHUB_TOKEN_Wings" "$Wings_REPO"; then
+        if validate_github_token "$GITHUB_TOKEN_WINGS" "$WINGS_REPO"; then
           success "Token validated successfully"
           token_valid=true
         else
@@ -206,25 +206,25 @@ configure_Wings_auto_updater() {
       done
     fi
   else
-    Wings_REPO_PRIVATE="false"
+    WINGS_REPO_PRIVATE="false"
   fi
 
   # Wings always uses release-based updates
   output "Checking for releases in repository..."
-  if ! check_releases_exist "$Wings_REPO" "$GITHUB_TOKEN_Wings"; then
+  if ! check_releases_exist "$WINGS_REPO" "$GITHUB_TOKEN_WINGS"; then
     echo ""
-    error "No releases found in repository: ${Wings_REPO}"
+    error "No releases found in repository: ${WINGS_REPO}"
     warning "You must publish a release before using the auto-updater."
     exit 1
   fi
 
   local latest_release
-  latest_release=$(get_latest_release "$Wings_REPO" "$GITHUB_TOKEN_Wings")
+  latest_release=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN_WINGS")
   success "Found release: ${latest_release}"
 
-  export Wings_REPO
-  export Wings_REPO_PRIVATE
-  export GITHUB_TOKEN="$GITHUB_TOKEN_Wings"
+  export WINGS_REPO
+  export WINGS_REPO_PRIVATE
+  export GITHUB_TOKEN="$GITHUB_TOKEN_WINGS"
 
   install_auto_updater_Wings
 }
@@ -441,8 +441,8 @@ trigger_Wings_update() {
   fi
   
   # Get latest version from GitHub
-  local Wings_repo="${Wings_REPO:-pterodactyl/wings}"
-  local github_token="${GITHUB_TOKEN_Wings:-$GITHUB_TOKEN}"
+  local Wings_repo="${WINGS_REPO:-blueprintframework/wings}"
+  local github_token="${GITHUB_TOKEN_WINGS:-$GITHUB_TOKEN}"
   local curl_args=(-sL --max-time 10)
   if [ -n "$github_token" ]; then
     curl_args+=(-H "Authorization: Bearer $github_token")

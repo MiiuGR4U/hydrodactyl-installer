@@ -52,16 +52,16 @@ REMOVE_DATA=false
 
 detect_installed_components() {
   PANEL_INSTALLED=false
-  Wings_INSTALLED=false
+  WINGS_INSTALLED=false
   PANEL_UPDATER_INSTALLED=false
-  Wings_UPDATER_INSTALLED=false
+  WINGS_UPDATER_INSTALLED=false
 
   if [ -d "/var/www/Hydrodactyl" ]; then
     PANEL_INSTALLED=true
   fi
 
   if [ -f "/usr/local/bin/Wings" ]; then
-    Wings_INSTALLED=true
+    WINGS_INSTALLED=true
   fi
 
   if systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
@@ -69,7 +69,7 @@ detect_installed_components() {
   fi
 
   if systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
-    Wings_UPDATER_INSTALLED=true
+    WINGS_UPDATER_INSTALLED=true
   fi
 }
 
@@ -88,13 +88,13 @@ show_main_menu() {
     echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Hydrodactyl Panel"
   fi
 
-  if [ "$Wings_INSTALLED" == true ]; then
+  if [ "$WINGS_INSTALLED" == true ]; then
     echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Wings Daemon"
   else
     echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Wings Daemon"
   fi
 
-  if [ "$PANEL_UPDATER_INSTALLED" == true ] || [ "$Wings_UPDATER_INSTALLED" == true ]; then
+  if [ "$PANEL_UPDATER_INSTALLED" == true ] || [ "$WINGS_UPDATER_INSTALLED" == true ]; then
     echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Auto-updaters"
   else
     echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Auto-updaters"
@@ -127,7 +127,7 @@ show_main_menu() {
         return
         ;;
       1)
-        if [ "$Wings_INSTALLED" == false ]; then
+        if [ "$WINGS_INSTALLED" == false ]; then
           error "Wings is not installed"
           continue
         fi
@@ -136,7 +136,7 @@ show_main_menu() {
         return
         ;;
       2)
-        if [ "$PANEL_INSTALLED" == false ] && [ "$Wings_INSTALLED" == false ]; then
+        if [ "$PANEL_INSTALLED" == false ] && [ "$WINGS_INSTALLED" == false ]; then
           error "Neither Panel nor Wings are installed"
           continue
         fi
@@ -146,7 +146,7 @@ show_main_menu() {
         return
         ;;
       3)
-        if [ "$PANEL_UPDATER_INSTALLED" == false ] && [ "$Wings_UPDATER_INSTALLED" == false ]; then
+        if [ "$PANEL_UPDATER_INSTALLED" == false ] && [ "$WINGS_UPDATER_INSTALLED" == false ]; then
           error "No auto-updaters are installed"
           continue
         fi
@@ -155,7 +155,7 @@ show_main_menu() {
         return
         ;;
       4)
-        if [ "$PANEL_INSTALLED" == false ] && [ "$Wings_INSTALLED" == false ]; then
+        if [ "$PANEL_INSTALLED" == false ] && [ "$WINGS_INSTALLED" == false ]; then
           error "Nothing is installed"
           continue
         fi
@@ -250,7 +250,7 @@ export_variables() {
 main() {
   detect_installed_components
 
-  if [ "$PANEL_INSTALLED" == false ] && [ "$Wings_INSTALLED" == false ] && [ "$PANEL_UPDATER_INSTALLED" == false ] && [ "$Wings_UPDATER_INSTALLED" == false ]; then
+  if [ "$PANEL_INSTALLED" == false ] && [ "$WINGS_INSTALLED" == false ] && [ "$PANEL_UPDATER_INSTALLED" == false ] && [ "$WINGS_UPDATER_INSTALLED" == false ]; then
     print_header
     print_flame "Nothing to Uninstall"
     output "No Hydrodactyl components were detected on this system."

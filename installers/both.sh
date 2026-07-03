@@ -62,7 +62,7 @@ else
 fi
 
 # Wings configuration
-Wings_REPO="${Wings_REPO:-pterodactyl/wings}"
+WINGS_REPO="${WINGS_REPO:-blueprintframework/wings}"
 NODE_NAME="${NODE_NAME:-local}"
 NODE_DESCRIPTION="${NODE_DESCRIPTION:-Local Node}"
 NODE_TOKEN="${NODE_TOKEN:-$(gen_passwd 32)}"
@@ -77,7 +77,7 @@ INSTALL_AUTO_UPDATER_Wings="${INSTALL_AUTO_UPDATER_Wings:-false}"
 
 # GitHub
 PANEL_REPO_PRIVATE="${PANEL_REPO_PRIVATE:-false}"
-Wings_REPO_PRIVATE="${Wings_REPO_PRIVATE:-false}"
+WINGS_REPO_PRIVATE="${WINGS_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
 # Paths
@@ -714,10 +714,10 @@ install_Wings_daemon() {
   # Get latest release
   output "Fetching latest Wings release..."
   local latest_release
-  latest_release=$(get_latest_release "$Wings_REPO" "$GITHUB_TOKEN")
+  latest_release=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
 
   if [ -z "$latest_release" ] || [ "$latest_release" == "null" ]; then
-    error "Could not fetch latest release from $Wings_REPO"
+    error "Could not fetch latest release from $WINGS_REPO"
     exit 1
   fi
 
@@ -725,7 +725,7 @@ install_Wings_daemon() {
 
   # Download binary
   output "Downloading Wings binary..."
-  if ! download_release_asset "$Wings_REPO" "$asset_name" "/usr/local/bin/Wings" "$GITHUB_TOKEN"; then
+  if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/Wings" "$GITHUB_TOKEN"; then
     error "Failed to download Wings binary"
     exit 1
   fi
@@ -902,8 +902,8 @@ install_auto_updaters() {
 
   if [ "$INSTALL_AUTO_UPDATER_Wings" == true ]; then
     print_flame "Installing Wings Auto-Updater"
-    export Wings_REPO
-    export Wings_REPO_PRIVATE
+    export WINGS_REPO
+    export WINGS_REPO_PRIVATE
     export GITHUB_TOKEN
     install_auto_updater_Wings
   fi

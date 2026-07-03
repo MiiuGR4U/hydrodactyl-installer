@@ -31,8 +31,8 @@ fi
 
 # ------------------ Configuration Variables ----------------- #
 
-Wings_REPO=""
-Wings_REPO_PRIVATE=false
+WINGS_REPO=""
+WINGS_REPO_PRIVATE=false
 GITHUB_TOKEN=""
 Wings_RELEASE_VERSION="${Wings_RELEASE_VERSION:-latest}"
 PANEL_URL=""
@@ -55,33 +55,33 @@ configure_github_repository() {
   print_flame "GitHub Repository Configuration"
 
   output "The default Wings repository is:"
-  output "  ${COLOR_BLUE_THEME}${DEFAULT_Wings_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_WINGS_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
   bool_input use_default "Use default repository?" "y"
 
   if [ "$use_default" == "y" ]; then
-    Wings_REPO="$DEFAULT_Wings_REPO"
+    WINGS_REPO="$DEFAULT_WINGS_REPO"
   else
-    required_input Wings_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
+    required_input WINGS_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
 
-    if [[ ! "$Wings_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+    if [[ ! "$WINGS_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
       error "Invalid repository format. Must be 'owner/repo'"
       exit 1
     fi
   fi
 
   echo ""
-  output "Repository: ${COLOR_BLUE_THEME}${Wings_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${WINGS_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
     local is_private=""
     bool_input is_private "Is this a private repository?" "n"
-    Wings_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+    WINGS_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
 
-    if [ "$Wings_REPO_PRIVATE" == "true" ]; then
+    if [ "$WINGS_REPO_PRIVATE" == "true" ]; then
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: $(hyperlink "https://github.com/settings/tokens")"
@@ -93,7 +93,7 @@ configure_github_repository() {
         password_input GITHUB_TOKEN "Enter your GitHub token: " "Token cannot be empty"
 
         output "Validating token..."
-        if validate_github_token "$GITHUB_TOKEN" "$Wings_REPO"; then
+        if validate_github_token "$GITHUB_TOKEN" "$WINGS_REPO"; then
           success "Token validated successfully"
           token_valid=true
         else
@@ -102,19 +102,19 @@ configure_github_repository() {
       done
     fi
   else
-    Wings_REPO_PRIVATE="false"
+    WINGS_REPO_PRIVATE="false"
   fi
 
   output "Checking for releases in repository..."
-  if ! check_releases_exist "$Wings_REPO" "$GITHUB_TOKEN"; then
+  if ! check_releases_exist "$WINGS_REPO" "$GITHUB_TOKEN"; then
     echo ""
-    error "No releases found in repository: ${Wings_REPO}"
+    error "No releases found in repository: ${WINGS_REPO}"
     warning "Wings must be installed from a release."
     exit 1
   fi
 
   local latest_release
-  latest_release=$(get_latest_release "$Wings_REPO" "$GITHUB_TOKEN")
+  latest_release=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
   success "Found releases in repository"
 }
 
@@ -125,7 +125,7 @@ configure_release_version() {
   print_flame "Release Version Selection"
 
   local selected_version
-  selected_version=$(select_release_version "$Wings_REPO" "Wings" "$GITHUB_TOKEN")
+  selected_version=$(select_release_version "$WINGS_REPO" "Wings" "$GITHUB_TOKEN")
 
   if [ -z "$selected_version" ]; then
     error "Failed to select release version"
@@ -136,7 +136,7 @@ configure_release_version() {
 
   if [ "$Wings_RELEASE_VERSION" == "latest" ]; then
     local latest
-    latest=$(get_latest_release "$Wings_REPO" "$GITHUB_TOKEN")
+    latest=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
     success "Will install latest release: ${latest}"
   else
     success "Will install release: ${Wings_RELEASE_VERSION}"
@@ -324,7 +324,7 @@ show_summary() {
 
   output "Please review the following configuration:"
   echo ""
-  echo -e "  ${COLOR_BLUE_THEME}Repository:${COLOR_NC}        ${Wings_REPO} $([ "$Wings_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_BLUE_THEME}Repository:${COLOR_NC}        ${WINGS_REPO} $([ "$WINGS_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
   echo -e "  ${COLOR_BLUE_THEME}Panel URL:${COLOR_NC}         ${PANEL_URL}"
   if [ "$USE_API_KEY" == "true" ]; then
     echo -e "  ${COLOR_BLUE_THEME}Setup Method:${COLOR_NC}      Automatic (via API key)"
@@ -353,8 +353,8 @@ show_summary() {
 # ------------------ Export and Run ----------------- #
 
 export_variables() {
-  export Wings_REPO
-  export Wings_REPO_PRIVATE
+  export WINGS_REPO
+  export WINGS_REPO_PRIVATE
   export GITHUB_TOKEN
   export Wings_RELEASE_VERSION
   export PANEL_URL

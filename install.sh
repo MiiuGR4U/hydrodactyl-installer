@@ -391,7 +391,7 @@ run_wings_update() {
   else
     # Create temporary env file with defaults
     mkdir -p /etc/hydrodactyl
-    echo "WINGS_REPO=\"pyrohost/wings\"" > /etc/hydrodactyl/auto-update-wings.env
+    echo "WINGS_REPO=\"blueprintframework/wings\"" > /etc/hydrodactyl/auto-update-wings.env
     echo "GITHUB_TOKEN=\"\"" >> /etc/hydrodactyl/auto-update-wings.env
     chmod 600 /etc/hydrodactyl/auto-update-wings.env
   fi

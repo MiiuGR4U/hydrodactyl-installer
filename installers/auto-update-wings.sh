@@ -26,7 +26,7 @@ if [ -f /etc/Hydrodactyl/auto-update-Wings.env ]; then
 fi
 
 # Default config (can be overridden by /etc/Hydrodactyl/auto-update-Wings.env)
-Wings_REPO="${Wings_REPO:-pterodactyl/wings}"
+WINGS_REPO="${WINGS_REPO:-blueprintframework/wings}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 INSTALL_DIR="${INSTALL_DIR:-/etc/Wings}"
 LOG_FILE="${LOG_FILE:-/var/log/Hydrodactyl-Wings-auto-update.log}"
@@ -39,7 +39,7 @@ AUTO_UPDATE="${AUTO_UPDATE:-true}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
 # Wings is always updated via releases (distributed as binary)
 UPDATE_METHOD="releases"
-Wings_REPO_PRIVATE="${Wings_REPO_PRIVATE:-false}"
+WINGS_REPO_PRIVATE="${WINGS_REPO_PRIVATE:-false}"
 
 # ------------------ Runtime Flags ----------------- #
 
@@ -199,7 +199,7 @@ get_latest_release() {
 
   local release_json
   release_json=$(curl "${curl_opts[@]}" \
-    "https://api.github.com/repos/$Wings_REPO/releases/latest" 2>/dev/null)
+    "https://api.github.com/repos/$WINGS_REPO/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message":"Not Found"'; then
     return 1
@@ -221,7 +221,7 @@ get_release_asset_info() {
   encoded_version=$(printf '%s' "$version" | jq -sRr @uri 2>/dev/null || echo "$version")
 
   curl "${curl_opts[@]}" \
-    "https://api.github.com/repos/$Wings_REPO/releases/tags/$encoded_version" 2>/dev/null
+    "https://api.github.com/repos/$WINGS_REPO/releases/tags/$encoded_version" 2>/dev/null
 }
 
 # Version comparison
@@ -699,7 +699,7 @@ send_notification() {
 
 check_for_updates() {
   info "Checking for Wings updates..."
-  debug "Repository: $Wings_REPO"
+  debug "Repository: $WINGS_REPO"
   debug "Install directory: $INSTALL_DIR"
 
   local current_version

@@ -220,7 +220,7 @@ else
 fi
 
 # Get latest release URL
-LATEST_URL=$(curl -s https://api.github.com/repos/pterodactyl/wings/releases/latest | grep "browser_download_url" | grep "linux_${ARCH}" | cut -d'"' -f4)
+LATEST_URL=$(curl -s https://api.github.com/repos/blueprintframework/wings/releases/latest | grep "browser_download_url" | grep "linux_${ARCH}" | cut -d'"' -f4)
 
 # Download Wings
 curl -Lo /usr/local/bin/Wings "$LATEST_URL"
@@ -732,7 +732,7 @@ apt install -y htop iotop nethogs
 ```bash
 # Download latest version
 curl -Lo /usr/local/bin/Wings \
-    "https://github.com/pterodactyl/wings/releases/latest/download/Wings_linux_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+    "https://github.com/blueprintframework/wings/releases/latest/download/Wings_linux_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
 
 chmod +x /usr/local/bin/Wings
 
@@ -785,7 +785,7 @@ For help creating servers and managing them, refer to the Hydrodactyl Panel docu
 
 ## Support
 
-- GitHub Issues: https://github.com/pterodactyl/wings/issues
+- GitHub Issues: https://github.com/blueprintframework/wings/issues
 - Hydrodactyl Documentation: https://github.com/blueprintframework/hydrodactyl/tree/main/docs
 - Docker Documentation: https://docs.docker.com/
 

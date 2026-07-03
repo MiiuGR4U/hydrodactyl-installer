@@ -110,7 +110,7 @@ parse_arguments() {
         shift 2
         ;;
       --Wings-repo)
-        Wings_REPO="$2"
+        WINGS_REPO="$2"
         shift 2
         ;;
       --skip-wings-setup)
@@ -172,7 +172,7 @@ Options:
   --configure-letsencrypt        Obtain SSL certificate via Let's Encrypt
   --ssl-email <email>            Email for Let's Encrypt registration
   --github-token, -g <token>     GitHub token for private repos
-  --Wings-repo <repo>           Wings repo (default: pterodactyl/wings)
+  --Wings-repo <repo>           Wings repo (default: blueprintframework/wings)
   --skip-wings-setup             Skip Wings detection/setup
   --help, -h                     Show this help message
 
@@ -199,7 +199,7 @@ parse_arguments "$@"
 # Use Wings_INSTALL_DIR to avoid collision with lib.sh's INSTALL_DIR (which is /var/www/Hydrodactyl for the panel)
 Wings_INSTALL_DIR="/etc/Wings"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/Hydrodactyl}"
-Wings_REPO="${Wings_REPO:-pterodactyl/wings}"
+WINGS_REPO="${WINGS_REPO:-blueprintframework/wings}"
 
 # Panel connection
 PANEL_URL="${PANEL_URL:-}"
@@ -222,7 +222,7 @@ GAME_PORT_END="${GAME_PORT_END:-28025}"
 INSTALL_AUTO_UPDATER="${INSTALL_AUTO_UPDATER:-false}"
 
 # GitHub
-Wings_REPO_PRIVATE="${Wings_REPO_PRIVATE:-false}"
+WINGS_REPO_PRIVATE="${WINGS_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 Wings_RELEASE_VERSION="${Wings_RELEASE_VERSION:-latest}"
 
@@ -330,13 +330,13 @@ install_Wings() {
   local target_release="$Wings_RELEASE_VERSION"
   if [ "$target_release" == "latest" ]; then
     output "Fetching latest Wings release..."
-    target_release=$(get_latest_release "$Wings_REPO" "$GITHUB_TOKEN")
+    target_release=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
   else
     output "Fetching Wings release ${Wings_RELEASE_VERSION}..."
   fi
 
   if [ -z "$target_release" ] || [ "$target_release" == "null" ]; then
-    error "Could not fetch release from $Wings_REPO"
+    error "Could not fetch release from $WINGS_REPO"
     if [ "$Wings_RELEASE_VERSION" != "latest" ]; then
       error "Release ${Wings_RELEASE_VERSION} may not exist."
     fi
@@ -347,7 +347,7 @@ install_Wings() {
 
   # Download binary
   output "Downloading Wings binary..."
-  if ! download_release_asset "$Wings_REPO" "$asset_name" "/usr/local/bin/Wings" "$GITHUB_TOKEN" "$target_release"; then
+  if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/Wings" "$GITHUB_TOKEN" "$target_release"; then
     error "Failed to download Wings binary"
     exit 1
   fi
@@ -787,8 +787,8 @@ install_auto_updater_if_requested() {
   if [ "$INSTALL_AUTO_UPDATER" == true ]; then
     print_flame "Installing Auto-Updater"
 
-    export Wings_REPO
-    export Wings_REPO_PRIVATE
+    export WINGS_REPO
+    export WINGS_REPO_PRIVATE
     export GITHUB_TOKEN
 
     install_auto_updater_Wings
