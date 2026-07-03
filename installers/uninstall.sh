@@ -287,9 +287,9 @@ main() {
     output "Hydrodactyl has been uninstalled from your system."
     output ""
     output "Note: Some configuration files may remain in:"
-    output "  ${COLOR_ORANGE}/etc/nginx/${COLOR_NC}"
-    output "  ${COLOR_ORANGE}/etc/mysql/${COLOR_NC}"
-    output "  ${COLOR_ORANGE}/etc/redis/${COLOR_NC}"
+    output "  ${COLOR_BLUE_THEME}/etc/nginx/${COLOR_NC}"
+    output "  ${COLOR_BLUE_THEME}/etc/mysql/${COLOR_NC}"
+    output "  ${COLOR_BLUE_THEME}/etc/redis/${COLOR_NC}"
     output ""
     output "If you no longer need these services, you can remove them manually."
 

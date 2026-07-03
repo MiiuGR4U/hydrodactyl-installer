@@ -55,7 +55,7 @@ configure_github_repository() {
   print_flame "GitHub Repository Configuration"
 
   output "The default Wings repository is:"
-  output "  ${COLOR_ORANGE}${DEFAULT_Wings_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_Wings_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
@@ -73,7 +73,7 @@ configure_github_repository() {
   fi
 
   echo ""
-  output "Repository: ${COLOR_ORANGE}${Wings_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${Wings_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
@@ -85,7 +85,7 @@ configure_github_repository() {
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: $(hyperlink "https://github.com/settings/tokens")"
-      output "Required scopes: ${COLOR_ORANGE}repo${COLOR_NC}"
+      output "Required scopes: ${COLOR_BLUE_THEME}repo${COLOR_NC}"
       echo ""
 
       local token_valid=false
@@ -162,7 +162,7 @@ configure_api_key() {
 
     output ""
     output "Enter your panel URL"
-    output "Example: ${COLOR_ORANGE}https://panel.example.com${COLOR_NC}"
+    output "Example: ${COLOR_BLUE_THEME}https://panel.example.com${COLOR_NC}"
     required_input PANEL_URL "Panel URL: " "Panel URL is required"
     PANEL_URL="${PANEL_URL%/}"  # Remove trailing slash
 
@@ -192,7 +192,7 @@ configure_panel_connection() {
   fi
 
   output "Enter the URL of your Hydrodactyl Panel"
-  output "Example: ${COLOR_ORANGE}https://panel.example.com${COLOR_NC}"
+  output "Example: ${COLOR_BLUE_THEME}https://panel.example.com${COLOR_NC}"
   echo ""
 
   required_input PANEL_URL "Panel URL: " "Panel URL is required"
@@ -239,9 +239,9 @@ configure_ssl() {
 
   if [ "$use_ssl" == "y" ]; then
     echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Let's Encrypt (auto-generated, requires FQDN to point to this server)"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Use existing SSL certificate"
-    output "[${COLOR_ORANGE}2${COLOR_NC}] No SSL (not recommended for production)"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Let's Encrypt (auto-generated, requires FQDN to point to this server)"
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Use existing SSL certificate"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] No SSL (not recommended for production)"
     echo ""
 
     local ssl_choice=""
@@ -324,21 +324,21 @@ show_summary() {
 
   output "Please review the following configuration:"
   echo ""
-  echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${Wings_REPO} $([ "$Wings_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
-  echo -e "  ${COLOR_ORANGE}Panel URL:${COLOR_NC}         ${PANEL_URL}"
+  echo -e "  ${COLOR_BLUE_THEME}Repository:${COLOR_NC}        ${Wings_REPO} $([ "$Wings_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_BLUE_THEME}Panel URL:${COLOR_NC}         ${PANEL_URL}"
   if [ "$USE_API_KEY" == "true" ]; then
-    echo -e "  ${COLOR_ORANGE}Setup Method:${COLOR_NC}      Automatic (via API key)"
-    echo -e "  ${COLOR_ORANGE}Node Name:${COLOR_NC}         ${NODE_NAME}"
-    echo -e "  ${COLOR_ORANGE}API Key:${COLOR_NC}         ${PANEL_API_KEY:0:20}..."
+    echo -e "  ${COLOR_BLUE_THEME}Setup Method:${COLOR_NC}      Automatic (via API key)"
+    echo -e "  ${COLOR_BLUE_THEME}Node Name:${COLOR_NC}         ${NODE_NAME}"
+    echo -e "  ${COLOR_BLUE_THEME}API Key:${COLOR_NC}         ${PANEL_API_KEY:0:20}..."
   else
-    echo -e "  ${COLOR_ORANGE}Setup Method:${COLOR_NC}      Manual"
-    echo -e "  ${COLOR_ORANGE}Node ID:${COLOR_NC}           ${NODE_ID}"
+    echo -e "  ${COLOR_BLUE_THEME}Setup Method:${COLOR_NC}      Manual"
+    echo -e "  ${COLOR_BLUE_THEME}Node ID:${COLOR_NC}           ${NODE_ID}"
   fi
-  echo -e "  ${COLOR_ORANGE}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
-  echo -e "  ${COLOR_ORANGE}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
-  echo -e "  ${COLOR_ORANGE}FQDN:${COLOR_NC}              $([ -n "$FQDN" ] && echo "$FQDN" || echo 'Not set')"
-  echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER" == "true" ] && echo 'Yes' || echo 'No')"
-  echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
+  echo -e "  ${COLOR_BLUE_THEME}FQDN:${COLOR_NC}              $([ -n "$FQDN" ] && echo "$FQDN" || echo 'Not set')"
+  echo -e "  ${COLOR_BLUE_THEME}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
   local confirm=""

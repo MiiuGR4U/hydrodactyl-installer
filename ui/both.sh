@@ -72,7 +72,7 @@ configure_panel_repository() {
   print_flame "Panel Repository Configuration"
 
   output "The default Hydrodactyl Panel repository is:"
-  output "  ${COLOR_ORANGE}${DEFAULT_PANEL_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_PANEL_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
@@ -90,7 +90,7 @@ configure_panel_repository() {
   fi
 
   echo ""
-  output "Repository: ${COLOR_ORANGE}${PANEL_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${PANEL_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
@@ -106,7 +106,7 @@ configure_panel_repository() {
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: https://github.com/settings/tokens"
-      output "Required scopes: ${COLOR_ORANGE}repo${COLOR_NC}"
+      output "Required scopes: ${COLOR_BLUE_THEME}repo${COLOR_NC}"
       echo ""
 
       local token_valid=false
@@ -147,8 +147,8 @@ configure_panel_settings() {
 
   output "How would you like to install the panel?"
   echo ""
-  output "[${COLOR_ORANGE}0${COLOR_NC}] Download latest release tarball (recommended)"
-  output "[${COLOR_ORANGE}1${COLOR_NC}] Clone from Git repository (development)"
+  output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Download latest release tarball (recommended)"
+  output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Clone from Git repository (development)"
   echo ""
 
   local method_choice=""
@@ -213,9 +213,9 @@ configure_panel_settings() {
 
   if [ "$use_ssl" == "y" ]; then
     echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Let's Encrypt (auto-generated)"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Use existing SSL certificate"
-    output "[${COLOR_ORANGE}2${COLOR_NC}] No SSL (not recommended)"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Let's Encrypt (auto-generated)"
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Use existing SSL certificate"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] No SSL (not recommended)"
     echo ""
 
     local ssl_choice=""
@@ -282,7 +282,7 @@ configure_Wings_settings() {
   print_flame "Wings Repository Configuration"
 
   output "The default Wings repository is:"
-  output "  ${COLOR_ORANGE}${DEFAULT_Wings_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_Wings_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
@@ -300,7 +300,7 @@ configure_Wings_settings() {
   fi
 
   echo ""
-  output "Repository: ${COLOR_ORANGE}${Wings_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${Wings_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
@@ -371,7 +371,7 @@ configure_Wings_settings() {
   print_flame "Wings Node Configuration"
   echo ""
 
-  output "Configuring Wings to connect to the panel at: ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
+  output "Configuring Wings to connect to the panel at: ${COLOR_BLUE_THEME}https://${PANEL_FQDN}${COLOR_NC}"
   output "(This will be set automatically - no panel URL input needed)"
   echo ""
 
@@ -449,44 +449,44 @@ show_summary() {
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "  Panel Configuration"
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-  echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${PANEL_REPO} $([ "$PANEL_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
-  echo -e "  ${COLOR_ORANGE}Install Method:${COLOR_NC}    ${PANEL_INSTALL_METHOD}"
-  echo -e "  ${COLOR_ORANGE}Release Version:${COLOR_NC}   ${PANEL_RELEASE_VERSION}"
-  echo -e "  ${COLOR_ORANGE}Domain:${COLOR_NC}            ${PANEL_FQDN}"
-  echo -e "  ${COLOR_ORANGE}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
-  echo -e "  ${COLOR_ORANGE}Timezone:${COLOR_NC}          ${PANEL_TIMEZONE}"
-  echo -e "  ${COLOR_ORANGE}Admin:${COLOR_NC}             ${PANEL_ADMIN_USERNAME} (${PANEL_ADMIN_EMAIL})"
-  echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_PANEL" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Repository:${COLOR_NC}        ${PANEL_REPO} $([ "$PANEL_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_BLUE_THEME}Install Method:${COLOR_NC}    ${PANEL_INSTALL_METHOD}"
+  echo -e "  ${COLOR_BLUE_THEME}Release Version:${COLOR_NC}   ${PANEL_RELEASE_VERSION}"
+  echo -e "  ${COLOR_BLUE_THEME}Domain:${COLOR_NC}            ${PANEL_FQDN}"
+  echo -e "  ${COLOR_BLUE_THEME}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
+  echo -e "  ${COLOR_BLUE_THEME}Timezone:${COLOR_NC}          ${PANEL_TIMEZONE}"
+  echo -e "  ${COLOR_BLUE_THEME}Admin:${COLOR_NC}             ${PANEL_ADMIN_USERNAME} (${PANEL_ADMIN_EMAIL})"
+  echo -e "  ${COLOR_BLUE_THEME}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_PANEL" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "  Wings Configuration"
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-  echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${Wings_REPO} $([ "$Wings_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
-  echo -e "  ${COLOR_ORANGE}Release Version:${COLOR_NC}   ${Wings_RELEASE_VERSION}"
-  echo -e "  ${COLOR_ORANGE}Panel URL:${COLOR_NC}         https://${PANEL_FQDN} (auto-configured)"
-  echo -e "  ${COLOR_ORANGE}Node Name:${COLOR_NC}         ${NODE_NAME}"
-  echo -e "  ${COLOR_ORANGE}Node Description:${COLOR_NC}  ${NODE_DESCRIPTION}"
-  echo -e "  ${COLOR_ORANGE}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
-  echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_Wings" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Repository:${COLOR_NC}        ${Wings_REPO} $([ "$Wings_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_BLUE_THEME}Release Version:${COLOR_NC}   ${Wings_RELEASE_VERSION}"
+  echo -e "  ${COLOR_BLUE_THEME}Panel URL:${COLOR_NC}         https://${PANEL_FQDN} (auto-configured)"
+  echo -e "  ${COLOR_BLUE_THEME}Node Name:${COLOR_NC}         ${NODE_NAME}"
+  echo -e "  ${COLOR_BLUE_THEME}Node Description:${COLOR_NC}  ${NODE_DESCRIPTION}"
+  echo -e "  ${COLOR_BLUE_THEME}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_Wings" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "  Minecraft Server"
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-  echo -e "  ${COLOR_ORANGE}Auto-Create:${COLOR_NC}       $([ "$CREATE_MINECRAFT_SERVER" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Auto-Create:${COLOR_NC}       $([ "$CREATE_MINECRAFT_SERVER" == "true" ] && echo 'Yes' || echo 'No')"
   if [ "$CREATE_MINECRAFT_SERVER" == "true" ]; then
-    echo -e "  ${COLOR_ORANGE}Server Type:${COLOR_NC}       Vanilla Minecraft Java"
-    echo -e "  ${COLOR_ORANGE}Memory:${COLOR_NC}            4GB"
-    echo -e "  ${COLOR_ORANGE}Disk:${COLOR_NC}              32GB"
+    echo -e "  ${COLOR_BLUE_THEME}Server Type:${COLOR_NC}       Vanilla Minecraft Java"
+    echo -e "  ${COLOR_BLUE_THEME}Memory:${COLOR_NC}            4GB"
+    echo -e "  ${COLOR_BLUE_THEME}Disk:${COLOR_NC}              32GB"
   fi
   echo ""
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "  General Settings"
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-  echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Enabled' || echo 'Disabled')"
+  echo -e "  ${COLOR_BLUE_THEME}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Enabled' || echo 'Disabled')"
   if [ "$CONFIGURE_FIREWALL" == "true" ]; then
-    echo -e "  ${COLOR_ORANGE}Game Support:${COLOR_NC}      Minecraft, CS:GO/TF2/GMod, ARK, Rust, Valheim, FiveM"
+    echo -e "  ${COLOR_BLUE_THEME}Game Support:${COLOR_NC}      Minecraft, CS:GO/TF2/GMod, ARK, Rust, Valheim, FiveM"
   fi
   echo ""
 

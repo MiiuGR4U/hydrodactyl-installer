@@ -48,7 +48,7 @@ check_root
 
 check_system_resources_health() {
   echo ""
-  output "${COLOR_ORANGE}System Resources Check${COLOR_NC}"
+  output "${COLOR_BLUE_THEME}System Resources Check${COLOR_NC}"
   echo ""
   
   local cpu_cores=$(get_cpu_cores)
@@ -165,14 +165,14 @@ show_health_menu() {
     print_flame "Health Check & Diagnostics"
 
     echo ""
-    output "${COLOR_ORANGE}What would you like to check?${COLOR_NC}"
+    output "${COLOR_BLUE_THEME}What would you like to check?${COLOR_NC}"
     echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Check Panel Health"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Check Wings Health"
-    output "[${COLOR_ORANGE}2${COLOR_NC}] Check Both"
-    output "[${COLOR_ORANGE}3${COLOR_NC}] Check System Resources"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Check Panel Health"
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Check Wings Health"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Check Both"
+    output "[${COLOR_BLUE_THEME}3${COLOR_NC}] Check System Resources"
     echo ""
-    output "[${COLOR_ORANGE}4${COLOR_NC}] Back to Main Menu"
+    output "[${COLOR_BLUE_THEME}4${COLOR_NC}] Back to Main Menu"
     echo ""
 
     echo -n "* Select an option [0-4]: "

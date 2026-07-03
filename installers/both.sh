@@ -589,7 +589,7 @@ create_node_in_panel() {
     output "Detecting server location..."
     local country_code
     country_code=$(get_server_country_code)
-    info "Detected country code: ${COLOR_ORANGE}${country_code}${COLOR_NC}"
+    info "Detected country code: ${COLOR_BLUE_THEME}${country_code}${COLOR_NC}"
 
     local location_id
     if ! location_id=$(get_or_create_location "$PANEL_API_KEY" "$panel_url" "$country_code"); then
@@ -597,7 +597,7 @@ create_node_in_panel() {
       # Fall through to manual method below
     else
       # Step 2: Create node via API
-      output "Creating node via API: ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}" >&2
+      output "Creating node via API: ${COLOR_BLUE_THEME}${NODE_NAME}${COLOR_NC}" >&2
       local memory_mb
       local disk_mb
       memory_mb=$(get_system_memory)
@@ -1005,21 +1005,21 @@ main() {
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "  Panel Information"
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-  output "Panel URL:      ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
-  output "Admin Email:    ${COLOR_ORANGE}${PANEL_ADMIN_EMAIL}${COLOR_NC}"
-  output "Admin Username: ${COLOR_ORANGE}${PANEL_ADMIN_USERNAME}${COLOR_NC}"
-  output "Admin Password: ${COLOR_ORANGE}${PANEL_ADMIN_PASSWORD}${COLOR_NC}"
+  output "Panel URL:      ${COLOR_BLUE_THEME}https://${PANEL_FQDN}${COLOR_NC}"
+  output "Admin Email:    ${COLOR_BLUE_THEME}${PANEL_ADMIN_EMAIL}${COLOR_NC}"
+  output "Admin Username: ${COLOR_BLUE_THEME}${PANEL_ADMIN_USERNAME}${COLOR_NC}"
+  output "Admin Password: ${COLOR_BLUE_THEME}${PANEL_ADMIN_PASSWORD}${COLOR_NC}"
   echo ""
   if [ -n "$PANEL_API_KEY" ]; then
-    output "API Key:        ${COLOR_ORANGE}${PANEL_API_KEY}${COLOR_NC}"
+    output "API Key:        ${COLOR_BLUE_THEME}${PANEL_API_KEY}${COLOR_NC}"
     echo ""
   fi
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "  phpMyAdmin Database Access"
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-  output "URL:      ${COLOR_ORANGE}http://${PANEL_FQDN}:8081${COLOR_NC}"
-  output "Username: ${COLOR_ORANGE}phpmyadmin${COLOR_NC}"
-  output "Password: ${COLOR_ORANGE}${PHPMYADMIN_PASSWORD}${COLOR_NC}"
+  output "URL:      ${COLOR_BLUE_THEME}http://${PANEL_FQDN}:8081${COLOR_NC}"
+  output "Username: ${COLOR_BLUE_THEME}phpmyadmin${COLOR_NC}"
+  output "Password: ${COLOR_BLUE_THEME}${PHPMYADMIN_PASSWORD}${COLOR_NC}"
   output "Alternative Logins:"
   output "  - root / ${MYSQL_ROOT_PASSWORD}"
   output "  - ${DB_USER} / ${DB_PASSWORD}"
@@ -1027,19 +1027,19 @@ main() {
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "  Node & Database Host Information"
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-  output "Node Name:        ${COLOR_ORANGE}${NODE_NAME}${COLOR_NC}"
-  output "Node ID:          ${COLOR_ORANGE}${NODE_ID}${COLOR_NC}"
-  output "Node Description: ${COLOR_ORANGE}${NODE_DESCRIPTION}${COLOR_NC}"
-  output "Database Host:    ${COLOR_ORANGE}${PANEL_FQDN}:3306${COLOR_NC}"
-  output "Database User:    ${COLOR_ORANGE}dbhost${COLOR_NC}"
+  output "Node Name:        ${COLOR_BLUE_THEME}${NODE_NAME}${COLOR_NC}"
+  output "Node ID:          ${COLOR_BLUE_THEME}${NODE_ID}${COLOR_NC}"
+  output "Node Description: ${COLOR_BLUE_THEME}${NODE_DESCRIPTION}${COLOR_NC}"
+  output "Database Host:    ${COLOR_BLUE_THEME}${PANEL_FQDN}:3306${COLOR_NC}"
+  output "Database User:    ${COLOR_BLUE_THEME}dbhost${COLOR_NC}"
   echo ""
   if [ -n "$CREATED_SERVER_ID" ]; then
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "  Created Minecraft Server"
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-    output "Server ID:    ${COLOR_ORANGE}${CREATED_SERVER_ID}${COLOR_NC}"
-    output "Server UUID:  ${COLOR_ORANGE}${CREATED_SERVER_UUID}${COLOR_NC}"
-    output "Name:         ${COLOR_ORANGE}Minecraft Vanilla Server${COLOR_NC}"
+    output "Server ID:    ${COLOR_BLUE_THEME}${CREATED_SERVER_ID}${COLOR_NC}"
+    output "Server UUID:  ${COLOR_BLUE_THEME}${CREATED_SERVER_UUID}${COLOR_NC}"
+    output "Name:         ${COLOR_BLUE_THEME}Minecraft Vanilla Server${COLOR_NC}"
     echo ""
   fi
   output "Game Server Ports Configured (TCP & UDP):"
@@ -1060,9 +1060,9 @@ main() {
   fi
 
   output "Service Commands:"
-  output "  ${COLOR_ORANGE}systemctl status pteroq${COLOR_NC}    - Panel queue worker"
-  output "  ${COLOR_ORANGE}systemctl status Wings${COLOR_NC}    - Wings daemon"
-  output "  ${COLOR_ORANGE}journalctl -u Wings -f${COLOR_NC}   - View Wings logs"
+  output "  ${COLOR_BLUE_THEME}systemctl status pteroq${COLOR_NC}    - Panel queue worker"
+  output "  ${COLOR_BLUE_THEME}systemctl status Wings${COLOR_NC}    - Wings daemon"
+  output "  ${COLOR_BLUE_THEME}journalctl -u Wings -f${COLOR_NC}   - View Wings logs"
   echo ""
 
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
@@ -1070,13 +1070,13 @@ main() {
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "If you need to reconfigure Wings manually, run:"
   output ""
-  output "  ${COLOR_ORANGE}cd /etc/Wings && sudo Wings configure \\"
+  output "  ${COLOR_BLUE_THEME}cd /etc/Wings && sudo Wings configure \\"
   output "    --panel-url 'https://${PANEL_FQDN}' \\"
   output "    --token '<your-api-key>' \\"
   output "    --node '${NODE_ID}'${COLOR_NC}"
   output ""
   output "Or use the installer function (if running the installer):"
-  output "  ${COLOR_ORANGE}configure_Wings 'https://${PANEL_FQDN}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}configure_Wings 'https://${PANEL_FQDN}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
   echo ""
 
   print_brake 70

@@ -67,14 +67,14 @@ setup_colors() {
     COLOR_YELLOW=''
     COLOR_RED=''
     COLOR_BLUE=''
-    COLOR_ORANGE=''
+    COLOR_BLUE_THEME=''
     COLOR_NC=''
   else
     COLOR_GREEN='\033[0;32m'
     COLOR_YELLOW='\033[1;33m'
     COLOR_RED='\033[0;31m'
     COLOR_BLUE='\033[0;34m'
-    COLOR_ORANGE='\033[38;5;214m'
+    COLOR_BLUE_THEME='\033[38;5;214m'
     COLOR_NC='\033[0m'
   fi
 }
@@ -113,7 +113,7 @@ info() {
 
 debug() {
   if [ "$VERBOSE" == true ]; then
-    log "${COLOR_ORANGE}DEBUG${COLOR_NC}: $1"
+    log "${COLOR_BLUE_THEME}DEBUG${COLOR_NC}: $1"
   fi
 }
 

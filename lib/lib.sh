@@ -53,9 +53,9 @@ export PHP_VERSION="8.4"
 
 # ------------------ Colors - Orange Gradient ----------------- #
 
-export COLOR_DARK_ORANGE='\033[38;5;208m'
-export COLOR_ORANGE='\033[38;5;214m'
-export COLOR_LIGHT_ORANGE='\033[38;5;220m'
+export COLOR_DARK_BLUE='\033[38;5;26m'
+export COLOR_BLUE_THEME='\033[38;5;33m'
+export COLOR_LIGHT_BLUE='\033[38;5;39m'
 export COLOR_YELLOW='\033[1;33m'
 export COLOR_GREEN='\033[0;32m'
 export COLOR_RED='\033[0;31m'
@@ -66,18 +66,18 @@ export COLOR_NC='\033[0m'
 
 # ------------------ Gradient Colors for Header ----------------- #
 # Smooth flame gradient from red (top) to yellow (bottom)
-# Smooth flame gradient colors (top to bottom) - red to gold
-export GRADIENT_1='\033[38;5;196m'   # Deep red
-export GRADIENT_2='\033[38;5;202m'   # Red-orange
-export GRADIENT_3='\033[38;5;208m'   # Dark orange
-export GRADIENT_4='\033[38;5;214m'   # Orange
-export GRADIENT_5='\033[38;5;220m'   # Light orange
+# Smooth water gradient colors (top to bottom) - deep blue to cyan
+export GRADIENT_1='\033[38;5;18m'    # Deep blue
+export GRADIENT_2='\033[38;5;20m'    # Dark blue
+export GRADIENT_3='\033[38;5;26m'    # Blue
+export GRADIENT_4='\033[38;5;32m'    # Light blue
+export GRADIENT_5='\033[38;5;33m'    # Bright blue
 export GRADIENT_6='\033[38;5;221m'   # Yellow-orange
-export GRADIENT_7='\033[38;5;222m'   # Gold
-export GRADIENT_8='\033[38;5;226m'   # Yellow-gold
-export GRADIENT_9='\033[38;5;227m'   # Bright gold
-export GRADIENT_10='\033[38;5;228m'  # Light gold
-export GRADIENT_11='\033[38;5;229m'  # Pale gold
+export GRADIENT_7='\033[38;5;39m'    # Deep sky blue
+export GRADIENT_8='\033[38;5;45m'    # Light sky blue
+export GRADIENT_9='\033[38;5;51m'    # Cyan
+export GRADIENT_10='\033[38;5;87m'   # Light cyan
+export GRADIENT_11='\033[38;5;123m'  # Pale cyan
 
 # Gradient array for flame effects
 GRADIENT_COLORS=(
@@ -150,7 +150,7 @@ print_header() {
   echo -e "${GRADIENT_10}    ║                            Hydrodactyl Installation Manager                           ║"
   echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
-  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} MiiuGR4U"
+  echo -e "    ${COLOR_BLUE_THEME}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_BLUE_THEME}|${COLOR_NC}  ${COLOR_BLUE_THEME}By:${COLOR_NC} MiiuGR4U"
   echo ""
 }
 
@@ -158,7 +158,7 @@ print_flame() {
   local message="$1"
 
   echo ""
-  echo -e "${COLOR_ORANGE}  $message${COLOR_NC}"
+  echo -e "${COLOR_BLUE_THEME}  $message${COLOR_NC}"
   echo ""
 }
 
@@ -171,7 +171,7 @@ welcome() {
 
   detect_os
 
-  echo -e "  ${COLOR_ORANGE}Operating System:${COLOR_NC} $OS $OS_VER_MAJOR ($ARCH)"
+  echo -e "  ${COLOR_BLUE_THEME}Operating System:${COLOR_NC} $OS $OS_VER_MAJOR ($ARCH)"
 
   # Display system resources
   local cpu_cores=$(nproc 2>/dev/null || echo "1")
@@ -180,7 +180,7 @@ welcome() {
   local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
   local swap_human=$(free -h 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
 
-  echo -e "  ${COLOR_ORANGE}System Resources:${COLOR_NC} ${cpu_cores} cores, ${ram_human} RAM, ${disk_human} disk, ${swap_human} swap"
+  echo -e "  ${COLOR_BLUE_THEME}System Resources:${COLOR_NC} ${cpu_cores} cores, ${ram_human} RAM, ${disk_human} disk, ${swap_human} swap"
 
   # Warn if no swap configured
   if [ "$swap_mb" -eq 0 ]; then
@@ -397,7 +397,7 @@ check_system_resources() {
 
   # Output results
   echo ""
-  output "${COLOR_ORANGE}System Resources${COLOR_NC}"
+  output "${COLOR_BLUE_THEME}System Resources${COLOR_NC}"
   print_brake 40
   output "CPU Cores:        $cpu_cores"
   output "RAM:              $(get_ram_human) (${ram_mb}MB)"
@@ -521,10 +521,10 @@ show_system_resources() {
 
   echo ""
   output "System Resources:"
-  output "  ${COLOR_ORANGE}CPU:${COLOR_NC}    $cpu_cores cores"
-  output "  ${COLOR_ORANGE}RAM:${COLOR_NC}    $ram_human"
-  output "  ${COLOR_ORANGE}Disk:${COLOR_NC}   $disk_human available"
-  output "  ${COLOR_ORANGE}Swap:${COLOR_NC}   $swap_human"
+  output "  ${COLOR_BLUE_THEME}CPU:${COLOR_NC}    $cpu_cores cores"
+  output "  ${COLOR_BLUE_THEME}RAM:${COLOR_NC}    $ram_human"
+  output "  ${COLOR_BLUE_THEME}Disk:${COLOR_NC}   $disk_human available"
+  output "  ${COLOR_BLUE_THEME}Swap:${COLOR_NC}   $swap_human"
 }
 
 # Check if system can run Docker (important for Wings)
@@ -822,19 +822,19 @@ select_release_version() {
     recent_releases=$(get_recent_releases "$repo" 4 "$token")
 
     echo "" >&2
-    output "Available releases for ${COLOR_ORANGE}${repo}${COLOR_NC}:" >&2
+    output "Available releases for ${COLOR_BLUE_THEME}${repo}${COLOR_NC}:" >&2
     echo "" >&2
-    output "[${COLOR_ORANGE}latest${COLOR_NC}] Latest release (${latest})" >&2
+    output "[${COLOR_BLUE_THEME}latest${COLOR_NC}] Latest release (${latest})" >&2
 
     while IFS= read -r tag; do
       [ -z "$tag" ] && continue
       releases+=("$tag")
-      output "[${COLOR_ORANGE}${tag}${COLOR_NC}] Release ${tag}" >&2
+      output "[${COLOR_BLUE_THEME}${tag}${COLOR_NC}] Release ${tag}" >&2
     done <<< "$recent_releases"
 
     echo "" >&2
-    output "You can enter: ${COLOR_ORANGE}latest${COLOR_NC}, a specific tag (e.g., ${COLOR_ORANGE}v1.2.3${COLOR_NC})," >&2
-    output "or ${COLOR_ORANGE}Release v1.2.3${COLOR_NC}" >&2
+    output "You can enter: ${COLOR_BLUE_THEME}latest${COLOR_NC}, a specific tag (e.g., ${COLOR_BLUE_THEME}v1.2.3${COLOR_NC})," >&2
+    output "or ${COLOR_BLUE_THEME}Release v1.2.3${COLOR_NC}" >&2
     output "Press Ctrl+C to cancel" >&2
     echo "" >&2
 
@@ -877,10 +877,10 @@ select_release_version() {
     # Wings: Simple latest vs specific
     echo "" >&2
     output "Wings is installed from binary releases." >&2
-    output "Latest release: ${COLOR_ORANGE}${latest}${COLOR_NC}" >&2
+    output "Latest release: ${COLOR_BLUE_THEME}${latest}${COLOR_NC}" >&2
     echo "" >&2
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Latest release (${latest})" >&2
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Specific version" >&2
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Latest release (${latest})" >&2
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Specific version" >&2
     output "Press Ctrl+C to cancel" >&2
     echo "" >&2
 
@@ -902,7 +902,7 @@ select_release_version() {
     # User wants specific version
     echo "" >&2
     output "Enter the version tag you want to install." >&2
-    output "Format: ${COLOR_ORANGE}vX.X.X${COLOR_NC} (e.g., v1.0.0, v1.2.3)" >&2
+    output "Format: ${COLOR_BLUE_THEME}vX.X.X${COLOR_NC} (e.g., v1.0.0, v1.2.3)" >&2
     output "Press Ctrl+C to cancel" >&2
     echo "" >&2
 
@@ -2051,7 +2051,7 @@ verify_certbot_renewal() {
   local has_errors=false
 
   echo ""
-  output "${COLOR_ORANGE}Certbot Renewal Check${COLOR_NC}"
+  output "${COLOR_BLUE_THEME}Certbot Renewal Check${COLOR_NC}"
   echo ""
 
   # Check if certbot is installed
@@ -2229,7 +2229,7 @@ verify_pteroq() {
     failed_jobs=$(cd "$panel_dir" && php artisan queue:failed 2>/dev/null | wc -l)
     if [ "$failed_jobs" -gt 0 ]; then
       warning "There are failed jobs in the queue: $failed_jobs"
-      output "  Run '${COLOR_ORANGE}php artisan queue:retry all${COLOR_NC}' to retry failed jobs"
+      output "  Run '${COLOR_BLUE_THEME}php artisan queue:retry all${COLOR_NC}' to retry failed jobs"
       has_errors=true
     else
       output "✓ No failed jobs in queue"
@@ -2895,7 +2895,7 @@ get_or_create_location() {
   local country_code="$3"
 
   # Output to stderr so it doesn't pollute the return value
-  output "Checking for existing location with code: ${COLOR_ORANGE}${country_code}${COLOR_NC}" >&2
+  output "Checking for existing location with code: ${COLOR_BLUE_THEME}${country_code}${COLOR_NC}" >&2
 
   # Get all locations
   output "DEBUG: Fetching locations from ${panel_url}/api/application/locations" >&2
@@ -2950,7 +2950,7 @@ get_or_create_location() {
   fi
 
   # Location doesn't exist, create it
-  output "Creating new location: ${COLOR_ORANGE}${country_code}${COLOR_NC}" >&2
+  output "Creating new location: ${COLOR_BLUE_THEME}${country_code}${COLOR_NC}" >&2
   output "DEBUG: POST ${panel_url}/api/application/locations with data: {\"short\":\"${country_code}\",\"long\":\"${country_code} Region\"}" >&2
 
   local create_response
@@ -3000,7 +3000,7 @@ create_node_via_api() {
   local behind_proxy="${7:-false}"
   local panel_fqdn="${8:-}"
 
-  output "Creating node: ${COLOR_ORANGE}${node_name}${COLOR_NC}" >&2
+  output "Creating node: ${COLOR_BLUE_THEME}${node_name}${COLOR_NC}" >&2
 
   # Convert bash boolean to JSON boolean
   local json_behind_proxy="false"
@@ -3356,7 +3356,7 @@ display_panel_install_info() {
 
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_ORANGE}Hydrodactyl Panel Installation Information${COLOR_NC}"
+  echo -e "  ${COLOR_BLUE_THEME}Hydrodactyl Panel Installation Information${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3396,7 +3396,7 @@ display_wings_install_info() {
 
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_ORANGE}Wings Daemon Installation Information${COLOR_NC}"
+  echo -e "  ${COLOR_BLUE_THEME}Wings Daemon Installation Information${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3520,7 +3520,7 @@ check_panel_health() {
   local has_errors=false
 
   echo ""
-  output "${COLOR_ORANGE}Panel Health Check${COLOR_NC}"
+  output "${COLOR_BLUE_THEME}Panel Health Check${COLOR_NC}"
   echo ""
 
   # Check directory exists
@@ -3652,7 +3652,7 @@ check_wings_health() {
   local has_errors=false
 
   echo ""
-  output "${COLOR_ORANGE}Wings Health Check${COLOR_NC}"
+  output "${COLOR_BLUE_THEME}Wings Health Check${COLOR_NC}"
   echo ""
 
   # Check binary exists

@@ -52,10 +52,10 @@ LOG_PATH="/var/log/hydrodactyl-installer.log"
 
 # ------------------ Utility Functions ----------------- #
 
-# Color definitions - Orange gradient for flame effect
-export COLOR_DARK_ORANGE='\033[38;5;208m'
-export COLOR_ORANGE='\033[38;5;214m'
-export COLOR_LIGHT_ORANGE='\033[38;5;220m'
+# Color definitions - Blue gradient for water effect
+export COLOR_DARK_BLUE='\033[38;5;26m'
+export COLOR_BLUE_THEME='\033[38;5;33m'
+export COLOR_LIGHT_BLUE='\033[38;5;39m'
 export COLOR_YELLOW='\033[1;33m'
 export COLOR_GREEN='\033[0;32m'
 export COLOR_RED='\033[0;31m'
@@ -63,18 +63,18 @@ export COLOR_BLUE='\033[0;34m'
 export COLOR_CYAN='\033[0;36m'
 export COLOR_NC='\033[0m'
 
-# Smooth flame gradient colors (top to bottom) - red to gold
-export GRADIENT_1='\033[38;5;196m'   # Deep red
-export GRADIENT_2='\033[38;5;202m'   # Red-orange
-export GRADIENT_3='\033[38;5;208m'   # Dark orange
-export GRADIENT_4='\033[38;5;214m'   # Orange
-export GRADIENT_5='\033[38;5;220m'   # Light orange
-export GRADIENT_6='\033[38;5;221m'   # Gold-orange
-export GRADIENT_7='\033[38;5;222m'   # Gold
-export GRADIENT_8='\033[38;5;226m'   # Yellow-gold
-export GRADIENT_9='\033[38;5;227m'   # Bright gold
-export GRADIENT_10='\033[38;5;228m'  # Light gold
-export GRADIENT_11='\033[38;5;229m'  # Pale gold
+# Smooth water gradient colors (top to bottom) - deep blue to cyan
+export GRADIENT_1='\033[38;5;18m'    # Deep blue
+export GRADIENT_2='\033[38;5;20m'    # Dark blue
+export GRADIENT_3='\033[38;5;26m'    # Blue
+export GRADIENT_4='\033[38;5;32m'    # Light blue
+export GRADIENT_5='\033[38;5;33m'    # Bright blue
+export GRADIENT_6='\033[38;5;38m'    # Dodger blue
+export GRADIENT_7='\033[38;5;39m'    # Deep sky blue
+export GRADIENT_8='\033[38;5;45m'    # Light sky blue
+export GRADIENT_9='\033[38;5;51m'    # Cyan
+export GRADIENT_10='\033[38;5;87m'   # Light cyan
+export GRADIENT_11='\033[38;5;123m'  # Pale cyan
 
 output() {
   echo -e "* $1"
@@ -113,7 +113,7 @@ error_handler() {
     [ -n "$line_no" ] && echo -e "* ${COLOR_YELLOW}Failed at line:${COLOR_NC} $line_no"
     echo ""
     echo -e "* ${COLOR_CYAN}Troubleshooting tips:${COLOR_NC}"
-    echo -e "  1. Check the log file: ${COLOR_ORANGE}$LOG_PATH${COLOR_NC}"
+    echo -e "  1. Check the log file: ${COLOR_BLUE_THEME}$LOG_PATH${COLOR_NC}"
     echo -e "  2. Ensure you have a stable internet connection"
     echo -e "  3. Verify your GitHub token has 'repo' scope"
     echo -e "  4. Check that your OS is supported"
@@ -154,7 +154,7 @@ print_header() {
   echo -e "${GRADIENT_10}    ║                            Hydrodactyl Installation Manager                           ║"
   echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
-  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} MiiuGR4U"
+  echo -e "    ${COLOR_BLUE_THEME}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_BLUE_THEME}|${COLOR_NC}  ${COLOR_BLUE_THEME}By:${COLOR_NC} MiiuGR4U"
   echo ""
 }
 
@@ -162,7 +162,7 @@ print_flame() {
   local message="$1"
 
   echo ""
-  echo -e "${COLOR_ORANGE}  $message${COLOR_NC}"
+  echo -e "${COLOR_BLUE_THEME}  $message${COLOR_NC}"
   echo ""
 }
 
@@ -306,7 +306,7 @@ show_welcome() {
     os_info="$NAME $VERSION_ID"
   fi
 
-  echo -e "  ${COLOR_ORANGE}Operating System:${COLOR_NC} $os_info"
+  echo -e "  ${COLOR_BLUE_THEME}Operating System:${COLOR_NC} $os_info"
   echo ""
 
   # Check and display installed components
@@ -428,45 +428,45 @@ show_menu() {
     show_welcome
 
     echo ""
-    output "${COLOR_ORANGE}What would you like to do?${COLOR_NC}"
+    output "${COLOR_BLUE_THEME}What would you like to do?${COLOR_NC}"
     echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Install Hydrodactyl Panel"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Install Wings Daemon"
-    output "[${COLOR_ORANGE}2${COLOR_NC}] Install both Panel and Wings (same machine)"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Install Hydrodactyl Panel"
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Install Wings Daemon"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Install both Panel and Wings (same machine)"
     echo ""
 
     # Update options - gray out if not installed
     local COLOR_DARK_GRAY='\033[90m'
     if [ "$PANEL_INSTALLED" == true ]; then
-      output "[${COLOR_ORANGE}3${COLOR_NC}] Update Hydrodactyl Panel"
+      output "[${COLOR_BLUE_THEME}3${COLOR_NC}] Update Hydrodactyl Panel"
     else
       echo -e "* [3] ${COLOR_DARK_GRAY}Update Hydrodactyl Panel (not installed)${COLOR_NC}"
     fi
 
     if [ "$WINGS_INSTALLED" == true ]; then
-      output "[${COLOR_ORANGE}4${COLOR_NC}] Update Wings Daemon"
+      output "[${COLOR_BLUE_THEME}4${COLOR_NC}] Update Wings Daemon"
     else
       echo -e "* [4] ${COLOR_DARK_GRAY}Update Wings Daemon (not installed)${COLOR_NC}"
     fi
 
     if [ "$PANEL_INSTALLED" == true ] && [ "$WINGS_INSTALLED" == true ]; then
-      output "[${COLOR_ORANGE}5${COLOR_NC}] Update both Panel and Wings"
+      output "[${COLOR_BLUE_THEME}5${COLOR_NC}] Update both Panel and Wings"
     else
       echo -e "* [5] ${COLOR_DARK_GRAY}Update both Panel and Wings (not available)${COLOR_NC}"
     fi
 
     echo ""
-    output "[${COLOR_ORANGE}6${COLOR_NC}] Auto Updater Management"
+    output "[${COLOR_BLUE_THEME}6${COLOR_NC}] Auto Updater Management"
     echo ""
-    output "[${COLOR_ORANGE}7${COLOR_NC}] Repair / Fix Common Issues"
+    output "[${COLOR_BLUE_THEME}7${COLOR_NC}] Repair / Fix Common Issues"
     echo ""
-    output "[${COLOR_ORANGE}8${COLOR_NC}] Health Check"
+    output "[${COLOR_BLUE_THEME}8${COLOR_NC}] Health Check"
     echo ""
-    output "[${COLOR_ORANGE}9${COLOR_NC}] Uninstall Hydrodactyl / Wings"
+    output "[${COLOR_BLUE_THEME}9${COLOR_NC}] Uninstall Hydrodactyl / Wings"
     echo ""
-    output "[${COLOR_ORANGE}10${COLOR_NC}] View Installation Information"
+    output "[${COLOR_BLUE_THEME}10${COLOR_NC}] View Installation Information"
     echo ""
-    output "[${COLOR_ORANGE}11${COLOR_NC}] Exit"
+    output "[${COLOR_BLUE_THEME}11${COLOR_NC}] Exit"
     echo ""
 
     echo -n "* Select an option [0-11]: "
@@ -567,7 +567,7 @@ main() {
 
   # Pre-flight system resource check
   echo ""
-  output "${COLOR_ORANGE}Running system requirements check...${COLOR_NC}"
+  output "${COLOR_BLUE_THEME}Running system requirements check...${COLOR_NC}"
   if ! check_system_resources; then
     echo ""
     warning "Your system is below minimum requirements!"
@@ -592,7 +592,7 @@ main() {
 
   # Check Docker compatibility for Wings installations
   echo ""
-  output "${COLOR_ORANGE}Checking Docker compatibility...${COLOR_NC}"
+  output "${COLOR_BLUE_THEME}Checking Docker compatibility...${COLOR_NC}"
   check_docker_compatibility || true
 
   # Run menu/installation
@@ -603,7 +603,7 @@ main() {
 
   # Always show log location at the end
   echo ""
-  output "Installation log saved to: ${COLOR_ORANGE}$LOG_PATH${COLOR_NC}"
+  output "Installation log saved to: ${COLOR_BLUE_THEME}$LOG_PATH${COLOR_NC}"
   echo ""
 }
 

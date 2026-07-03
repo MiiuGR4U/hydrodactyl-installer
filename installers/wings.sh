@@ -397,7 +397,7 @@ auto_configure_Wings() {
   [ -z "$node_name" ] && node_name="Wings-Node-$(hostname -s)"
 
   output "Starting automatic Wings configuration..."
-  output "Node name: ${COLOR_ORANGE}${node_name}${COLOR_NC}"
+  output "Node name: ${COLOR_BLUE_THEME}${node_name}${COLOR_NC}"
 
   # Step 1: Detect country and get/create location
   output ""
@@ -671,7 +671,7 @@ configure_Wings() {
     output ""
     output "To set up SSL later, you can:"
     output "  1. Obtain a Let's Encrypt certificate:"
-    output "     ${COLOR_ORANGE}certbot certonly --standalone -d ${node_fqdn:-'<fqdn>'}${COLOR_NC}"
+    output "     ${COLOR_BLUE_THEME}certbot certonly --standalone -d ${node_fqdn:-'<fqdn>'}${COLOR_NC}"
     output "  2. Or provide custom certificate paths in ${Wings_INSTALL_DIR}/config.yml"
   fi
 
@@ -815,7 +815,7 @@ main() {
       output "Skipping auto-configuration."
       output ""
       output "You chose to manually configure Wings. To configure later, run:"
-      output "  ${COLOR_ORANGE}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+      output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -883,7 +883,7 @@ main() {
       output "Skipping configuration. Wings is installed but not configured."
       output ""
       output "To configure later, run:"
-      output "  ${COLOR_ORANGE}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+      output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -921,42 +921,42 @@ main() {
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "  Connection Details"
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
-    output "Panel URL: ${COLOR_ORANGE}${PANEL_URL:-Not configured}${COLOR_NC}"
-    output "Node ID: ${COLOR_ORANGE}${NODE_ID:-Not configured}${COLOR_NC}"
+    output "Panel URL: ${COLOR_BLUE_THEME}${PANEL_URL:-Not configured}${COLOR_NC}"
+    output "Node ID: ${COLOR_BLUE_THEME}${NODE_ID:-Not configured}${COLOR_NC}"
     if [ -n "$PANEL_API_KEY" ]; then
-      output "Setup Method: ${COLOR_ORANGE}Automatic (via API)${COLOR_NC}"
+      output "Setup Method: ${COLOR_BLUE_THEME}Automatic (via API)${COLOR_NC}"
     else
-      output "Setup Method: ${COLOR_ORANGE}Manual${COLOR_NC}"
+      output "Setup Method: ${COLOR_BLUE_THEME}Manual${COLOR_NC}"
     fi
-    output "Configuration: ${COLOR_ORANGE}${Wings_INSTALL_DIR}/config.yml${COLOR_NC}"
-    output "Node FQDN: ${COLOR_ORANGE}${FQDN:-Not configured}${COLOR_NC}"
+    output "Configuration: ${COLOR_BLUE_THEME}${Wings_INSTALL_DIR}/config.yml${COLOR_NC}"
+    output "Node FQDN: ${COLOR_BLUE_THEME}${FQDN:-Not configured}${COLOR_NC}"
     if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
-      output "SSL: ${COLOR_ORANGE}Let's Encrypt${COLOR_NC}"
+      output "SSL: ${COLOR_BLUE_THEME}Let's Encrypt${COLOR_NC}"
     elif [ -n "$SSL_CERT_PATH" ] && [ -n "$SSL_KEY_PATH" ]; then
-      output "SSL: ${COLOR_ORANGE}Custom Certificate${COLOR_NC}"
+      output "SSL: ${COLOR_BLUE_THEME}Custom Certificate${COLOR_NC}"
     elif [ "$ASSUME_SSL" == true ]; then
-      output "SSL: ${COLOR_ORANGE}Assumed (external)${COLOR_NC}"
+      output "SSL: ${COLOR_BLUE_THEME}Assumed (external)${COLOR_NC}"
     else
-      output "SSL: ${COLOR_ORANGE}None${COLOR_NC}"
+      output "SSL: ${COLOR_BLUE_THEME}None${COLOR_NC}"
     fi
     echo ""
 
     if [ "$CONFIGURE_FIREWALL" == "true" ]; then
       output "Game Server Ports Configured (TCP & UDP):"
-      output "  ${COLOR_ORANGE}25565-25665${COLOR_NC}: Minecraft"
-      output "  ${COLOR_ORANGE}27015-27150${COLOR_NC}: Source Engine (CS:GO, TF2, GMod)"
-      output "  ${COLOR_ORANGE}7777-8000${COLOR_NC}: ARK, Satisfactory, etc."
-      output "  ${COLOR_ORANGE}28015-28025${COLOR_NC}: Rust"
-      output "  ${COLOR_ORANGE}2456-2466${COLOR_NC}: Valheim"
-      output "  ${COLOR_ORANGE}30120-30130${COLOR_NC}: FiveM/GTA"
-      output "  ${COLOR_ORANGE}$GAME_PORT_START-$GAME_PORT_END${COLOR_NC}: General range"
+      output "  ${COLOR_BLUE_THEME}25565-25665${COLOR_NC}: Minecraft"
+      output "  ${COLOR_BLUE_THEME}27015-27150${COLOR_NC}: Source Engine (CS:GO, TF2, GMod)"
+      output "  ${COLOR_BLUE_THEME}7777-8000${COLOR_NC}: ARK, Satisfactory, etc."
+      output "  ${COLOR_BLUE_THEME}28015-28025${COLOR_NC}: Rust"
+      output "  ${COLOR_BLUE_THEME}2456-2466${COLOR_NC}: Valheim"
+      output "  ${COLOR_BLUE_THEME}30120-30130${COLOR_NC}: FiveM/GTA"
+      output "  ${COLOR_BLUE_THEME}$GAME_PORT_START-$GAME_PORT_END${COLOR_NC}: General range"
       echo ""
     fi
 
     output "Service Commands:"
-    output "  ${COLOR_ORANGE}systemctl status Wings${COLOR_NC}    - Check service status"
-    output "  ${COLOR_ORANGE}systemctl restart Wings${COLOR_NC}   - Restart service"
-    output "  ${COLOR_ORANGE}journalctl -u Wings -f${COLOR_NC}   - View logs"
+    output "  ${COLOR_BLUE_THEME}systemctl status Wings${COLOR_NC}    - Check service status"
+    output "  ${COLOR_BLUE_THEME}systemctl restart Wings${COLOR_NC}   - Restart service"
+    output "  ${COLOR_BLUE_THEME}journalctl -u Wings -f${COLOR_NC}   - View logs"
     echo ""
 
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
@@ -964,13 +964,13 @@ main() {
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "If you need to reconfigure Wings manually, run:"
     output ""
-    output "  ${COLOR_ORANGE}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+    output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
     output "    --panel-url '${PANEL_URL}' \\"
     output "    --token '<your-api-key>' \\"
     output "    --node '${NODE_ID}'${COLOR_NC}"
     output ""
     output "Or use the installer function with parameters:"
-    output "  ${COLOR_ORANGE}configure_Wings '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
+    output "  ${COLOR_BLUE_THEME}configure_Wings '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
     echo ""
   else
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
@@ -981,13 +981,13 @@ main() {
     output "The config directory has been created at ${Wings_INSTALL_DIR}."
     output "To complete setup, run:"
     output ""
-    output "  ${COLOR_ORANGE}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+    output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
     output "    --panel-url 'https://your-panel.com' \\"
     output "    --token 'your-api-key' \\"
     output "    --node 'your-node-id'${COLOR_NC}"
     output ""
     output "Then enable the service:"
-    output "  ${COLOR_ORANGE}systemctl enable --now Wings${COLOR_NC}"
+    output "  ${COLOR_BLUE_THEME}systemctl enable --now Wings${COLOR_NC}"
     echo ""
   fi
 

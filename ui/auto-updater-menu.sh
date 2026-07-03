@@ -56,7 +56,7 @@ configure_panel_auto_updater() {
   print_flame "Panel Auto-Updater Configuration"
 
   output "The default Hydrodactyl Panel repository is:"
-  output "  ${COLOR_ORANGE}${DEFAULT_PANEL_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_PANEL_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
@@ -74,7 +74,7 @@ configure_panel_auto_updater() {
   fi
 
   echo ""
-  output "Repository: ${COLOR_ORANGE}${PANEL_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${PANEL_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
@@ -90,7 +90,7 @@ configure_panel_auto_updater() {
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: https://github.com/settings/tokens"
-      output "Required scopes: ${COLOR_ORANGE}repo${COLOR_NC}"
+      output "Required scopes: ${COLOR_BLUE_THEME}repo${COLOR_NC}"
       echo ""
 
       local token_valid=false
@@ -155,7 +155,7 @@ configure_Wings_auto_updater() {
   print_flame "Wings Auto-Updater Configuration"
 
   output "The default Wings repository is:"
-  output "  ${COLOR_ORANGE}${DEFAULT_Wings_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_Wings_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
@@ -173,7 +173,7 @@ configure_Wings_auto_updater() {
   fi
 
   echo ""
-  output "Repository: ${COLOR_ORANGE}${Wings_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${Wings_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
@@ -189,7 +189,7 @@ configure_Wings_auto_updater() {
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: https://github.com/settings/tokens"
-      output "Required scopes: ${COLOR_ORANGE}repo${COLOR_NC}"
+      output "Required scopes: ${COLOR_BLUE_THEME}repo${COLOR_NC}"
       echo ""
 
       local token_valid=false
@@ -276,18 +276,18 @@ show_remove_menu() {
   echo ""
 
   if [ "$panel_updater_installed" == true ]; then
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Panel auto-updater only"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Panel auto-updater only"
   fi
 
   if [ "$Wings_updater_installed" == true ]; then
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Wings auto-updater only"
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Wings auto-updater only"
   fi
 
   if [ "$panel_updater_installed" == true ] && [ "$Wings_updater_installed" == true ]; then
-    output "[${COLOR_ORANGE}2${COLOR_NC}] Both auto-updaters"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Both auto-updaters"
   fi
 
-  output "[${COLOR_ORANGE}3${COLOR_NC}] Cancel"
+  output "[${COLOR_BLUE_THEME}3${COLOR_NC}] Cancel"
   echo ""
 
   local choice=""
@@ -385,9 +385,9 @@ trigger_panel_update() {
   latest_version=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$panel_repo/releases/latest" 2>/dev/null | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -1)
   [ -z "$latest_version" ] && latest_version="unknown"
   
-  output "Current version: ${COLOR_ORANGE}${current_version}${COLOR_NC}"
+  output "Current version: ${COLOR_BLUE_THEME}${current_version}${COLOR_NC}"
   if [ "$latest_version" != "unknown" ] && [ "$latest_version" != "null" ]; then
-    output "Latest version:  ${COLOR_ORANGE}${latest_version}${COLOR_NC}"
+    output "Latest version:  ${COLOR_BLUE_THEME}${latest_version}${COLOR_NC}"
     if [ "$current_version" == "$latest_version" ]; then
       output "${COLOR_GREEN}You are already on the latest version!${COLOR_NC}"
     fi
@@ -450,9 +450,9 @@ trigger_Wings_update() {
   latest_version=$(curl "${curl_args[@]}" "https://api.github.com/repos/$Wings_repo/releases/latest" 2>/dev/null | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -1)
   [ -z "$latest_version" ] && latest_version="unknown"
   
-  output "Current version: ${COLOR_ORANGE}${current_version}${COLOR_NC}"
+  output "Current version: ${COLOR_BLUE_THEME}${current_version}${COLOR_NC}"
   if [ "$latest_version" != "unknown" ] && [ "$latest_version" != "null" ]; then
-    output "Latest version:  ${COLOR_ORANGE}${latest_version}${COLOR_NC}"
+    output "Latest version:  ${COLOR_BLUE_THEME}${latest_version}${COLOR_NC}"
     if [ "$current_version" == "$latest_version" ]; then
       output "${COLOR_GREEN}You are already on the latest version!${COLOR_NC}"
     fi
@@ -502,27 +502,27 @@ show_main_menu() {
 
     output "What would you like to do?"
     echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Install Panel auto-updater"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Install Wings auto-updater"
-    output "[${COLOR_ORANGE}2${COLOR_NC}] Install both auto-updaters"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Install Panel auto-updater"
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Install Wings auto-updater"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Install both auto-updaters"
     echo ""
 
     if [ "$panel_updater_installed" == true ]; then
-      output "[${COLOR_ORANGE}3${COLOR_NC}] Trigger Panel update check now"
+      output "[${COLOR_BLUE_THEME}3${COLOR_NC}] Trigger Panel update check now"
     else
       output "[${COLOR_GRAY}3${COLOR_NC}] Trigger Panel update check now (not installed)"
     fi
 
     if [ "$Wings_updater_installed" == true ]; then
-      output "[${COLOR_ORANGE}4${COLOR_NC}] Trigger Wings update check now"
+      output "[${COLOR_BLUE_THEME}4${COLOR_NC}] Trigger Wings update check now"
     else
       output "[${COLOR_GRAY}4${COLOR_NC}] Trigger Wings update check now (not installed)"
     fi
 
     echo ""
-    output "[${COLOR_ORANGE}5${COLOR_NC}] Remove auto-updaters"
+    output "[${COLOR_BLUE_THEME}5${COLOR_NC}] Remove auto-updaters"
     echo ""
-    output "[${COLOR_ORANGE}6${COLOR_NC}] Return to main menu"
+    output "[${COLOR_BLUE_THEME}6${COLOR_NC}] Return to main menu"
     echo ""
 
     local choice=""

@@ -64,7 +64,7 @@ configure_github_repository() {
   print_flame "GitHub Repository Configuration"
 
   output "The default Hydrodactyl Panel repository is:"
-  output "  ${COLOR_ORANGE}${DEFAULT_PANEL_REPO}${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}${DEFAULT_PANEL_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
@@ -82,7 +82,7 @@ configure_github_repository() {
   fi
 
   echo ""
-  output "Repository: ${COLOR_ORANGE}${PANEL_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_BLUE_THEME}${PANEL_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
@@ -94,7 +94,7 @@ configure_github_repository() {
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: $(hyperlink "https://github.com/settings/tokens")"
-      output "Required scopes: ${COLOR_ORANGE}repo${COLOR_NC}"
+      output "Required scopes: ${COLOR_BLUE_THEME}repo${COLOR_NC}"
       echo ""
 
       local token_valid=false
@@ -160,8 +160,8 @@ configure_installation_method() {
 
   output "How would you like to install the panel?"
   echo ""
-  output "[${COLOR_ORANGE}0${COLOR_NC}] Download latest release tarball (recommended)"
-  output "[${COLOR_ORANGE}1${COLOR_NC}] Clone from Git repository (development)"
+  output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Download latest release tarball (recommended)"
+  output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Clone from Git repository (development)"
   echo ""
 
   local method_choice=""
@@ -188,7 +188,7 @@ configure_fqdn() {
   print_flame "Domain Configuration"
 
   output "Please enter the domain or subdomain for your panel."
-  output "Example: ${COLOR_ORANGE}panel.example.com${COLOR_NC}"
+  output "Example: ${COLOR_BLUE_THEME}panel.example.com${COLOR_NC}"
   echo ""
 
   local valid_fqdn=false
@@ -212,7 +212,7 @@ configure_fqdn() {
     fi
   done
 
-  output "Domain set to: ${COLOR_ORANGE}${PANEL_FQDN}${COLOR_NC}"
+  output "Domain set to: ${COLOR_BLUE_THEME}${PANEL_FQDN}${COLOR_NC}"
 }
 
 # ------------------ SSL Configuration ----------------- #
@@ -226,9 +226,9 @@ configure_ssl() {
 
   if [ "$use_ssl" == "y" ]; then
     echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Let's Encrypt (auto-generated, requires domain to point to this server)"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Use existing SSL certificate"
-    output "[${COLOR_ORANGE}2${COLOR_NC}] No SSL (not recommended for production)"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Let's Encrypt (auto-generated, requires domain to point to this server)"
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Use existing SSL certificate"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] No SSL (not recommended for production)"
     echo ""
 
     local ssl_choice=""
@@ -362,15 +362,15 @@ show_summary() {
 
   output "Please review the following configuration:"
   echo ""
-  echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${PANEL_REPO} $([ "$PANEL_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
-  echo -e "  ${COLOR_ORANGE}Install Method:${COLOR_NC}    ${PANEL_INSTALL_METHOD}"
-  echo -e "  ${COLOR_ORANGE}Domain:${COLOR_NC}            ${PANEL_FQDN}"
-  echo -e "  ${COLOR_ORANGE}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
-  echo -e "  ${COLOR_ORANGE}Database:${COLOR_NC}          ${DB_NAME}@${DB_HOST}:${DB_PORT}"
-  echo -e "  ${COLOR_ORANGE}Timezone:${COLOR_NC}          ${PANEL_TIMEZONE}"
-  echo -e "  ${COLOR_ORANGE}Admin Email:${COLOR_NC}       ${PANEL_ADMIN_EMAIL}"
-  echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER" == "true" ] && echo 'Yes' || echo 'No')"
-  echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Repository:${COLOR_NC}        ${PANEL_REPO} $([ "$PANEL_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_BLUE_THEME}Install Method:${COLOR_NC}    ${PANEL_INSTALL_METHOD}"
+  echo -e "  ${COLOR_BLUE_THEME}Domain:${COLOR_NC}            ${PANEL_FQDN}"
+  echo -e "  ${COLOR_BLUE_THEME}SSL:${COLOR_NC}               $([ "$CONFIGURE_LETSENCRYPT" == "true" ] && echo 'Let'\''s Encrypt' || ([ -n "$SSL_CERT_PATH" ] && echo 'Custom' || echo 'None'))"
+  echo -e "  ${COLOR_BLUE_THEME}Database:${COLOR_NC}          ${DB_NAME}@${DB_HOST}:${DB_PORT}"
+  echo -e "  ${COLOR_BLUE_THEME}Timezone:${COLOR_NC}          ${PANEL_TIMEZONE}"
+  echo -e "  ${COLOR_BLUE_THEME}Admin Email:${COLOR_NC}       ${PANEL_ADMIN_EMAIL}"
+  echo -e "  ${COLOR_BLUE_THEME}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
   local confirm=""
