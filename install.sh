@@ -358,7 +358,7 @@ run_panel_update() {
   else
     # Create temporary env file with defaults
     mkdir -p /etc/hydrodactyl
-    echo "PANEL_REPO=\"hydrodactyl-oss/hydrodactyl\"" > /etc/hydrodactyl/auto-update-panel.env
+    echo "PANEL_REPO=\"blueprintframework/hydrodactyl\"" > /etc/hydrodactyl/auto-update-panel.env
     echo "GITHUB_TOKEN=\"\"" >> /etc/hydrodactyl/auto-update-panel.env
     chmod 600 /etc/hydrodactyl/auto-update-panel.env
   fi

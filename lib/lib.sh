@@ -23,7 +23,7 @@ export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
 # ------------------ Default Repositories ----------------- #
 
-export DEFAULT_PANEL_REPO="hydrodactyl-oss/hydrodactyl"
+export DEFAULT_PANEL_REPO="blueprintframework/hydrodactyl"
 export DEFAULT_WINGS_REPO="pyrohost/wings"
 
 # ------------------ Path Configuration ----------------- #
@@ -2308,7 +2308,7 @@ install_auto_updater_panel() {
   fi
 
   # Create config
-  echo "PANEL_REPO=\"${PANEL_REPO:-hydrodactyl-oss/hydrodactyl}\"" > /etc/hydrodactyl/auto-update-panel.env
+  echo "PANEL_REPO=\"${PANEL_REPO:-blueprintframework/hydrodactyl}\"" > /etc/hydrodactyl/auto-update-panel.env
   echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/hydrodactyl/auto-update-panel.env
   echo "UPDATE_METHOD=\"${update_method}\"" >> /etc/hydrodactyl/auto-update-panel.env
   echo "PANEL_REPO_PRIVATE=\"${PANEL_REPO_PRIVATE:-false}\"" >> /etc/hydrodactyl/auto-update-panel.env
