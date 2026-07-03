@@ -6,7 +6,7 @@ set -e
 #                                                                                    #
 # Hydrodactyl Installer Library                                                       #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, MiiuGR4U                                             #
 #                                                                                    #
 # https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
@@ -24,12 +24,12 @@ export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 # ------------------ Default Repositories ----------------- #
 
 export DEFAULT_PANEL_REPO="hydrodactyl-oss/hydrodactyl"
-export DEFAULT_ELYTRA_REPO="pyrohost/wings"
+export DEFAULT_WINGS_REPO="pyrohost/wings"
 
 # ------------------ Path Configuration ----------------- #
 
 export INSTALL_DIR="/var/www/hydrodactyl"
-export ELYTRA_DIR="/etc/wings"
+export WINGS_DIR="/etc/wings"
 export PANEL_CONFIG_DIR="/etc/hydrodactyl"
 export LOG_PATH="/var/log/hydrodactyl-installer.log"
 
@@ -150,7 +150,7 @@ print_header() {
   echo -e "${GRADIENT_10}    ║                            Hydrodactyl Installation Manager                           ║"
   echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
-  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Muspelheim Hosting"
+  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} MiiuGR4U"
   echo ""
 }
 
@@ -2345,10 +2345,10 @@ install_auto_updater_wings() {
   output "Wings uses release-based updates"
 
   # Create config
-  echo "ELYTRA_REPO=\"${ELYTRA_REPO:-pyrohost/wings}\"" > /etc/hydrodactyl/auto-update-wings.env
+  echo "WINGS_REPO=\"${WINGS_REPO:-pyrohost/wings}\"" > /etc/hydrodactyl/auto-update-wings.env
   echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/hydrodactyl/auto-update-wings.env
   echo "UPDATE_METHOD=\"releases\"" >> /etc/hydrodactyl/auto-update-wings.env
-  echo "ELYTRA_REPO_PRIVATE=\"${ELYTRA_REPO_PRIVATE:-false}\"" >> /etc/hydrodactyl/auto-update-wings.env
+  echo "WINGS_REPO_PRIVATE=\"${WINGS_REPO_PRIVATE:-false}\"" >> /etc/hydrodactyl/auto-update-wings.env
   chmod 600 /etc/hydrodactyl/auto-update-wings.env
 
   # Get systemd service
@@ -3282,8 +3282,8 @@ save_wings_install_info() {
     echo ""
     echo "INSTALL_DATE=\"$(date)\""
     echo "INSTALL_TYPE=\"$install_type\""
-    [ -n "$ELYTRA_VERSION" ] && echo "ELYTRA_VERSION=\"$ELYTRA_VERSION\""
-    [ -n "$ELYTRA_REPO" ] && echo "ELYTRA_REPO=\"$ELYTRA_REPO\""
+    [ -n "$WINGS_VERSION" ] && echo "WINGS_VERSION=\"$WINGS_VERSION\""
+    [ -n "$WINGS_REPO" ] && echo "WINGS_REPO=\"$WINGS_REPO\""
     [ -n "$GITHUB_TOKEN" ] && echo "GITHUB_TOKEN=\"$GITHUB_TOKEN\""
     [ -n "$PANEL_FQDN" ] && echo "PANEL_FQDN=\"$PANEL_FQDN\""
     [ -n "$PANEL_URL" ] && echo "PANEL_URL=\"$PANEL_URL\""
@@ -3302,8 +3302,8 @@ save_wings_install_info() {
     [ -n "$SSL_CERT_PATH" ] && echo "SSL_CERT_PATH=\"$SSL_CERT_PATH\""
     [ -n "$SSL_KEY_PATH" ] && echo "SSL_KEY_PATH=\"$SSL_KEY_PATH\""
     [ -n "$ASSUME_SSL" ] && echo "ASSUME_SSL=\"$ASSUME_SSL\""
-    echo "ELYTRA_DIR=\"$ELYTRA_DIR\""
-    echo "ELYTRA_BINARY=\"$ELYTRA_BINARY\""
+    echo "WINGS_DIR=\"$WINGS_DIR\""
+    echo "WINGS_BINARY=\"$WINGS_BINARY\""
   } > "$info_file"
 
   chmod 600 "$info_file"
@@ -3402,7 +3402,7 @@ display_wings_install_info() {
   echo ""
   [ -n "$INSTALL_DATE" ] && output "Installation Date: $INSTALL_DATE"
   [ -n "$INSTALL_TYPE" ] && output "Type: $INSTALL_TYPE"
-  [ -n "$ELYTRA_VERSION" ] && output "Version: $ELYTRA_VERSION"
+  [ -n "$WINGS_VERSION" ] && output "Version: $WINGS_VERSION"
   [ -n "$PANEL_FQDN" ] && output "Panel FQDN: $PANEL_FQDN"
   [ -n "$PANEL_URL" ] && output "Panel URL: $PANEL_URL"
   [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
@@ -3414,9 +3414,9 @@ display_wings_install_info() {
   [ -n "$NODE_ID" ] && output "Node ID: $NODE_ID"
   [ -n "$NODE_TOKEN" ] && output "Node Token: (hidden)"
   [ -n "$NODE_UUID" ] && output "Node UUID: $NODE_UUID"
-  [ -n "$ELYTRA_DIR" ] && output "Config Directory: $ELYTRA_DIR"
-  [ -n "$ELYTRA_BINARY" ] && output "Binary Location: $ELYTRA_BINARY"
-  [ -n "$ELYTRA_REPO" ] && output "Repository: $ELYTRA_REPO"
+  [ -n "$WINGS_DIR" ] && output "Config Directory: $WINGS_DIR"
+  [ -n "$WINGS_BINARY" ] && output "Binary Location: $WINGS_BINARY"
+  [ -n "$WINGS_REPO" ] && output "Repository: $WINGS_REPO"
   echo ""
   print_brake 70
   echo ""

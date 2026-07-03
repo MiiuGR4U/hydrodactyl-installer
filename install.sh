@@ -38,7 +38,7 @@ done
 #                                                                                    #
 # One-command installer for Hydrodactyl Panel and Wings Daemon                       #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, MiiuGR4U                                             #
 #                                                                                    #
 # https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
@@ -154,7 +154,7 @@ print_header() {
   echo -e "${GRADIENT_10}    ║                            Hydrodactyl Installation Manager                           ║"
   echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
-  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Muspelheim Hosting"
+  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} MiiuGR4U"
   echo ""
 }
 
@@ -264,11 +264,11 @@ execute_ui() {
 # Check installations and set state variables
 check_installations() {
   PANEL_INSTALLED=false
-  ELYTRA_INSTALLED=false
+  WINGS_INSTALLED=false
   PANEL_VERSION=""
-  ELYTRA_VERSION=""
+  WINGS_VERSION=""
   PANEL_UPDATER_INSTALLED=false
-  ELYTRA_UPDATER_INSTALLED=false
+  WINGS_UPDATER_INSTALLED=false
 
   # Check for Hydrodactyl
   if [ -d "/var/www/hydrodactyl" ]; then
@@ -280,9 +280,9 @@ check_installations() {
 
   # Check for Wings
   if [ -f "/usr/local/bin/wings" ]; then
-    ELYTRA_INSTALLED=true
+    WINGS_INSTALLED=true
     if [ -f "/etc/hydrodactyl/wings-version" ]; then
-      ELYTRA_VERSION=$(cat "/etc/hydrodactyl/wings-version" 2>/dev/null || echo "")
+      WINGS_VERSION=$(cat "/etc/hydrodactyl/wings-version" 2>/dev/null || echo "")
     fi
   fi
 
@@ -291,7 +291,7 @@ check_installations() {
   fi
 
   if systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
-    ELYTRA_UPDATER_INSTALLED=true
+    WINGS_UPDATER_INSTALLED=true
   fi
 }
 
@@ -318,8 +318,8 @@ show_welcome() {
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel not installed"
   fi
 
-  if [ "$ELYTRA_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings installed${ELYTRA_VERSION:+ ($ELYTRA_VERSION)}"
+  if [ "$WINGS_INSTALLED" == true ]; then
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings installed${WINGS_VERSION:+ ($WINGS_VERSION)}"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Wings not installed"
   fi
@@ -330,7 +330,7 @@ show_welcome() {
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel auto-updater not installed"
   fi
 
-  if [ "$ELYTRA_UPDATER_INSTALLED" == true ]; then
+  if [ "$WINGS_UPDATER_INSTALLED" == true ]; then
     echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings auto-updater enabled"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Wings auto-updater not installed"
@@ -391,7 +391,7 @@ run_wings_update() {
   else
     # Create temporary env file with defaults
     mkdir -p /etc/hydrodactyl
-    echo "ELYTRA_REPO=\"pyrohost/wings\"" > /etc/hydrodactyl/auto-update-wings.env
+    echo "WINGS_REPO=\"pyrohost/wings\"" > /etc/hydrodactyl/auto-update-wings.env
     echo "GITHUB_TOKEN=\"\"" >> /etc/hydrodactyl/auto-update-wings.env
     chmod 600 /etc/hydrodactyl/auto-update-wings.env
   fi
@@ -443,13 +443,13 @@ show_menu() {
       echo -e "* [3] ${COLOR_DARK_GRAY}Update Hydrodactyl Panel (not installed)${COLOR_NC}"
     fi
 
-    if [ "$ELYTRA_INSTALLED" == true ]; then
+    if [ "$WINGS_INSTALLED" == true ]; then
       output "[${COLOR_ORANGE}4${COLOR_NC}] Update Wings Daemon"
     else
       echo -e "* [4] ${COLOR_DARK_GRAY}Update Wings Daemon (not installed)${COLOR_NC}"
     fi
 
-    if [ "$PANEL_INSTALLED" == true ] && [ "$ELYTRA_INSTALLED" == true ]; then
+    if [ "$PANEL_INSTALLED" == true ] && [ "$WINGS_INSTALLED" == true ]; then
       output "[${COLOR_ORANGE}5${COLOR_NC}] Update both Panel and Wings"
     else
       echo -e "* [5] ${COLOR_DARK_GRAY}Update both Panel and Wings (not available)${COLOR_NC}"
@@ -495,7 +495,7 @@ show_menu() {
         continue
         ;;
       4)
-        if [ "$ELYTRA_INSTALLED" == false ]; then
+        if [ "$WINGS_INSTALLED" == false ]; then
           error "Wings Daemon is not installed"
           sleep 2
           continue
@@ -504,7 +504,7 @@ show_menu() {
         continue
         ;;
       5)
-        if [ "$PANEL_INSTALLED" == false ] || [ "$ELYTRA_INSTALLED" == false ]; then
+        if [ "$PANEL_INSTALLED" == false ] || [ "$WINGS_INSTALLED" == false ]; then
           error "Both Panel and Wings must be installed to use this option"
           sleep 2
           continue
@@ -522,11 +522,11 @@ show_menu() {
         ;;
       8)
         # Health Check - runs based on what's installed
-        if [ "$PANEL_INSTALLED" == true ] && [ "$ELYTRA_INSTALLED" == true ]; then
+        if [ "$PANEL_INSTALLED" == true ] && [ "$WINGS_INSTALLED" == true ]; then
           check_both_health
         elif [ "$PANEL_INSTALLED" == true ]; then
           check_panel_health
-        elif [ "$ELYTRA_INSTALLED" == true ]; then
+        elif [ "$WINGS_INSTALLED" == true ]; then
           check_wings_health
         else
           error "Nothing installed to check. Install Hydrodactyl or Wings first."
