@@ -441,7 +441,7 @@ trigger_Wings_update() {
   fi
   
   # Get latest version from GitHub
-  local Wings_repo="${WINGS_REPO:-blueprintframework/wings}"
+  local Wings_repo="${WINGS_REPO:-pterodactyl/wings}"
   local github_token="${GITHUB_TOKEN_WINGS:-$GITHUB_TOKEN}"
   local curl_args=(-sL --max-time 10)
   if [ -n "$github_token" ]; then

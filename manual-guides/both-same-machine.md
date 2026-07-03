@@ -360,7 +360,7 @@ mkdir -p /var/lib/Hydrodactyl/volumes /var/lib/Hydrodactyl/archives /var/lib/Hyd
 ### Download Wings
 ```bash
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-curl -Lo /usr/local/bin/Wings "https://github.com/blueprintframework/wings/releases/latest/download/Wings_linux_${ARCH}"
+curl -Lo /usr/local/bin/Wings "https://github.com/pterodactyl/wings/releases/latest/download/Wings_linux_${ARCH}"
 chmod +x /usr/local/bin/Wings
 ```
 
@@ -813,7 +813,7 @@ bash <(curl -Ss https://my-netdata.io/kickstart.sh)
 ## Support
 
 - Hydrodactyl Issues: https://github.com/blueprintframework/hydrodactyl/issues
-- Wings Issues: https://github.com/blueprintframework/wings/issues
+- Wings Issues: https://github.com/pterodactyl/wings/issues
 - Docker Docs: https://docs.docker.com/
 - Community Discord: [Hydrodactyl Community]
 

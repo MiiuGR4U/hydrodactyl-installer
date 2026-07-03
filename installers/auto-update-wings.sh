@@ -26,7 +26,7 @@ if [ -f /etc/Hydrodactyl/auto-update-Wings.env ]; then
 fi
 
 # Default config (can be overridden by /etc/Hydrodactyl/auto-update-Wings.env)
-WINGS_REPO="${WINGS_REPO:-blueprintframework/wings}"
+WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 INSTALL_DIR="${INSTALL_DIR:-/etc/Wings}"
 LOG_FILE="${LOG_FILE:-/var/log/Hydrodactyl-Wings-auto-update.log}"

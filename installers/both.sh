@@ -62,7 +62,7 @@ else
 fi
 
 # Wings configuration
-WINGS_REPO="${WINGS_REPO:-blueprintframework/wings}"
+WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
 NODE_NAME="${NODE_NAME:-local}"
 NODE_DESCRIPTION="${NODE_DESCRIPTION:-Local Node}"
 NODE_TOKEN="${NODE_TOKEN:-$(gen_passwd 32)}"

@@ -172,7 +172,7 @@ Options:
   --configure-letsencrypt        Obtain SSL certificate via Let's Encrypt
   --ssl-email <email>            Email for Let's Encrypt registration
   --github-token, -g <token>     GitHub token for private repos
-  --Wings-repo <repo>           Wings repo (default: blueprintframework/wings)
+  --Wings-repo <repo>           Wings repo (default: pterodactyl/wings)
   --skip-wings-setup             Skip Wings detection/setup
   --help, -h                     Show this help message
 
@@ -199,7 +199,7 @@ parse_arguments "$@"
 # Use Wings_INSTALL_DIR to avoid collision with lib.sh's INSTALL_DIR (which is /var/www/Hydrodactyl for the panel)
 Wings_INSTALL_DIR="/etc/Wings"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/Hydrodactyl}"
-WINGS_REPO="${WINGS_REPO:-blueprintframework/wings}"
+WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
 
 # Panel connection
 PANEL_URL="${PANEL_URL:-}"

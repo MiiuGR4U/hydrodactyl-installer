@@ -24,7 +24,7 @@ export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 # ------------------ Default Repositories ----------------- #
 
 export DEFAULT_PANEL_REPO="blueprintframework/hydrodactyl"
-export DEFAULT_WINGS_REPO="blueprintframework/wings"
+export DEFAULT_WINGS_REPO="pterodactyl/wings"
 
 # ------------------ Path Configuration ----------------- #
 
@@ -2343,7 +2343,7 @@ install_auto_updater_wings() {
   output "Wings uses release-based updates"
 
   # Create config
-  echo "WINGS_REPO=\"${WINGS_REPO:-blueprintframework/wings}\"" > /etc/hydrodactyl/auto-update-wings.env
+  echo "WINGS_REPO=\"${WINGS_REPO:-pterodactyl/wings}\"" > /etc/hydrodactyl/auto-update-wings.env
   echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/hydrodactyl/auto-update-wings.env
   echo "UPDATE_METHOD=\"releases\"" >> /etc/hydrodactyl/auto-update-wings.env
   echo "WINGS_REPO_PRIVATE=\"${WINGS_REPO_PRIVATE:-false}\"" >> /etc/hydrodactyl/auto-update-wings.env
