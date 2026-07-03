@@ -10,7 +10,7 @@ set -e
 #                                                                                    #
 # Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
-# https://github.com/blueprintframework/hydrodactyl-installer                         #
+# https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
 ######################################################################################
 
@@ -28,7 +28,7 @@ if ! fn_exists lib_loaded; then
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi

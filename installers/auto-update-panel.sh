@@ -39,7 +39,7 @@ CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
 UPDATE_METHOD="${UPDATE_METHOD:-releases}"
 PANEL_REPO_PRIVATE="${PANEL_REPO_PRIVATE:-false}"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/Hydrodactyl}"
-GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer}"
+GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer}"
 GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
 
 # ------------------ Runtime Flags ----------------- #

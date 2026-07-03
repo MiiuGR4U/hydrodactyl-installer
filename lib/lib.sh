@@ -8,7 +8,7 @@ set -e
 #                                                                                    #
 # Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
-# https://github.com/blueprintframework/hydrodactyl-installer                         #
+# https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
 ######################################################################################
 
@@ -16,7 +16,7 @@ set -e
 
 export GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
 export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.0.0}"
-export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer}"
+export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer}"
 export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
 
@@ -126,7 +126,7 @@ info() {
 }
 
 print_brake() {
-  local char="${2:-â”€}"
+  local char="${2:-Ã¢â€â‚¬}"
   for ((n = 0; n < $1; n++)); do
     echo -n "$char"
   done
@@ -138,17 +138,17 @@ print_header() {
   echo ""
 
   # Flame gradient header - smooth color transition from top to bottom
-  echo -e "${GRADIENT_1}    â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
-  echo -e "${GRADIENT_2}    â•‘                                                                                      â•‘"
-  echo -e "${GRADIENT_3}    â•‘  â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—     â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ–ˆâ•—  â•‘"
-  echo -e "${GRADIENT_4}    â•‘  â–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ•‘  â•‘"
-  echo -e "${GRADIENT_5}    â•‘  â–ˆâ–ˆâ•”â–ˆâ–ˆâ–ˆâ–ˆâ•”â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â–ˆâ–ˆâ–ˆâ–ˆâ•”â–ˆâ–ˆâ•‘  â•‘"
-  echo -e "${GRADIENT_6}    â•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â•šâ•â•â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â• â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â•‘"
-  echo -e "${GRADIENT_7}    â•‘  â–ˆâ–ˆâ•‘ â•šâ•â• â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘ â•šâ•â• â–ˆâ–ˆâ•‘  â•‘"
-  echo -e "${GRADIENT_8}    â•‘  â•šâ•â•     â•šâ•â• â•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â•â•â•šâ•â•     â•šâ•â•â•â•â•â•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•â•šâ•â•     â•šâ•â•  â•‘"
-  echo -e "${GRADIENT_9}    â•‘                                                                                      â•‘"
-  echo -e "${GRADIENT_10}    â•‘                            Hydrodactyl Installation Manager                           â•‘"
-  echo -e "${GRADIENT_11}    â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
+  echo -e "${GRADIENT_1}    Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”"
+  echo -e "${GRADIENT_2}    Ã¢â€¢â€˜                                                                                      Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_3}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_4}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_5}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_6}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_7}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜ Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜ Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_8}    Ã¢â€¢â€˜  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â     Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â     Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â     Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_9}    Ã¢â€¢â€˜                                                                                      Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_10}    Ã¢â€¢â€˜                            Hydrodactyl Installation Manager                           Ã¢â€¢â€˜"
+  echo -e "${GRADIENT_11}    Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â"
   echo -e "${COLOR_NC}"
   echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Blueprint"
   echo ""
@@ -185,7 +185,7 @@ welcome() {
   # Warn if no swap configured
   if [ "$swap_mb" -eq 0 ]; then
     echo ""
-    echo -e "  ${COLOR_YELLOW}âš  Warning: No swap configured. Consider setting up swap for system stability.${COLOR_NC}"
+    echo -e "  ${COLOR_YELLOW}Ã¢Å¡Â  Warning: No swap configured. Consider setting up swap for system stability.${COLOR_NC}"
     echo -e "     Use the Repair Tool (option 7) to configure swap."
   fi
 
@@ -197,27 +197,27 @@ welcome() {
     if [ -f "/var/www/Hydrodactyl/config/app.php" ]; then
       panel_version=$(grep "'version'" /var/www/Hydrodactyl/config/app.php 2>/dev/null | head -1 | cut -d"'" -f4 || echo "unknown")
     fi
-    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Panel installed${panel_version:+ (v$panel_version)}"
+    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Panel installed${panel_version:+ (v$panel_version)}"
   else
-    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Panel not installed"
+    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Panel not installed"
   fi
 
   if [ -f "/usr/local/bin/Wings" ]; then
-    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Wings installed"
+    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Wings installed"
   else
-    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Wings not installed"
+    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Wings not installed"
   fi
 
   if systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
-    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Panel auto-updater enabled"
+    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Panel auto-updater enabled"
   else
-    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Panel auto-updater not installed"
+    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Panel auto-updater not installed"
   fi
 
   if systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
-    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Wings auto-updater enabled"
+    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Wings auto-updater enabled"
   else
-    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Wings auto-updater not installed"
+    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Wings auto-updater not installed"
   fi
 
   echo ""
@@ -543,7 +543,7 @@ check_docker_compatibility() {
         has_warnings=true
         ;;
       none|kvm|vmware|microsoft|xen|bochs)
-        output "âœ“ Virtualization type '$virt_type' is compatible with Docker"
+        output "Ã¢Å“â€œ Virtualization type '$virt_type' is compatible with Docker"
         ;;
       *)
         info "Unknown virtualization type: $virt_type"
@@ -563,7 +563,7 @@ check_docker_compatibility() {
   # Check cgroup version (cgroup v2 is preferred)
   if [ -f /proc/filesystems ]; then
     if grep -q "cgroup2" /proc/filesystems 2>/dev/null; then
-      output "âœ“ Cgroup v2 is available (recommended for Docker)"
+      output "Ã¢Å“â€œ Cgroup v2 is available (recommended for Docker)"
     elif grep -q "cgroup" /proc/filesystems 2>/dev/null; then
       info "Cgroup v1 detected - Docker will work but cgroup v2 is preferred"
     fi
@@ -1583,12 +1583,12 @@ configure_firewall_rules() {
 
   # Always open specific game port ranges for comprehensive game support
   output "Opening game server ports..."
-  output "  â€¢ 25565-25665 (Minecraft)"
-  output "  â€¢ 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
-  output "  â€¢ 7777-8000 (Unreal Engine - ARK, Satisfactory)"
-  output "  â€¢ 28015-28025 (Rust)"
-  output "  â€¢ 2456-2466 (Valheim)"
-  output "  â€¢ 30120-30130 (FiveM/GTA)"
+  output "  Ã¢â‚¬Â¢ 25565-25665 (Minecraft)"
+  output "  Ã¢â‚¬Â¢ 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
+  output "  Ã¢â‚¬Â¢ 7777-8000 (Unreal Engine - ARK, Satisfactory)"
+  output "  Ã¢â‚¬Â¢ 28015-28025 (Rust)"
+  output "  Ã¢â‚¬Â¢ 2456-2466 (Valheim)"
+  output "  Ã¢â‚¬Â¢ 30120-30130 (FiveM/GTA)"
 
   ports="$ports 25565:25665 27015:27150 7777:8000 28015:28025 2456:2466 30120:30130"
 
@@ -2059,14 +2059,14 @@ verify_certbot_renewal() {
     warning "Certbot is not installed"
     return 1
   fi
-  output "âœ“ Certbot is installed"
+  output "Ã¢Å“â€œ Certbot is installed"
 
   # Check for renewal hooks
   if [ -f "/etc/letsencrypt/renewal-hooks/deploy/Hydrodactyl-services.sh" ]; then
-    output "âœ“ Hydrodactyl renewal hook script exists"
+    output "Ã¢Å“â€œ Hydrodactyl renewal hook script exists"
 
     if [ -x "/etc/letsencrypt/renewal-hooks/deploy/Hydrodactyl-services.sh" ]; then
-      output "âœ“ Renewal hook script is executable"
+      output "Ã¢Å“â€œ Renewal hook script is executable"
     else
       warning "Renewal hook script is not executable"
       has_errors=true
@@ -2080,12 +2080,12 @@ verify_certbot_renewal() {
   local renewal_configured=false
 
   if crontab -l 2>/dev/null | grep -q "certbot renew"; then
-    output "âœ“ Certbot renewal cron job is configured"
+    output "Ã¢Å“â€œ Certbot renewal cron job is configured"
     renewal_configured=true
   fi
 
   if systemctl list-timers 2>/dev/null | grep -q certbot; then
-    output "âœ“ Certbot systemd timer is active"
+    output "Ã¢Å“â€œ Certbot systemd timer is active"
     renewal_configured=true
   fi
 
@@ -2096,7 +2096,7 @@ verify_certbot_renewal() {
 
   # Check renewal logs
   if [ -f "/var/log/Hydrodactyl-certbot-renewal.log" ]; then
-    output "âœ“ Renewal log file exists"
+    output "Ã¢Å“â€œ Renewal log file exists"
 
     # Show last renewal
     local last_renewal
@@ -2111,7 +2111,7 @@ verify_certbot_renewal() {
   # Test certbot renewal (dry run)
   output "Testing certbot renewal (dry run)..."
   if certbot renew --dry-run --quiet 2>/dev/null; then
-    output "âœ“ Certbot renewal dry-run successful"
+    output "Ã¢Å“â€œ Certbot renewal dry-run successful"
   else
     warning "Certbot renewal dry-run failed - check certbot configuration"
     has_errors=true
@@ -2212,7 +2212,7 @@ verify_pteroq() {
     warning "Queue worker (pteroq) is not running"
     has_errors=true
   else
-    output "âœ“ Queue worker (pteroq) is running"
+    output "Ã¢Å“â€œ Queue worker (pteroq) is running"
   fi
 
   # Check if service is enabled
@@ -2220,7 +2220,7 @@ verify_pteroq() {
     warning "Queue worker (pteroq) is not enabled to start on boot"
     has_errors=true
   else
-    output "âœ“ Queue worker (pteroq) is enabled"
+    output "Ã¢Å“â€œ Queue worker (pteroq) is enabled"
   fi
 
   # Check for failed jobs if panel is installed
@@ -2232,7 +2232,7 @@ verify_pteroq() {
       output "  Run '${COLOR_ORANGE}php artisan queue:retry all${COLOR_NC}' to retry failed jobs"
       has_errors=true
     else
-      output "âœ“ No failed jobs in queue"
+      output "Ã¢Å“â€œ No failed jobs in queue"
     fi
   fi
 
@@ -3430,7 +3430,7 @@ show_panel_completion() {
 
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_GREEN}âœ“ $install_type Completed Successfully!${COLOR_NC}"
+  echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ $install_type Completed Successfully!${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3460,7 +3460,7 @@ show_Wings_completion() {
 
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_GREEN}âœ“ $install_type Completed Successfully!${COLOR_NC}"
+  echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ $install_type Completed Successfully!${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3487,7 +3487,7 @@ show_Wings_completion() {
 show_both_completion() {
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_GREEN}âœ“ Full Installation Completed Successfully!${COLOR_NC}"
+  echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ Full Installation Completed Successfully!${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3528,14 +3528,14 @@ check_panel_health() {
     error "Panel directory not found: $panel_dir"
     return 1
   fi
-  output "âœ“ Panel directory exists"
+  output "Ã¢Å“â€œ Panel directory exists"
 
   # Check artisan exists
   if [ ! -f "$panel_dir/artisan" ]; then
     error "artisan command not found"
     has_errors=true
   else
-    output "âœ“ artisan command exists"
+    output "Ã¢Å“â€œ artisan command exists"
   fi
 
   # Check .env exists
@@ -3543,7 +3543,7 @@ check_panel_health() {
     warning ".env file not found"
     has_errors=true
   else
-    output "âœ“ .env file exists"
+    output "Ã¢Å“â€œ .env file exists"
   fi
 
   # Check storage permissions
@@ -3551,7 +3551,7 @@ check_panel_health() {
     local storage_owner
     storage_owner=$(stat -c '%U' "$panel_dir/storage" 2>/dev/null)
     if [ "$storage_owner" == "www-data" ] || [ "$storage_owner" == "nginx" ]; then
-      output "âœ“ Storage directory owned by $storage_owner"
+      output "Ã¢Å“â€œ Storage directory owned by $storage_owner"
     else
       warning "Storage directory owned by $storage_owner (expected www-data or nginx)"
       has_errors=true
@@ -3566,7 +3566,7 @@ check_panel_health() {
     local cache_owner
     cache_owner=$(stat -c '%U' "$panel_dir/bootstrap/cache" 2>/dev/null)
     if [ "$cache_owner" == "www-data" ] || [ "$cache_owner" == "nginx" ]; then
-      output "âœ“ Cache directory owned by $cache_owner"
+      output "Ã¢Å“â€œ Cache directory owned by $cache_owner"
     else
       warning "Cache directory owned by $cache_owner (expected www-data or nginx)"
       has_errors=true
@@ -3578,7 +3578,7 @@ check_panel_health() {
 
   # Check services
   if systemctl is-active --quiet nginx 2>/dev/null; then
-    output "âœ“ nginx is running"
+    output "Ã¢Å“â€œ nginx is running"
   else
     warning "nginx is not running"
     has_errors=true
@@ -3588,14 +3588,14 @@ check_panel_health() {
   local php_fpm_running=false
   for version in 8.4 8.3 8.2 8.1 8.0; do
     if systemctl is-active --quiet "php${version}-fpm" 2>/dev/null; then
-      output "âœ“ php${version}-fpm is running"
+      output "Ã¢Å“â€œ php${version}-fpm is running"
       php_fpm_running=true
       break
     fi
   done
   if [ "$php_fpm_running" == false ]; then
     if systemctl is-active --quiet php-fpm 2>/dev/null; then
-      output "âœ“ php-fpm is running"
+      output "Ã¢Å“â€œ php-fpm is running"
       php_fpm_running=true
     else
       warning "PHP-FPM is not running"
@@ -3605,7 +3605,7 @@ check_panel_health() {
 
   # Check Redis
   if systemctl is-active --quiet redis-server 2>/dev/null || systemctl is-active --quiet redis 2>/dev/null; then
-    output "âœ“ Redis is running"
+    output "Ã¢Å“â€œ Redis is running"
   else
     warning "Redis is not running"
     has_errors=true
@@ -3613,7 +3613,7 @@ check_panel_health() {
 
   # Check database
   if systemctl is-active --quiet mariadb 2>/dev/null || systemctl is-active --quiet mysql 2>/dev/null; then
-    output "âœ“ Database is running"
+    output "Ã¢Å“â€œ Database is running"
   else
     warning "Database is not running"
     has_errors=true
@@ -3630,7 +3630,7 @@ check_panel_health() {
     app_url=$(grep "^APP_URL=" "$panel_dir/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"')
     if [ -n "$app_url" ] && command -v curl >/dev/null 2>&1; then
       if curl -sfL --max-time 5 "$app_url" >/dev/null 2>&1; then
-        output "âœ“ Panel is responding at $app_url"
+        output "Ã¢Å“â€œ Panel is responding at $app_url"
       else
         warning "Panel is not responding at $app_url"
       fi
@@ -3657,11 +3657,11 @@ check_Wings_health() {
 
   # Check binary exists
   if [ -f "/usr/local/bin/Wings" ]; then
-    output "âœ“ Wings binary exists at /usr/local/bin/Wings"
+    output "Ã¢Å“â€œ Wings binary exists at /usr/local/bin/Wings"
 
     # Check binary is executable
     if [ -x "/usr/local/bin/Wings" ]; then
-      output "âœ“ Wings binary is executable"
+      output "Ã¢Å“â€œ Wings binary is executable"
     else
       warning "Wings binary is not executable"
       has_errors=true
@@ -3671,7 +3671,7 @@ check_Wings_health() {
     local version
     version=$(/usr/local/bin/Wings --version 2>/dev/null | head -1)
     if [ -n "$version" ]; then
-      output "âœ“ Wings version: $version"
+      output "Ã¢Å“â€œ Wings version: $version"
     fi
   else
     error "Wings binary not found at /usr/local/bin/Wings"
@@ -3680,10 +3680,10 @@ check_Wings_health() {
 
   # Check config directory
   if [ -d "/etc/Wings" ]; then
-    output "âœ“ Wings config directory exists"
+    output "Ã¢Å“â€œ Wings config directory exists"
 
     if [ -f "/etc/Wings/config.yml" ]; then
-      output "âœ“ Wings config file exists"
+      output "Ã¢Å“â€œ Wings config file exists"
     else
       warning "Wings config file not found"
       has_errors=true
@@ -3696,7 +3696,7 @@ check_Wings_health() {
   # Check data directories
   for dir in /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups; do
     if [ -d "$dir" ]; then
-      output "âœ“ Data directory exists: $dir"
+      output "Ã¢Å“â€œ Data directory exists: $dir"
     else
       warning "Data directory missing: $dir"
     fi
@@ -3704,7 +3704,7 @@ check_Wings_health() {
 
   # Check Docker
   if systemctl is-active --quiet docker 2>/dev/null; then
-    output "âœ“ Docker is running"
+    output "Ã¢Å“â€œ Docker is running"
   else
     warning "Docker is not running"
     has_errors=true
@@ -3712,7 +3712,7 @@ check_Wings_health() {
 
   # Check service
   if systemctl is-active --quiet Wings 2>/dev/null; then
-    output "âœ“ Wings service is running"
+    output "Ã¢Å“â€œ Wings service is running"
   elif systemctl is-enabled --quiet Wings 2>/dev/null; then
     warning "Wings service is enabled but not running"
   else

@@ -10,7 +10,7 @@ set -e
 #                                                                                    #
 # Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
-# https://github.com/blueprintframework/hydrodactyl-installer                         #
+# https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
 ######################################################################################
 
@@ -28,7 +28,7 @@ if ! fn_exists lib_loaded; then
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
@@ -64,7 +64,7 @@ check_system_resources_health() {
   elif [ "$cpu_cores" -lt "$REC_CPU_CORES" ]; then
     info "  CPU cores below recommended ($REC_CPU_CORES)"
   else
-    output "  âœ“ CPU meets recommended requirements"
+    output "  Ã¢Å“â€œ CPU meets recommended requirements"
   fi
   
   output "RAM:              $(get_ram_human) (${ram_mb}MB)"
@@ -74,7 +74,7 @@ check_system_resources_health() {
   elif [ "$ram_mb" -lt "$REC_RAM_MB" ]; then
     info "  RAM below recommended (${REC_RAM_MB}MB / 4GB)"
   else
-    output "  âœ“ RAM meets recommended requirements"
+    output "  Ã¢Å“â€œ RAM meets recommended requirements"
   fi
   
   output "Disk (root):      $(get_disk_human) (${disk_gb}GB)"
@@ -84,7 +84,7 @@ check_system_resources_health() {
   elif [ "$disk_gb" -lt "$REC_DISK_GB" ]; then
     info "  Disk below recommended (${REC_DISK_GB}GB)"
   else
-    output "  âœ“ Disk meets recommended requirements"
+    output "  Ã¢Å“â€œ Disk meets recommended requirements"
   fi
   
   output "Swap:             $(get_swap_human)"
@@ -92,7 +92,7 @@ check_system_resources_health() {
     warning "  No swap configured - recommended for system stability"
     has_warnings=true
   else
-    output "  âœ“ Swap is configured"
+    output "  Ã¢Å“â€œ Swap is configured"
   fi
   
   # Check Docker compatibility for Wings

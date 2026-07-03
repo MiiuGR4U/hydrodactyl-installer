@@ -27,7 +27,7 @@ if ! fn_exists lib_loaded; then
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
@@ -373,9 +373,9 @@ ask_skip_auto_config() {
 
   echo ""
   output "Auto-configuration will:"
-  output "  â€¢ Create a new location (or use existing) in your panel"
-  output "  â€¢ Create a new node in your panel"
-  output "  â€¢ Automatically configure Wings with the new node"
+  output "  Ã¢â‚¬Â¢ Create a new location (or use existing) in your panel"
+  output "  Ã¢â‚¬Â¢ Create a new node in your panel"
+  output "  Ã¢â‚¬Â¢ Automatically configure Wings with the new node"
   echo ""
 
   bool_input skip_auto "Would you like to skip auto-configuration and configure manually?" "n"
@@ -623,10 +623,10 @@ configure_Wings() {
 
   # Configure SSL for Wings
   # This mirrors the panel.sh/both.sh SSL approach:
-  #   1. CONFIGURE_LETSENCRYPT=true â†’ obtain cert via certbot (standalone mode)
-  #   2. SSL_CERT_PATH/SSL_KEY_PATH â†’ use custom certificate
-  #   3. Pre-existing Let's Encrypt certs â†’ use them
-  #   4. Otherwise â†’ warn and tell user how to set up later
+  #   1. CONFIGURE_LETSENCRYPT=true Ã¢â€ â€™ obtain cert via certbot (standalone mode)
+  #   2. SSL_CERT_PATH/SSL_KEY_PATH Ã¢â€ â€™ use custom certificate
+  #   3. Pre-existing Let's Encrypt certs Ã¢â€ â€™ use them
+  #   4. Otherwise Ã¢â€ â€™ warn and tell user how to set up later
   output "Configuring SSL for Wings..."
 
   # Step 1: If Let's Encrypt is requested, obtain the certificate
@@ -762,20 +762,20 @@ configure_firewall() {
     fi
 
     output "Opening ports for Wings daemon and game servers..."
-    output "  â€¢ 22 (SSH)"
-    output "  â€¢ 80 (HTTP - needed for certbot renewal)"
+    output "  Ã¢â‚¬Â¢ 22 (SSH)"
+    output "  Ã¢â‚¬Â¢ 80 (HTTP - needed for certbot renewal)"
     if [ "$CONFIGURE_LETSENCRYPT" == true ] || [ "$ASSUME_SSL" == true ] || [ -n "$SSL_CERT_PATH" ]; then
-      output "  â€¢ 443 (HTTPS/SSL)"
+      output "  Ã¢â‚¬Â¢ 443 (HTTPS/SSL)"
     fi
-    output "  â€¢ 8080 (Wings API)"
-    output "  â€¢ 2022 (SFTP)"
-    output "  â€¢ 25565-25665 (Minecraft)"
-    output "  â€¢ 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
-    output "  â€¢ 7777-8000 (Unreal Engine - ARK, Satisfactory)"
-    output "  â€¢ 28015-28025 (Rust)"
-    output "  â€¢ 2456-2466 (Valheim)"
-    output "  â€¢ 30120-30130 (FiveM/GTA)"
-    output "  â€¢ ${GAME_PORT_START}-${GAME_PORT_END} (Additional range)"
+    output "  Ã¢â‚¬Â¢ 8080 (Wings API)"
+    output "  Ã¢â‚¬Â¢ 2022 (SFTP)"
+    output "  Ã¢â‚¬Â¢ 25565-25665 (Minecraft)"
+    output "  Ã¢â‚¬Â¢ 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
+    output "  Ã¢â‚¬Â¢ 7777-8000 (Unreal Engine - ARK, Satisfactory)"
+    output "  Ã¢â‚¬Â¢ 28015-28025 (Rust)"
+    output "  Ã¢â‚¬Â¢ 2456-2466 (Valheim)"
+    output "  Ã¢â‚¬Â¢ 30120-30130 (FiveM/GTA)"
+    output "  Ã¢â‚¬Â¢ ${GAME_PORT_START}-${GAME_PORT_END} (Additional range)"
 
     # Configure firewall with all game ports
     # Pass SSL flag so port 443 is opened when SSL is configured
@@ -918,9 +918,9 @@ main() {
   echo ""
 
   if [ -f "${Wings_INSTALL_DIR}/config.yml" ]; then
-    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "  Connection Details"
-    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "Panel URL: ${COLOR_ORANGE}${PANEL_URL:-Not configured}${COLOR_NC}"
     output "Node ID: ${COLOR_ORANGE}${NODE_ID:-Not configured}${COLOR_NC}"
     if [ -n "$PANEL_API_KEY" ]; then
@@ -959,9 +959,9 @@ main() {
     output "  ${COLOR_ORANGE}journalctl -u Wings -f${COLOR_NC}   - View logs"
     echo ""
 
-    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "  Manual Reconfiguration"
-    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "If you need to reconfigure Wings manually, run:"
     output ""
     output "  ${COLOR_ORANGE}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
@@ -973,9 +973,9 @@ main() {
     output "  ${COLOR_ORANGE}configure_Wings '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
     echo ""
   else
-    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "  Configuration Required"
-    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "Wings is installed but NOT configured."
     output ""
     output "The config directory has been created at ${Wings_INSTALL_DIR}."

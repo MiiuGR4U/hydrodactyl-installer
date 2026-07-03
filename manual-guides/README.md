@@ -2,7 +2,7 @@
 
 This directory contains comprehensive manual installation guides for Hydrodactyl Panel and Wings Daemon. These guides are designed for users who prefer to install and configure each component manually, or for those who want to understand the installation process in detail.
 
-## ðŸ“š Available Guides
+## Ã°Å¸â€œÅ¡ Available Guides
 
 | Guide | Description | Use Case |
 |-------|-------------|----------|
@@ -10,7 +10,7 @@ This directory contains comprehensive manual installation guides for Hydrodactyl
 | [Wings Daemon Manual](./Wings-manual.md) | Complete standalone Daemon installation | Game server node only, connects to existing Panel |
 | [Both Same Machine](./both-same-machine.md) | Combined Panel + Daemon installation | Single-server setup for small deployments |
 
-## ðŸ¤” Which Guide Should I Use?
+## Ã°Å¸Â¤â€ Which Guide Should I Use?
 
 ### Use the **Panel Only** guide if:
 - You want a dedicated control panel server
@@ -30,7 +30,7 @@ This directory contains comprehensive manual installation guides for Hydrodactyl
 - You have limited server resources
 - You want everything on one server for simplicity
 
-## ðŸ”„ Manual vs Automated Installer
+## Ã°Å¸â€â€ž Manual vs Automated Installer
 
 We also provide an [automated installer](../install.sh) that can:
 - Install everything with a single command
@@ -51,7 +51,7 @@ We also provide an [automated installer](../install.sh) that can:
 - Want to install components separately
 - Are using non-standard environments
 
-## âš™ï¸ Prerequisites for All Guides
+## Ã¢Å¡â„¢Ã¯Â¸Â Prerequisites for All Guides
 
 Before starting any manual installation, ensure you have:
 
@@ -63,7 +63,7 @@ Before starting any manual installation, ensure you have:
   - Both Same Machine: 4 cores, 4GB RAM, 50GB SSD
 - **Supported virtualization** (KVM, VMware, Xen - OpenVZ/LXC not supported for Wings)
 
-## ðŸ”§ Common Configuration
+## Ã°Å¸â€Â§ Common Configuration
 
 All installations require:
 - MariaDB (MySQL) database server
@@ -76,7 +76,7 @@ Wings additionally requires:
 - Docker Engine
 - Swap accounting enabled (for game server containers)
 
-## ðŸ†˜ Getting Help
+## Ã°Å¸â€ Ëœ Getting Help
 
 If you encounter issues with manual installation:
 
@@ -87,7 +87,7 @@ If you encounter issues with manual installation:
    - [Wings Issues](https://github.com/pterodactyl/wings/issues)
 4. **Community Support**: Join our Discord community
 
-## ðŸ“– Guide Structure
+## Ã°Å¸â€œâ€“ Guide Structure
 
 Each manual guide follows this structure:
 
@@ -97,7 +97,7 @@ Each manual guide follows this structure:
 4. **Troubleshooting** - Common issues and solutions
 5. **Post-Installation** - Recommended next steps and maintenance
 
-## ðŸŽ“ Learning Path
+## Ã°Å¸Å½â€œ Learning Path
 
 New to Hydrodactyl? Follow this path:
 
@@ -107,15 +107,15 @@ New to Hydrodactyl? Follow this path:
 4. **Plan your architecture** - Decide if you need separate servers
 5. **Scale up** - Use separate guides for production deployment
 
-## ðŸ“ Contributing
+## Ã°Å¸â€œÂ Contributing
 
 Found an error in a guide? Want to improve documentation?
 
-- Submit a PR to the [Hydrodactyl-installer repository](https://github.com/blueprintframework/hydrodactyl-installer)
+- Submit a PR to the [Hydrodactyl-installer repository](https://github.com/MiiuGR4U/hydrodactyl-installer)
 - Report issues via GitHub Issues
 - Suggest improvements based on your experience
 
-## ðŸ”— Quick Links
+## Ã°Å¸â€â€” Quick Links
 
 - [Main Installer](../install.sh) - Automated one-command installer
 - [Panel Guide](./Hydrodactyl-panel-manual.md) - Panel-only installation
@@ -124,4 +124,4 @@ Found an error in a guide? Want to improve documentation?
 
 ---
 
-**Happy hosting!** ðŸŽ®ðŸš€
+**Happy hosting!** Ã°Å¸Å½Â®Ã°Å¸Å¡â‚¬
