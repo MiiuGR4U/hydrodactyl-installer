@@ -83,21 +83,21 @@ show_main_menu() {
   echo ""
 
   if [ "$PANEL_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Hydrodactyl Panel"
+    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Hydrodactyl Panel"
   else
-    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Hydrodactyl Panel"
+    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Hydrodactyl Panel"
   fi
 
   if [ "$Wings_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Wings Daemon"
+    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Wings Daemon"
   else
-    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Wings Daemon"
+    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Wings Daemon"
   fi
 
   if [ "$PANEL_UPDATER_INSTALLED" == true ] || [ "$Wings_UPDATER_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Auto-updaters"
+    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Auto-updaters"
   else
-    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Auto-updaters"
+    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Auto-updaters"
   fi
 
   echo ""

@@ -64,7 +64,7 @@ check_system_resources_health() {
   elif [ "$cpu_cores" -lt "$REC_CPU_CORES" ]; then
     info "  CPU cores below recommended ($REC_CPU_CORES)"
   else
-    output "  Ã¢Å“â€œ CPU meets recommended requirements"
+    output "  âœ“ CPU meets recommended requirements"
   fi
   
   output "RAM:              $(get_ram_human) (${ram_mb}MB)"
@@ -74,7 +74,7 @@ check_system_resources_health() {
   elif [ "$ram_mb" -lt "$REC_RAM_MB" ]; then
     info "  RAM below recommended (${REC_RAM_MB}MB / 4GB)"
   else
-    output "  Ã¢Å“â€œ RAM meets recommended requirements"
+    output "  âœ“ RAM meets recommended requirements"
   fi
   
   output "Disk (root):      $(get_disk_human) (${disk_gb}GB)"
@@ -84,7 +84,7 @@ check_system_resources_health() {
   elif [ "$disk_gb" -lt "$REC_DISK_GB" ]; then
     info "  Disk below recommended (${REC_DISK_GB}GB)"
   else
-    output "  Ã¢Å“â€œ Disk meets recommended requirements"
+    output "  âœ“ Disk meets recommended requirements"
   fi
   
   output "Swap:             $(get_swap_human)"
@@ -92,7 +92,7 @@ check_system_resources_health() {
     warning "  No swap configured - recommended for system stability"
     has_warnings=true
   else
-    output "  Ã¢Å“â€œ Swap is configured"
+    output "  âœ“ Swap is configured"
   fi
   
   # Check Docker compatibility for Wings

@@ -6,7 +6,7 @@ set -e
 #                                                                                    #
 # Hydrodactyl Installer Library                                                       #
 #                                                                                    #
-# Copyright (C) 2025, Blueprint                                             #
+# Copyright (C) 2025, Muspelheim Hosting                                             #
 #                                                                                    #
 # https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
@@ -23,15 +23,15 @@ export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
 # ------------------ Default Repositories ----------------- #
 
-export DEFAULT_PANEL_REPO="blueprintframework/hydrodactyl"
-export DEFAULT_Wings_REPO="pterodactyl/wings"
+export DEFAULT_PANEL_REPO="hydrodactyl-oss/hydrodactyl"
+export DEFAULT_ELYTRA_REPO="pyrohost/wings"
 
 # ------------------ Path Configuration ----------------- #
 
-export INSTALL_DIR="/var/www/Hydrodactyl"
-export Wings_DIR="/etc/Wings"
-export PANEL_CONFIG_DIR="/etc/Hydrodactyl"
-export LOG_PATH="/var/log/Hydrodactyl-installer.log"
+export INSTALL_DIR="/var/www/hydrodactyl"
+export ELYTRA_DIR="/etc/wings"
+export PANEL_CONFIG_DIR="/etc/hydrodactyl"
+export LOG_PATH="/var/log/hydrodactyl-installer.log"
 
 # ------------------ System Requirements ----------------- #
 
@@ -126,7 +126,7 @@ info() {
 }
 
 print_brake() {
-  local char="${2:-Ã¢â€â‚¬}"
+  local char="${2:-─}"
   for ((n = 0; n < $1; n++)); do
     echo -n "$char"
   done
@@ -138,19 +138,19 @@ print_header() {
   echo ""
 
   # Flame gradient header - smooth color transition from top to bottom
-  echo -e "${GRADIENT_1}    Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢â€”"
-  echo -e "${GRADIENT_2}    Ã¢â€¢â€˜                                                                                      Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_3}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_4}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_5}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_6}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_7}    Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜ Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜     Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜ Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_8}    Ã¢â€¢â€˜  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â     Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â     Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â     Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_9}    Ã¢â€¢â€˜                                                                                      Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_10}    Ã¢â€¢â€˜                            Hydrodactyl Installation Manager                           Ã¢â€¢â€˜"
-  echo -e "${GRADIENT_11}    Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â"
+  echo -e "${GRADIENT_1}    ╔══════════════════════════════════════════════════════════════════════════════════════╗"
+  echo -e "${GRADIENT_2}    ║                                                                                      ║"
+  echo -e "${GRADIENT_3}    ║  ███╗   ███╗██╗   ██╗███████╗██████╗ ███████╗██╗     ██╗  ██╗███████╗██╗███╗   ███╗  ║"
+  echo -e "${GRADIENT_4}    ║  ████╗ ████║██║   ██║██╔════╝██╔══██╗██╔════╝██║     ██║  ██║██╔════╝██║████╗ ████║  ║"
+  echo -e "${GRADIENT_5}    ║  ██╔████╔██║██║   ██║███████╗██████╔╝█████╗  ██║     ███████║█████╗  ██║██╔████╔██║  ║"
+  echo -e "${GRADIENT_6}    ║  ██║╚██╔╝██║██║   ██║╚════██║██╔═══╝ ██╔══╝  ██║     ██╔══██║██╔══╝  ██║██║╚██╔╝██║  ║"
+  echo -e "${GRADIENT_7}    ║  ██║ ╚═╝ ██║╚██████╔╝███████║██║     ███████╗███████╗██║  ██║███████╗██║██║ ╚═╝ ██║  ║"
+  echo -e "${GRADIENT_8}    ║  ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚═╝     ╚═╝  ║"
+  echo -e "${GRADIENT_9}    ║                                                                                      ║"
+  echo -e "${GRADIENT_10}    ║                            Hydrodactyl Installation Manager                           ║"
+  echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
-  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Blueprint"
+  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Muspelheim Hosting"
   echo ""
 }
 
@@ -185,39 +185,39 @@ welcome() {
   # Warn if no swap configured
   if [ "$swap_mb" -eq 0 ]; then
     echo ""
-    echo -e "  ${COLOR_YELLOW}Ã¢Å¡Â  Warning: No swap configured. Consider setting up swap for system stability.${COLOR_NC}"
+    echo -e "  ${COLOR_YELLOW}⚠ Warning: No swap configured. Consider setting up swap for system stability.${COLOR_NC}"
     echo -e "     Use the Repair Tool (option 7) to configure swap."
   fi
 
   echo ""
 
   # Check installed components
-  if [ -d "/var/www/Hydrodactyl" ]; then
+  if [ -d "/var/www/hydrodactyl" ]; then
     local panel_version="unknown"
-    if [ -f "/var/www/Hydrodactyl/config/app.php" ]; then
-      panel_version=$(grep "'version'" /var/www/Hydrodactyl/config/app.php 2>/dev/null | head -1 | cut -d"'" -f4 || echo "unknown")
+    if [ -f "/var/www/hydrodactyl/config/app.php" ]; then
+      panel_version=$(grep "'version'" /var/www/hydrodactyl/config/app.php 2>/dev/null | head -1 | cut -d"'" -f4 || echo "unknown")
     fi
-    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Panel installed${panel_version:+ (v$panel_version)}"
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${panel_version:+ (v$panel_version)}"
   else
-    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Panel not installed"
+    echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel not installed"
   fi
 
-  if [ -f "/usr/local/bin/Wings" ]; then
-    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Wings installed"
+  if [ -f "/usr/local/bin/wings" ]; then
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings installed"
   else
-    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Wings not installed"
+    echo -e "  ${COLOR_RED}✗${COLOR_NC} Wings not installed"
   fi
 
-  if systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
-    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Panel auto-updater enabled"
+  if systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel auto-updater enabled"
   else
-    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Panel auto-updater not installed"
+    echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel auto-updater not installed"
   fi
 
-  if systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
-    echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ${COLOR_NC} Wings auto-updater enabled"
+  if systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings auto-updater enabled"
   else
-    echo -e "  ${COLOR_RED}Ã¢Å“â€”${COLOR_NC} Wings auto-updater not installed"
+    echo -e "  ${COLOR_RED}✗${COLOR_NC} Wings auto-updater not installed"
   fi
 
   echo ""
@@ -543,7 +543,7 @@ check_docker_compatibility() {
         has_warnings=true
         ;;
       none|kvm|vmware|microsoft|xen|bochs)
-        output "Ã¢Å“â€œ Virtualization type '$virt_type' is compatible with Docker"
+        output "✓ Virtualization type '$virt_type' is compatible with Docker"
         ;;
       *)
         info "Unknown virtualization type: $virt_type"
@@ -563,7 +563,7 @@ check_docker_compatibility() {
   # Check cgroup version (cgroup v2 is preferred)
   if [ -f /proc/filesystems ]; then
     if grep -q "cgroup2" /proc/filesystems 2>/dev/null; then
-      output "Ã¢Å“â€œ Cgroup v2 is available (recommended for Docker)"
+      output "✓ Cgroup v2 is available (recommended for Docker)"
     elif grep -q "cgroup" /proc/filesystems 2>/dev/null; then
       info "Cgroup v1 detected - Docker will work but cgroup v2 is preferred"
     fi
@@ -610,7 +610,7 @@ cmd_exists() {
 # Usage: load_existing_db_credentials [variable_name]
 # Returns 0 if credentials loaded successfully, 1 otherwise
 load_existing_db_credentials() {
-  local creds_file="/root/.config/Hydrodactyl/db-credentials"
+  local creds_file="/root/.config/hydrodactyl/db-credentials"
 
   if [ -f "$creds_file" ]; then
     output "Found existing database credentials, loading..." >&2
@@ -636,11 +636,11 @@ check_existing_installation() {
   local component="$1"
   local has_existing=false
 
-  if [ "$component" == "panel" ] && [ -d "/var/www/Hydrodactyl" ]; then
-    warning "Existing panel installation detected at /var/www/Hydrodactyl"
+  if [ "$component" == "panel" ] && [ -d "/var/www/hydrodactyl" ]; then
+    warning "Existing panel installation detected at /var/www/hydrodactyl"
     has_existing=true
-  elif [ "$component" == "Wings" ] && [ -f "/usr/local/bin/Wings" ]; then
-    warning "Existing Wings installation detected at /usr/local/bin/Wings"
+  elif [ "$component" == "wings" ] && [ -f "/usr/local/bin/wings" ]; then
+    warning "Existing Wings installation detected at /usr/local/bin/wings"
     has_existing=true
   fi
 
@@ -1312,7 +1312,7 @@ configure_mariadb_tcp() {
   mkdir -p "$mariadb_conf_dir"
 
   # Create configuration file
-  cat > "${mariadb_conf_dir}/99-Hydrodactyl.cnf" <<EOF
+  cat > "${mariadb_conf_dir}/99-hydrodactyl.cnf" <<EOF
 [mysqld]
 bind-address = 0.0.0.0
 port = 3306
@@ -1569,7 +1569,7 @@ firewall_allow_ports() {
 configure_firewall_rules() {
   local http="${1:-true}"
   local https="${2:-true}"
-  local Wings="${3:-false}"
+  local wings="${3:-false}"
   local game_start="${4:-0}"
   local game_end="${5:-0}"
 
@@ -1579,16 +1579,16 @@ configure_firewall_rules() {
 
   [ "$http" == true ] && ports="$ports 80"
   [ "$https" == true ] && ports="$ports 443"
-  [ "$Wings" == true ] && ports="$ports 8080 2022"
+  [ "$wings" == true ] && ports="$ports 8080 2022"
 
   # Always open specific game port ranges for comprehensive game support
   output "Opening game server ports..."
-  output "  Ã¢â‚¬Â¢ 25565-25665 (Minecraft)"
-  output "  Ã¢â‚¬Â¢ 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
-  output "  Ã¢â‚¬Â¢ 7777-8000 (Unreal Engine - ARK, Satisfactory)"
-  output "  Ã¢â‚¬Â¢ 28015-28025 (Rust)"
-  output "  Ã¢â‚¬Â¢ 2456-2466 (Valheim)"
-  output "  Ã¢â‚¬Â¢ 30120-30130 (FiveM/GTA)"
+  output "  • 25565-25665 (Minecraft)"
+  output "  • 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
+  output "  • 7777-8000 (Unreal Engine - ARK, Satisfactory)"
+  output "  • 28015-28025 (Rust)"
+  output "  • 2456-2466 (Valheim)"
+  output "  • 30120-30130 (FiveM/GTA)"
 
   ports="$ports 25565:25665 27015:27150 7777:8000 28015:28025 2456:2466 30120:30130"
 
@@ -1711,25 +1711,25 @@ install_nodejs() {
   fi
 }
 
-install_pnpm() {
-  if cmd_exists pnpm; then
-    output "pnpm is already installed ($(pnpm --version))"
+install_yarn() {
+  if cmd_exists yarn; then
+    output "yarn is already installed ($(yarn --version))"
     return 0
   fi
 
-  output "Installing pnpm..."
+  output "Installing yarn..."
 
-  # Install pnpm globally using npm
-  npm install -g pnpm
+  # Install yarn globally using npm
+  npm install -g yarn
 
   # Ensure npm global bin is in PATH
   export PATH="$PATH:$(npm bin -g 2>/dev/null || echo '/usr/local/bin')"
   export PATH="$PATH:$(npm config get prefix 2>/dev/null)/bin"
 
-  if cmd_exists pnpm; then
-    success "pnpm installed ($(pnpm --version))"
+  if cmd_exists yarn; then
+    success "yarn installed ($(yarn --version))"
   else
-    error "Failed to install pnpm"
+    error "Failed to install yarn"
     return 1
   fi
 }
@@ -1756,7 +1756,7 @@ build_panel_assets() {
 
   # Build frontend assets
   output "Building frontend assets..."
-  yarn build:production
+  yarn build
 
   success "Frontend assets built successfully"
 }
@@ -1792,8 +1792,8 @@ install_phpmyadmin() {
   " 2>/dev/null || warning "Could not create phpMyAdmin user (may already exist)"
 
   # Save credentials to file
-  mkdir -p /root/.config/Hydrodactyl
-  echo "phpmyadmin:${PHPMYADMIN_PASSWORD}" >> /root/.config/Hydrodactyl/db-credentials
+  mkdir -p /root/.config/hydrodactyl
+  echo "phpmyadmin:${PHPMYADMIN_PASSWORD}" >> /root/.config/hydrodactyl/db-credentials
 
   output "Setting up phpMyAdmin configuration..."
   cat > /etc/phpmyadmin/conf.d/99-custom.php << 'PHPEOF'
@@ -1878,10 +1878,10 @@ try {
 php_fpm_conf() {
   output "Configuring PHP-FPM..."
 
-  local config_file="/etc/php-fpm.d/www-Hydrodactyl.conf"
+  local config_file="/etc/php-fpm.d/www-hydrodactyl.conf"
 
   # Download or copy config
-  if ! get_config "www-Hydrodactyl.conf" "$config_file"; then
+  if ! get_config "www-hydrodactyl.conf" "$config_file"; then
     exit 1
   fi
 
@@ -1901,7 +1901,7 @@ get_php_socket() {
       echo "/run/php/php${PHP_VERSION}-fpm.sock"
       ;;
     rocky|almalinux|fedora|rhel|centos)
-      echo "/run/php-fpm/www-Hydrodactyl.sock"
+      echo "/run/php-fpm/www-hydrodactyl.sock"
       ;;
     *)
       echo "/run/php/php${PHP_VERSION}-fpm.sock"
@@ -1920,7 +1920,7 @@ install_nginx_config() {
 
   output "Installing Nginx configuration..."
 
-  local config_file="/etc/nginx/sites-available/Hydrodactyl.conf"
+  local config_file="/etc/nginx/sites-available/hydrodactyl.conf"
 
   if [ "$ssl" == true ] && [ -n "$cert_path" ] && [ -n "$key_path" ]; then
     # Get SSL config
@@ -1944,7 +1944,7 @@ install_nginx_config() {
 
   # Enable site
   mkdir -p /etc/nginx/sites-enabled
-  ln -sf "$config_file" /etc/nginx/sites-enabled/Hydrodactyl.conf
+  ln -sf "$config_file" /etc/nginx/sites-enabled/hydrodactyl.conf
 
   # Remove default site
   rm -f /etc/nginx/sites-enabled/default
@@ -1989,28 +1989,28 @@ setup_certbot_renewal() {
   mkdir -p /etc/letsencrypt/renewal-hooks/deploy
 
   # Create deploy hook script to restart services after renewal
-  cat > /etc/letsencrypt/renewal-hooks/deploy/Hydrodactyl-services.sh << 'EOF'
+  cat > /etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh << 'EOF'
 #!/bin/bash
 # Hydrodactyl/Wings service restart hook for Certbot
 # This script runs after successful certificate renewal
 
 # Log the renewal
-echo "[$(date)] Certificate renewed, restarting services..." >> /var/log/Hydrodactyl-certbot-renewal.log
+echo "[$(date)] Certificate renewed, restarting services..." >> /var/log/hydrodactyl-certbot-renewal.log
 
 # Restart nginx
 if systemctl is-active --quiet nginx 2>/dev/null; then
-    systemctl restart nginx 2>/dev/null && echo "[$(date)] nginx restarted successfully" >> /var/log/Hydrodactyl-certbot-renewal.log
+    systemctl restart nginx 2>/dev/null && echo "[$(date)] nginx restarted successfully" >> /var/log/hydrodactyl-certbot-renewal.log
 fi
 
 # Restart Wings if installed
-if systemctl is-active --quiet Wings 2>/dev/null; then
-    systemctl restart Wings 2>/dev/null && echo "[$(date)] Wings restarted successfully" >> /var/log/Hydrodactyl-certbot-renewal.log
+if systemctl is-active --quiet wings 2>/dev/null; then
+    systemctl restart wings 2>/dev/null && echo "[$(date)] Wings restarted successfully" >> /var/log/hydrodactyl-certbot-renewal.log
 fi
 
 exit 0
 EOF
 
-  chmod +x /etc/letsencrypt/renewal-hooks/deploy/Hydrodactyl-services.sh
+  chmod +x /etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh
 
   # Check if systemd timer is available (preferred method)
   if systemctl list-timers 2>/dev/null | grep -q "certbot"; then
@@ -2030,20 +2030,20 @@ EOF
     # Add renewal cron job with randomization (twice daily as recommended by Let's Encrypt)
     # Random sleep prevents thundering herd against Let's Encrypt servers
     local random_sleep=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}')
-    echo "0 0,12 * * * root sleep ${random_sleep} && certbot renew --quiet >> /var/log/Hydrodactyl-certbot-renewal.log 2>&1" >> /etc/crontab
+    echo "0 0,12 * * * root sleep ${random_sleep} && certbot renew --quiet >> /var/log/hydrodactyl-certbot-renewal.log 2>&1" >> /etc/crontab
 
     output "Cron job installed: Certbot will check for renewals twice daily (with ${random_sleep}s random delay)"
   fi
 
   # Create log file
-  touch /var/log/Hydrodactyl-certbot-renewal.log
+  touch /var/log/hydrodactyl-certbot-renewal.log
 
   # Log initial setup
-  echo "[$(date)] Certbot auto-renewal configured for Hydrodactyl" >> /var/log/Hydrodactyl-certbot-renewal.log
+  echo "[$(date)] Certbot auto-renewal configured for Hydrodactyl" >> /var/log/hydrodactyl-certbot-renewal.log
 
   success "Automatic certificate renewal configured"
   output "Services will automatically restart after certificate renewal"
-  output "Renewal logs: /var/log/Hydrodactyl-certbot-renewal.log"
+  output "Renewal logs: /var/log/hydrodactyl-certbot-renewal.log"
 }
 
 # Verify certbot renewal configuration
@@ -2059,14 +2059,14 @@ verify_certbot_renewal() {
     warning "Certbot is not installed"
     return 1
   fi
-  output "Ã¢Å“â€œ Certbot is installed"
+  output "✓ Certbot is installed"
 
   # Check for renewal hooks
-  if [ -f "/etc/letsencrypt/renewal-hooks/deploy/Hydrodactyl-services.sh" ]; then
-    output "Ã¢Å“â€œ Hydrodactyl renewal hook script exists"
+  if [ -f "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh" ]; then
+    output "✓ Hydrodactyl renewal hook script exists"
 
-    if [ -x "/etc/letsencrypt/renewal-hooks/deploy/Hydrodactyl-services.sh" ]; then
-      output "Ã¢Å“â€œ Renewal hook script is executable"
+    if [ -x "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh" ]; then
+      output "✓ Renewal hook script is executable"
     else
       warning "Renewal hook script is not executable"
       has_errors=true
@@ -2080,12 +2080,12 @@ verify_certbot_renewal() {
   local renewal_configured=false
 
   if crontab -l 2>/dev/null | grep -q "certbot renew"; then
-    output "Ã¢Å“â€œ Certbot renewal cron job is configured"
+    output "✓ Certbot renewal cron job is configured"
     renewal_configured=true
   fi
 
   if systemctl list-timers 2>/dev/null | grep -q certbot; then
-    output "Ã¢Å“â€œ Certbot systemd timer is active"
+    output "✓ Certbot systemd timer is active"
     renewal_configured=true
   fi
 
@@ -2095,12 +2095,12 @@ verify_certbot_renewal() {
   fi
 
   # Check renewal logs
-  if [ -f "/var/log/Hydrodactyl-certbot-renewal.log" ]; then
-    output "Ã¢Å“â€œ Renewal log file exists"
+  if [ -f "/var/log/hydrodactyl-certbot-renewal.log" ]; then
+    output "✓ Renewal log file exists"
 
     # Show last renewal
     local last_renewal
-    last_renewal=$(grep "Certificate renewed" /var/log/Hydrodactyl-certbot-renewal.log 2>/dev/null | tail -1)
+    last_renewal=$(grep "Certificate renewed" /var/log/hydrodactyl-certbot-renewal.log 2>/dev/null | tail -1)
     if [ -n "$last_renewal" ]; then
       output "  Last renewal: $last_renewal"
     fi
@@ -2111,7 +2111,7 @@ verify_certbot_renewal() {
   # Test certbot renewal (dry run)
   output "Testing certbot renewal (dry run)..."
   if certbot renew --dry-run --quiet 2>/dev/null; then
-    output "Ã¢Å“â€œ Certbot renewal dry-run successful"
+    output "✓ Certbot renewal dry-run successful"
   else
     warning "Certbot renewal dry-run failed - check certbot configuration"
     has_errors=true
@@ -2158,7 +2158,7 @@ selinux_allow() {
 insert_cronjob() {
   output "Installing cron job..."
 
-  (crontab -l 2>/dev/null | grep -v "schedule:run"; echo "* * * * * php /var/www/Hydrodactyl/artisan schedule:run >> /dev/null 2>&1") | crontab -
+  (crontab -l 2>/dev/null | grep -v "schedule:run"; echo "* * * * * php /var/www/hydrodactyl/artisan schedule:run >> /dev/null 2>&1") | crontab -
 
   success "Cron job installed"
 }
@@ -2212,7 +2212,7 @@ verify_pteroq() {
     warning "Queue worker (pteroq) is not running"
     has_errors=true
   else
-    output "Ã¢Å“â€œ Queue worker (pteroq) is running"
+    output "✓ Queue worker (pteroq) is running"
   fi
 
   # Check if service is enabled
@@ -2220,7 +2220,7 @@ verify_pteroq() {
     warning "Queue worker (pteroq) is not enabled to start on boot"
     has_errors=true
   else
-    output "Ã¢Å“â€œ Queue worker (pteroq) is enabled"
+    output "✓ Queue worker (pteroq) is enabled"
   fi
 
   # Check for failed jobs if panel is installed
@@ -2232,7 +2232,7 @@ verify_pteroq() {
       output "  Run '${COLOR_ORANGE}php artisan queue:retry all${COLOR_NC}' to retry failed jobs"
       has_errors=true
     else
-      output "Ã¢Å“â€œ No failed jobs in queue"
+      output "✓ No failed jobs in queue"
     fi
   fi
 
@@ -2290,17 +2290,17 @@ restart_pteroq() {
 install_auto_updater_panel() {
   output "Installing Panel auto-updater..."
 
-  mkdir -p /etc/Hydrodactyl
+  mkdir -p /etc/hydrodactyl
 
   # Get auto-update script
-  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/Hydrodactyl-auto-update-panel.sh"; then
+  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/hydrodactyl-auto-update-panel.sh"; then
     error "Failed to get auto-update script"
     exit 1
   fi
 
   # Auto-detect update method based on installation type
   local update_method="releases"
-  if [ -d "/var/www/Hydrodactyl/.git" ]; then
+  if [ -d "/var/www/hydrodactyl/.git" ]; then
     update_method="git"
     output "Detected git-based installation - will use git for updates"
   else
@@ -2308,35 +2308,35 @@ install_auto_updater_panel() {
   fi
 
   # Create config
-  echo "PANEL_REPO=\"${PANEL_REPO:-blueprintframework/hydrodactyl}\"" > /etc/Hydrodactyl/auto-update-panel.env
-  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/Hydrodactyl/auto-update-panel.env
-  echo "UPDATE_METHOD=\"${update_method}\"" >> /etc/Hydrodactyl/auto-update-panel.env
-  echo "PANEL_REPO_PRIVATE=\"${PANEL_REPO_PRIVATE:-false}\"" >> /etc/Hydrodactyl/auto-update-panel.env
-  chmod 600 /etc/Hydrodactyl/auto-update-panel.env
+  echo "PANEL_REPO=\"${PANEL_REPO:-hydrodactyl-oss/hydrodactyl}\"" > /etc/hydrodactyl/auto-update-panel.env
+  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/hydrodactyl/auto-update-panel.env
+  echo "UPDATE_METHOD=\"${update_method}\"" >> /etc/hydrodactyl/auto-update-panel.env
+  echo "PANEL_REPO_PRIVATE=\"${PANEL_REPO_PRIVATE:-false}\"" >> /etc/hydrodactyl/auto-update-panel.env
+  chmod 600 /etc/hydrodactyl/auto-update-panel.env
 
   # Get systemd service
-  if ! get_config "auto-update-panel.service" "/etc/systemd/system/Hydrodactyl-panel-auto-update.service"; then
+  if ! get_config "auto-update-panel.service" "/etc/systemd/system/hydrodactyl-panel-auto-update.service"; then
     exit 1
   fi
 
   # Get systemd timer
-  if ! get_config "auto-update-panel.timer" "/etc/systemd/system/Hydrodactyl-panel-auto-update.timer"; then
+  if ! get_config "auto-update-panel.timer" "/etc/systemd/system/hydrodactyl-panel-auto-update.timer"; then
     exit 1
   fi
 
   systemctl daemon-reload
-  systemctl enable --now Hydrodactyl-panel-auto-update.timer
+  systemctl enable --now hydrodactyl-panel-auto-update.timer
 
   success "Panel auto-updater installed"
 }
 
-install_auto_updater_Wings() {
+install_auto_updater_wings() {
   output "Installing Wings auto-updater..."
 
-  mkdir -p /etc/Hydrodactyl
+  mkdir -p /etc/hydrodactyl
 
   # Get auto-update script
-  if ! get_script "installers" "auto-update-Wings" "/usr/local/bin/Hydrodactyl-auto-update-Wings.sh"; then
+  if ! get_script "installers" "auto-update-wings" "/usr/local/bin/hydrodactyl-auto-update-wings.sh"; then
     error "Failed to get auto-update script"
     exit 1
   fi
@@ -2345,24 +2345,24 @@ install_auto_updater_Wings() {
   output "Wings uses release-based updates"
 
   # Create config
-  echo "Wings_REPO=\"${Wings_REPO:-pterodactyl/wings}\"" > /etc/Hydrodactyl/auto-update-Wings.env
-  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/Hydrodactyl/auto-update-Wings.env
-  echo "UPDATE_METHOD=\"releases\"" >> /etc/Hydrodactyl/auto-update-Wings.env
-  echo "Wings_REPO_PRIVATE=\"${Wings_REPO_PRIVATE:-false}\"" >> /etc/Hydrodactyl/auto-update-Wings.env
-  chmod 600 /etc/Hydrodactyl/auto-update-Wings.env
+  echo "ELYTRA_REPO=\"${ELYTRA_REPO:-pyrohost/wings}\"" > /etc/hydrodactyl/auto-update-wings.env
+  echo "GITHUB_TOKEN=\"${GITHUB_TOKEN:-}\"" >> /etc/hydrodactyl/auto-update-wings.env
+  echo "UPDATE_METHOD=\"releases\"" >> /etc/hydrodactyl/auto-update-wings.env
+  echo "ELYTRA_REPO_PRIVATE=\"${ELYTRA_REPO_PRIVATE:-false}\"" >> /etc/hydrodactyl/auto-update-wings.env
+  chmod 600 /etc/hydrodactyl/auto-update-wings.env
 
   # Get systemd service
-  if ! get_config "auto-update-Wings.service" "/etc/systemd/system/Hydrodactyl-Wings-auto-update.service"; then
+  if ! get_config "auto-update-wings.service" "/etc/systemd/system/hydrodactyl-wings-auto-update.service"; then
     exit 1
   fi
 
   # Get systemd timer
-  if ! get_config "auto-update-Wings.timer" "/etc/systemd/system/Hydrodactyl-Wings-auto-update.timer"; then
+  if ! get_config "auto-update-wings.timer" "/etc/systemd/system/hydrodactyl-wings-auto-update.timer"; then
     exit 1
   fi
 
   systemctl daemon-reload
-  systemctl enable --now Hydrodactyl-Wings-auto-update.timer
+  systemctl enable --now hydrodactyl-wings-auto-update.timer
 
   success "Wings auto-updater installed"
 }
@@ -2370,31 +2370,31 @@ install_auto_updater_Wings() {
 remove_auto_updater_panel() {
   output "Removing Panel auto-updater..."
 
-  systemctl stop Hydrodactyl-panel-auto-update.timer 2>/dev/null || true
-  systemctl disable Hydrodactyl-panel-auto-update.timer 2>/dev/null || true
+  systemctl stop hydrodactyl-panel-auto-update.timer 2>/dev/null || true
+  systemctl disable hydrodactyl-panel-auto-update.timer 2>/dev/null || true
 
-  rm -f /etc/systemd/system/Hydrodactyl-panel-auto-update.service
-  rm -f /etc/systemd/system/Hydrodactyl-panel-auto-update.timer
-  rm -f /usr/local/bin/Hydrodactyl-auto-update-panel.sh
-  rm -f /etc/Hydrodactyl/auto-update-panel.conf
-  rm -f /etc/Hydrodactyl/auto-update-panel.env
+  rm -f /etc/systemd/system/hydrodactyl-panel-auto-update.service
+  rm -f /etc/systemd/system/hydrodactyl-panel-auto-update.timer
+  rm -f /usr/local/bin/hydrodactyl-auto-update-panel.sh
+  rm -f /etc/hydrodactyl/auto-update-panel.conf
+  rm -f /etc/hydrodactyl/auto-update-panel.env
 
   systemctl daemon-reload
 
   success "Panel auto-updater removed"
 }
 
-remove_auto_updater_Wings() {
+remove_auto_updater_wings() {
   output "Removing Wings auto-updater..."
 
-  systemctl stop Hydrodactyl-Wings-auto-update.timer 2>/dev/null || true
-  systemctl disable Hydrodactyl-Wings-auto-update.timer 2>/dev/null || true
+  systemctl stop hydrodactyl-wings-auto-update.timer 2>/dev/null || true
+  systemctl disable hydrodactyl-wings-auto-update.timer 2>/dev/null || true
 
-  rm -f /etc/systemd/system/Hydrodactyl-Wings-auto-update.service
-  rm -f /etc/systemd/system/Hydrodactyl-Wings-auto-update.timer
-  rm -f /usr/local/bin/Hydrodactyl-auto-update-Wings.sh
-  rm -f /etc/Hydrodactyl/auto-update-Wings.conf
-  rm -f /etc/Hydrodactyl/auto-update-Wings.env
+  rm -f /etc/systemd/system/hydrodactyl-wings-auto-update.service
+  rm -f /etc/systemd/system/hydrodactyl-wings-auto-update.timer
+  rm -f /usr/local/bin/hydrodactyl-auto-update-wings.sh
+  rm -f /etc/hydrodactyl/auto-update-wings.conf
+  rm -f /etc/hydrodactyl/auto-update-wings.env
 
   systemctl daemon-reload
 
@@ -2574,10 +2574,10 @@ get_system_memory() {
 }
 
 get_system_disk() {
-  # Get available disk space in MB for /var/lib/Hydrodactyl or root
+  # Get available disk space in MB for /var/lib/hydrodactyl or root
   local disk_gb
-  if [ -d "/var/lib/Hydrodactyl" ]; then
-    disk_gb=$(df -BG /var/lib/Hydrodactyl | awk 'NR==2 {gsub(/G/,""); print $4}')
+  if [ -d "/var/lib/hydrodactyl" ]; then
+    disk_gb=$(df -BG /var/lib/hydrodactyl | awk 'NR==2 {gsub(/G/,""); print $4}')
   else
     disk_gb=$(df -BG / | awk 'NR==2 {gsub(/G/,""); print $4}')
   fi
@@ -2824,7 +2824,7 @@ generate_api_key() {
     return 1
   fi
 
-  # The API key should be the only thing in stdout (48 chars: hydro_ + identifier + token)
+  # The API key should be the only thing in stdout (48 chars: pyro_ + identifier + token)
   local api_key="$api_key_result"
 
   output "DEBUG: Key length: ${#api_key}" >&2
@@ -3064,7 +3064,7 @@ create_node_via_api() {
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "Wings", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "wings", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
       error "Failed to build JSON with jq"
       error "jq error: $(cat "$json_file")"
       rm -f "$json_file"
@@ -3072,7 +3072,7 @@ create_node_via_api() {
     fi
   else
     # Fallback: write JSON directly to file
-    printf '{"name":"%s","description":"Wings node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"Wings","backup_disk":"rustic_local"}' \
+    printf '{"name":"%s","description":"Wings node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"wings","backup_disk":"rustic_local"}' \
       "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
@@ -3217,7 +3217,7 @@ detect_os
 # ------------------ Installation Info Functions ----------------- #
 
 # Directory for storing installation information
-INSTALL_INFO_DIR="/etc/Hydrodactyl/install-info"
+INSTALL_INFO_DIR="/etc/hydrodactyl/install-info"
 
 # Save panel installation information
 save_panel_install_info() {
@@ -3264,14 +3264,14 @@ save_panel_install_info() {
 }
 
 # Save Wings installation information
-save_Wings_install_info() {
+save_wings_install_info() {
   local install_type="${1:-install}"
 
   # Create directory if it doesn't exist
   mkdir -p "$INSTALL_INFO_DIR"
   chmod 700 "$INSTALL_INFO_DIR"
 
-  local info_file="$INSTALL_INFO_DIR/Wings-info"
+  local info_file="$INSTALL_INFO_DIR/wings-info"
 
   output "Saving Wings installation information..."
 
@@ -3282,8 +3282,8 @@ save_Wings_install_info() {
     echo ""
     echo "INSTALL_DATE=\"$(date)\""
     echo "INSTALL_TYPE=\"$install_type\""
-    [ -n "$Wings_VERSION" ] && echo "Wings_VERSION=\"$Wings_VERSION\""
-    [ -n "$Wings_REPO" ] && echo "Wings_REPO=\"$Wings_REPO\""
+    [ -n "$ELYTRA_VERSION" ] && echo "ELYTRA_VERSION=\"$ELYTRA_VERSION\""
+    [ -n "$ELYTRA_REPO" ] && echo "ELYTRA_REPO=\"$ELYTRA_REPO\""
     [ -n "$GITHUB_TOKEN" ] && echo "GITHUB_TOKEN=\"$GITHUB_TOKEN\""
     [ -n "$PANEL_FQDN" ] && echo "PANEL_FQDN=\"$PANEL_FQDN\""
     [ -n "$PANEL_URL" ] && echo "PANEL_URL=\"$PANEL_URL\""
@@ -3302,8 +3302,8 @@ save_Wings_install_info() {
     [ -n "$SSL_CERT_PATH" ] && echo "SSL_CERT_PATH=\"$SSL_CERT_PATH\""
     [ -n "$SSL_KEY_PATH" ] && echo "SSL_KEY_PATH=\"$SSL_KEY_PATH\""
     [ -n "$ASSUME_SSL" ] && echo "ASSUME_SSL=\"$ASSUME_SSL\""
-    echo "Wings_DIR=\"$Wings_DIR\""
-    echo "Wings_BINARY=\"$Wings_BINARY\""
+    echo "ELYTRA_DIR=\"$ELYTRA_DIR\""
+    echo "ELYTRA_BINARY=\"$ELYTRA_BINARY\""
   } > "$info_file"
 
   chmod 600 "$info_file"
@@ -3323,8 +3323,8 @@ load_panel_install_info() {
 }
 
 # Load Wings installation information
-load_Wings_install_info() {
-  local info_file="$INSTALL_INFO_DIR/Wings-info"
+load_wings_install_info() {
+  local info_file="$INSTALL_INFO_DIR/wings-info"
 
   if [ -f "$info_file" ]; then
     # shellcheck source=/dev/null
@@ -3340,8 +3340,8 @@ panel_install_info_exists() {
 }
 
 # Check if Wings installation info exists
-Wings_install_info_exists() {
-  [ -f "$INSTALL_INFO_DIR/Wings-info" ]
+wings_install_info_exists() {
+  [ -f "$INSTALL_INFO_DIR/wings-info" ]
 }
 
 # Display panel installation information
@@ -3385,14 +3385,14 @@ display_panel_install_info() {
 }
 
 # Display Wings installation information
-display_Wings_install_info() {
-  if ! Wings_install_info_exists; then
+display_wings_install_info() {
+  if ! wings_install_info_exists; then
     warning "No Wings installation information found"
     return 1
   fi
 
   # Load the info
-  load_Wings_install_info
+  load_wings_install_info
 
   print_brake 70
   echo ""
@@ -3402,7 +3402,7 @@ display_Wings_install_info() {
   echo ""
   [ -n "$INSTALL_DATE" ] && output "Installation Date: $INSTALL_DATE"
   [ -n "$INSTALL_TYPE" ] && output "Type: $INSTALL_TYPE"
-  [ -n "$Wings_VERSION" ] && output "Version: $Wings_VERSION"
+  [ -n "$ELYTRA_VERSION" ] && output "Version: $ELYTRA_VERSION"
   [ -n "$PANEL_FQDN" ] && output "Panel FQDN: $PANEL_FQDN"
   [ -n "$PANEL_URL" ] && output "Panel URL: $PANEL_URL"
   [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
@@ -3414,13 +3414,13 @@ display_Wings_install_info() {
   [ -n "$NODE_ID" ] && output "Node ID: $NODE_ID"
   [ -n "$NODE_TOKEN" ] && output "Node Token: (hidden)"
   [ -n "$NODE_UUID" ] && output "Node UUID: $NODE_UUID"
-  [ -n "$Wings_DIR" ] && output "Config Directory: $Wings_DIR"
-  [ -n "$Wings_BINARY" ] && output "Binary Location: $Wings_BINARY"
-  [ -n "$Wings_REPO" ] && output "Repository: $Wings_REPO"
+  [ -n "$ELYTRA_DIR" ] && output "Config Directory: $ELYTRA_DIR"
+  [ -n "$ELYTRA_BINARY" ] && output "Binary Location: $ELYTRA_BINARY"
+  [ -n "$ELYTRA_REPO" ] && output "Repository: $ELYTRA_REPO"
   echo ""
   print_brake 70
   echo ""
-  output "Information file: $INSTALL_INFO_DIR/Wings-info"
+  output "Information file: $INSTALL_INFO_DIR/wings-info"
   echo ""
 }
 
@@ -3430,7 +3430,7 @@ show_panel_completion() {
 
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ $install_type Completed Successfully!${COLOR_NC}"
+  echo -e "  ${COLOR_GREEN}✓ $install_type Completed Successfully!${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3455,12 +3455,12 @@ show_panel_completion() {
 }
 
 # Display completion screen for Wings
-show_Wings_completion() {
+show_wings_completion() {
   local install_type="${1:-Installation}"
 
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ $install_type Completed Successfully!${COLOR_NC}"
+  echo -e "  ${COLOR_GREEN}✓ $install_type Completed Successfully!${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3471,9 +3471,9 @@ show_Wings_completion() {
   [ -n "$NODE_TOKEN" ] && output "Node Token: (saved in install info)"
   echo ""
   output "Next Steps:"
-  output "  1. Start Wings: systemctl start Wings"
-  output "  2. Check status: systemctl status Wings"
-  output "  3. View logs: journalctl -u Wings -f"
+  output "  1. Start Wings: systemctl start wings"
+  output "  2. Check status: systemctl status wings"
+  output "  3. View logs: journalctl -u wings -f"
   echo ""
   output "To view installation information later, run:"
   output "  bash <(curl -sSL $GITHUB_BASE_URL/$GITHUB_SOURCE/install.sh)"
@@ -3487,7 +3487,7 @@ show_Wings_completion() {
 show_both_completion() {
   print_brake 70
   echo ""
-  echo -e "  ${COLOR_GREEN}Ã¢Å“â€œ Full Installation Completed Successfully!${COLOR_NC}"
+  echo -e "  ${COLOR_GREEN}✓ Full Installation Completed Successfully!${COLOR_NC}"
   echo ""
   print_brake 70
   echo ""
@@ -3499,8 +3499,8 @@ show_both_completion() {
   [ -n "$NODE_NAME" ] && output "Node Name: $NODE_NAME"
   echo ""
   output "Next Steps:"
-  output "  1. Start Wings: systemctl start Wings"
-  output "  2. Check Wings status: systemctl status Wings"
+  output "  1. Start Wings: systemctl start wings"
+  output "  2. Check Wings status: systemctl status wings"
   output "  3. Access your panel at: https://$FQDN"
   output "  4. Log in with your admin credentials"
   echo ""
@@ -3528,14 +3528,14 @@ check_panel_health() {
     error "Panel directory not found: $panel_dir"
     return 1
   fi
-  output "Ã¢Å“â€œ Panel directory exists"
+  output "✓ Panel directory exists"
 
   # Check artisan exists
   if [ ! -f "$panel_dir/artisan" ]; then
     error "artisan command not found"
     has_errors=true
   else
-    output "Ã¢Å“â€œ artisan command exists"
+    output "✓ artisan command exists"
   fi
 
   # Check .env exists
@@ -3543,7 +3543,7 @@ check_panel_health() {
     warning ".env file not found"
     has_errors=true
   else
-    output "Ã¢Å“â€œ .env file exists"
+    output "✓ .env file exists"
   fi
 
   # Check storage permissions
@@ -3551,7 +3551,7 @@ check_panel_health() {
     local storage_owner
     storage_owner=$(stat -c '%U' "$panel_dir/storage" 2>/dev/null)
     if [ "$storage_owner" == "www-data" ] || [ "$storage_owner" == "nginx" ]; then
-      output "Ã¢Å“â€œ Storage directory owned by $storage_owner"
+      output "✓ Storage directory owned by $storage_owner"
     else
       warning "Storage directory owned by $storage_owner (expected www-data or nginx)"
       has_errors=true
@@ -3566,7 +3566,7 @@ check_panel_health() {
     local cache_owner
     cache_owner=$(stat -c '%U' "$panel_dir/bootstrap/cache" 2>/dev/null)
     if [ "$cache_owner" == "www-data" ] || [ "$cache_owner" == "nginx" ]; then
-      output "Ã¢Å“â€œ Cache directory owned by $cache_owner"
+      output "✓ Cache directory owned by $cache_owner"
     else
       warning "Cache directory owned by $cache_owner (expected www-data or nginx)"
       has_errors=true
@@ -3578,7 +3578,7 @@ check_panel_health() {
 
   # Check services
   if systemctl is-active --quiet nginx 2>/dev/null; then
-    output "Ã¢Å“â€œ nginx is running"
+    output "✓ nginx is running"
   else
     warning "nginx is not running"
     has_errors=true
@@ -3588,14 +3588,14 @@ check_panel_health() {
   local php_fpm_running=false
   for version in 8.4 8.3 8.2 8.1 8.0; do
     if systemctl is-active --quiet "php${version}-fpm" 2>/dev/null; then
-      output "Ã¢Å“â€œ php${version}-fpm is running"
+      output "✓ php${version}-fpm is running"
       php_fpm_running=true
       break
     fi
   done
   if [ "$php_fpm_running" == false ]; then
     if systemctl is-active --quiet php-fpm 2>/dev/null; then
-      output "Ã¢Å“â€œ php-fpm is running"
+      output "✓ php-fpm is running"
       php_fpm_running=true
     else
       warning "PHP-FPM is not running"
@@ -3605,7 +3605,7 @@ check_panel_health() {
 
   # Check Redis
   if systemctl is-active --quiet redis-server 2>/dev/null || systemctl is-active --quiet redis 2>/dev/null; then
-    output "Ã¢Å“â€œ Redis is running"
+    output "✓ Redis is running"
   else
     warning "Redis is not running"
     has_errors=true
@@ -3613,7 +3613,7 @@ check_panel_health() {
 
   # Check database
   if systemctl is-active --quiet mariadb 2>/dev/null || systemctl is-active --quiet mysql 2>/dev/null; then
-    output "Ã¢Å“â€œ Database is running"
+    output "✓ Database is running"
   else
     warning "Database is not running"
     has_errors=true
@@ -3630,7 +3630,7 @@ check_panel_health() {
     app_url=$(grep "^APP_URL=" "$panel_dir/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"')
     if [ -n "$app_url" ] && command -v curl >/dev/null 2>&1; then
       if curl -sfL --max-time 5 "$app_url" >/dev/null 2>&1; then
-        output "Ã¢Å“â€œ Panel is responding at $app_url"
+        output "✓ Panel is responding at $app_url"
       else
         warning "Panel is not responding at $app_url"
       fi
@@ -3648,7 +3648,7 @@ check_panel_health() {
 }
 
 # Check Wings health
-check_Wings_health() {
+check_wings_health() {
   local has_errors=false
 
   echo ""
@@ -3656,12 +3656,12 @@ check_Wings_health() {
   echo ""
 
   # Check binary exists
-  if [ -f "/usr/local/bin/Wings" ]; then
-    output "Ã¢Å“â€œ Wings binary exists at /usr/local/bin/Wings"
+  if [ -f "/usr/local/bin/wings" ]; then
+    output "✓ Wings binary exists at /usr/local/bin/wings"
 
     # Check binary is executable
-    if [ -x "/usr/local/bin/Wings" ]; then
-      output "Ã¢Å“â€œ Wings binary is executable"
+    if [ -x "/usr/local/bin/wings" ]; then
+      output "✓ Wings binary is executable"
     else
       warning "Wings binary is not executable"
       has_errors=true
@@ -3669,21 +3669,21 @@ check_Wings_health() {
 
     # Check binary version
     local version
-    version=$(/usr/local/bin/Wings --version 2>/dev/null | head -1)
+    version=$(/usr/local/bin/wings --version 2>/dev/null | head -1)
     if [ -n "$version" ]; then
-      output "Ã¢Å“â€œ Wings version: $version"
+      output "✓ Wings version: $version"
     fi
   else
-    error "Wings binary not found at /usr/local/bin/Wings"
+    error "Wings binary not found at /usr/local/bin/wings"
     has_errors=true
   fi
 
   # Check config directory
-  if [ -d "/etc/Wings" ]; then
-    output "Ã¢Å“â€œ Wings config directory exists"
+  if [ -d "/etc/wings" ]; then
+    output "✓ Wings config directory exists"
 
-    if [ -f "/etc/Wings/config.yml" ]; then
-      output "Ã¢Å“â€œ Wings config file exists"
+    if [ -f "/etc/wings/config.yml" ]; then
+      output "✓ Wings config file exists"
     else
       warning "Wings config file not found"
       has_errors=true
@@ -3694,9 +3694,9 @@ check_Wings_health() {
   fi
 
   # Check data directories
-  for dir in /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups; do
+  for dir in /var/lib/wings/volumes /var/lib/wings/archives /var/lib/wings/backups; do
     if [ -d "$dir" ]; then
-      output "Ã¢Å“â€œ Data directory exists: $dir"
+      output "✓ Data directory exists: $dir"
     else
       warning "Data directory missing: $dir"
     fi
@@ -3704,16 +3704,16 @@ check_Wings_health() {
 
   # Check Docker
   if systemctl is-active --quiet docker 2>/dev/null; then
-    output "Ã¢Å“â€œ Docker is running"
+    output "✓ Docker is running"
   else
     warning "Docker is not running"
     has_errors=true
   fi
 
   # Check service
-  if systemctl is-active --quiet Wings 2>/dev/null; then
-    output "Ã¢Å“â€œ Wings service is running"
-  elif systemctl is-enabled --quiet Wings 2>/dev/null; then
+  if systemctl is-active --quiet wings 2>/dev/null; then
+    output "✓ Wings service is running"
+  elif systemctl is-enabled --quiet wings 2>/dev/null; then
     warning "Wings service is enabled but not running"
   else
     warning "Wings service is not enabled"
@@ -3732,75 +3732,75 @@ check_Wings_health() {
 # Check both panel and Wings health
 check_both_health() {
   check_panel_health "$INSTALL_DIR"
-  check_Wings_health
+  check_wings_health
 }
 
 # Auto-fix Wings permission issues
-auto_fix_Wings_issues() {
+auto_fix_wings_issues() {
   info "Attempting to auto-fix Wings issues..."
 
   # Fix binary permissions
-  if [ -f "/usr/local/bin/Wings" ]; then
+  if [ -f "/usr/local/bin/wings" ]; then
     info "Fixing binary permissions..."
-    chmod +x /usr/local/bin/Wings
+    chmod +x /usr/local/bin/wings
   fi
 
   # Fix data directory permissions
   info "Fixing data directory permissions..."
-  mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
+  mkdir -p /var/lib/wings/volumes /var/lib/wings/archives /var/lib/wings/backups
 
-  chown -R 8888:8888 /var/lib/Wings/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/Wings/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/Wings/backups 2>/dev/null || true
-  chown -R 8888:8888 /etc/Wings 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/wings/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/wings/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/wings/backups 2>/dev/null || true
+  chown -R 8888:8888 /etc/wings 2>/dev/null || true
 
   # Fix permissions
   info "Fixing Wings permissions..."
 
   # Create directories if they don't exist
-  mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
+  mkdir -p /var/lib/wings/volumes /var/lib/wings/archives /var/lib/wings/backups
 
   # Set permissions for containerized game servers
   # Note: 777 is required because game server containers run as arbitrary UIDs
   # and must be able to read/write/execute in these directories
   info "Setting 777 permissions on data directories for container access..."
-  # Ensure parent /var/lib/Wings is accessible
-  chmod 755 /var/lib/Wings 2>/dev/null || true
+  # Ensure parent /var/lib/wings is accessible
+  chmod 755 /var/lib/wings 2>/dev/null || true
   # Ensure the volumes directory itself and all contents have 777
-  chmod 777 /var/lib/Wings/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/volumes/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/archives/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/backups 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/backups/* 2>/dev/null || true
+  chmod 777 /var/lib/wings/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/wings/volumes/* 2>/dev/null || true
+  chmod 777 /var/lib/wings/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/wings/archives/* 2>/dev/null || true
+  chmod 777 /var/lib/wings/backups 2>/dev/null || true
+  chmod -R 777 /var/lib/wings/backups/* 2>/dev/null || true
 
   # Set ACL default permissions so new directories inherit 777
   if command -v setfacl >/dev/null 2>&1; then
     info "Setting default ACL permissions for new files..."
-    setfacl -R -m d:o:rx /var/lib/Wings/volumes 2>/dev/null || true
-    setfacl -R -m d:g:rx /var/lib/Wings/volumes 2>/dev/null || true
+    setfacl -R -m d:o:rx /var/lib/wings/volumes 2>/dev/null || true
+    setfacl -R -m d:g:rx /var/lib/wings/volumes 2>/dev/null || true
   fi
 
   # Disable check_permissions_on_boot in Wings config to prevent permission resets
-  if [ -f "/etc/Wings/config.yml" ]; then
+  if [ -f "/etc/wings/config.yml" ]; then
     info "Disabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/Wings/config.yml 2>/dev/null || true
+    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/wings/config.yml 2>/dev/null || true
   fi
 
   # Wings config directory - create if needed and set more restrictive permissions
-  mkdir -p /etc/Wings
-  find /etc/Wings -type d -exec chmod 755 {} \; 2>/dev/null || true
+  mkdir -p /etc/wings
+  find /etc/wings -type d -exec chmod 755 {} \; 2>/dev/null || true
   # SECURITY: Config contains daemon credentials - restrict to owner-only
-  find /etc/Wings -type f -name "config.yml" -exec chmod 600 {} \; 2>/dev/null || true
-  find /etc/Wings -type f ! -name "config.yml" -exec chmod 640 {} \; 2>/dev/null || true
+  find /etc/wings -type f -name "config.yml" -exec chmod 600 {} \; 2>/dev/null || true
+  find /etc/wings -type f ! -name "config.yml" -exec chmod 640 {} \; 2>/dev/null || true
 
   # Restart Wings service
   info "Restarting Wings service..."
-  systemctl restart Wings 2>/dev/null || true
+  systemctl restart wings 2>/dev/null || true
 
   # Verify Wings started
   sleep 3
-  if systemctl is-active --quiet Wings 2>/dev/null; then
+  if systemctl is-active --quiet wings 2>/dev/null; then
     success "Wings is now running"
   else
     warning "Wings may still have issues - manual intervention may be required"
