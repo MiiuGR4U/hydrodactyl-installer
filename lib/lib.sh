@@ -1718,7 +1718,7 @@ install_pnpm() {
   output "Installing pnpm..."
 
   # Install pnpm globally using npm
-  npm install -g pnpm
+  npm install -g pnpm@9
 
   # Ensure npm global bin is in PATH
   export PATH="$PATH:$(npm bin -g 2>/dev/null || echo '/usr/local/bin')"
