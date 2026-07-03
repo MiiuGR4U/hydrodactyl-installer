@@ -1,0 +1,34 @@
+﻿import sys
+import re
+
+art = '''    ███╗   ███╗██╗██╗██╗   ██╗ ██████╗ ██████╗ ██╗  ██╗██╗   ██╗
+    ████╗ ████║██║██║██║   ██║██╔════╝ ██╔══██╗██║  ██║██║   ██║
+    ██╔████╔██║██║██║██║   ██║██║  ███╗██████╔╝███████║██║   ██║
+    ██║╚██╔╝██║██║██║██║   ██║██║   ██║██╔══██╗╚════██║██║   ██║
+    ██║ ╚═╝ ██║██║██║╚██████╔╝╚██████╔╝██║  ██║     ██║╚██████╔╝
+    ╚═╝     ╚═╝╚═╝╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝     ╚═╝ ╚═════╝ '''
+
+lines = art.split('\n')
+
+new_lines = [
+    '  echo -e "\' + lines[0] + '                                ║"',
+    '  echo -e "\' + lines[1] + '                                ║"',
+    '  echo -e "\' + lines[2] + '                                ║"',
+    '  echo -e "\' + lines[3] + '                                ║"',
+    '  echo -e "\' + lines[4] + '                                ║"',
+    '  echo -e "\' + lines[5] + '                                ║"'
+]
+
+with open('install.sh', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+pattern = re.compile(r'  echo -e \"\$\{GRADIENT_3\}.*?\n.*?\n.*?\n.*?\n.*?\n.*?echo -e \"\$\{GRADIENT_8\}.*?\"', re.MULTILINE | re.DOTALL)
+replacement = '\n'.join(new_lines)
+
+if pattern.search(content):
+    new_content = pattern.sub(replacement, content)
+    with open('install.sh', 'w', encoding='utf-8', newline='\n') as f:
+        f.write(new_content)
+    print("Replaced successfully")
+else:
+    print("Pattern not found")
