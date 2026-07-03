@@ -1709,25 +1709,25 @@ install_nodejs() {
   fi
 }
 
-install_yarn() {
-  if cmd_exists yarn; then
-    output "yarn is already installed ($(yarn --version))"
+install_pnpm() {
+  if cmd_exists pnpm; then
+    output "pnpm is already installed ($(pnpm --version))"
     return 0
   fi
 
-  output "Installing yarn..."
+  output "Installing pnpm..."
 
-  # Install yarn globally using npm
-  npm install -g yarn
+  # Install pnpm globally using npm
+  npm install -g pnpm
 
   # Ensure npm global bin is in PATH
   export PATH="$PATH:$(npm bin -g 2>/dev/null || echo '/usr/local/bin')"
   export PATH="$PATH:$(npm config get prefix 2>/dev/null)/bin"
 
-  if cmd_exists yarn; then
-    success "yarn installed ($(yarn --version))"
+  if cmd_exists pnpm; then
+    success "pnpm installed ($(pnpm --version))"
   else
-    error "Failed to install yarn"
+    error "Failed to install pnpm"
     return 1
   fi
 }
@@ -1745,16 +1745,16 @@ build_panel_assets() {
   # Install Node.js if needed
   install_nodejs
 
-  # Install yarn if needed
-  install_yarn
+  # Install pnpm if needed
+  install_pnpm
 
   # Install JavaScript dependencies
   output "Installing JavaScript dependencies..."
-  yarn install
+  pnpm install
 
   # Build frontend assets
   output "Building frontend assets..."
-  yarn build
+  pnpm run build
 
   success "Frontend assets built successfully"
 }
@@ -1932,6 +1932,7 @@ install_nginx_config() {
     sed -i "s|<php_socket>|$php_socket|g" "$config_file"
   else
     # Get HTTP config
+    mkdir -p /etc/nginx/sites-available
     if ! get_config "nginx.conf" "$config_file"; then
       exit 1
     fi
