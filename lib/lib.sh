@@ -1687,12 +1687,12 @@ install_nodejs() {
 
   case "$OS" in
     ubuntu|debian)
-      curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+      curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
       install_packages nodejs
       ;;
     rocky|almalinux|fedora|rhel|centos)
       # Install Node.js from NodeSource on RHEL-based systems
-      curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+      curl -fsSL https://rpm.nodesource.com/setup_22.x | bash -
       install_packages nodejs
       ;;
     *)
@@ -1718,7 +1718,7 @@ install_pnpm() {
   output "Installing pnpm..."
 
   # Install pnpm globally using npm
-  npm install -g pnpm@9
+  npm install -g pnpm
 
   # Ensure npm global bin is in PATH
   export PATH="$PATH:$(npm bin -g 2>/dev/null || echo '/usr/local/bin')"
