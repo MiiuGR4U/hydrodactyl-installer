@@ -1,0 +1,10 @@
+[Unit]
+Description=Hydrodactyl Wings Auto-Updater
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/Hydrodactyl-auto-update-Wings.sh
+EnvironmentFile=/etc/Hydrodactyl/auto-update-Wings.env
+StandardOutput=journal
+StandardError=journal

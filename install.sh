@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Clean up any cached files from previous runs
-rm -f /tmp/pyrodactyl-lib.sh /tmp/pyrodactyl-*.sh 2>/dev/null || true
+rm -f /tmp/Hydrodactyl-lib.sh /tmp/Hydrodactyl-*.sh 2>/dev/null || true
 
 set -e
 
@@ -11,7 +11,7 @@ set -e
 while [[ $# -gt 0 ]]; do
   case $1 in
     --help|-h)
-      echo "Pyrodactyl Installer"
+      echo "Hydrodactyl Installer"
       echo ""
       echo "Usage: install.sh [OPTIONS]"
       echo ""
@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
       echo ""
       echo "Examples:"
       echo "  # Standard install (downloads from GitHub)"
-      echo "  bash <(curl -sSL https://pyrodactyl-installer.muspelheim.host)"
+      echo "  bash <(curl -sSL https://Hydrodactyl-installer.muspelheim.host)"
       echo ""
       exit 0
       ;;
@@ -34,21 +34,21 @@ done
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Installer                                                               #
+# Hydrodactyl Installer                                                               #
 #                                                                                    #
-# One-command installer for Pyrodactyl Panel and Elytra Daemon                       #
+# One-command installer for Hydrodactyl Panel and Wings Daemon                       #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
-# https://github.com/Muspelheim-Hosting/pyrodactyl-installer                         #
+# https://github.com/blueprintframework/hydrodactyl-installer                         #
 #                                                                                    #
 ######################################################################################
 
 export GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
 export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.3.0}"
-export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer}"
+export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer}"
 
-LOG_PATH="/var/log/pyrodactyl-installer.log"
+LOG_PATH="/var/log/Hydrodactyl-installer.log"
 
 # ------------------ Utility Functions ----------------- #
 
@@ -105,9 +105,9 @@ error_handler() {
 
   if [ $exit_code -ne 0 ]; then
     echo ""
-    echo -e "* ${COLOR_RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_NC}"
+    echo -e "* ${COLOR_RED}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${COLOR_NC}"
     echo -e "* ${COLOR_RED}INSTALLATION FAILED${COLOR_NC}"
-    echo -e "* ${COLOR_RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_NC}"
+    echo -e "* ${COLOR_RED}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${COLOR_NC}"
     echo ""
     echo -e "* ${COLOR_YELLOW}Exit code:${COLOR_NC} $exit_code"
     [ -n "$line_no" ] && echo -e "* ${COLOR_YELLOW}Failed at line:${COLOR_NC} $line_no"
@@ -118,9 +118,9 @@ error_handler() {
     echo -e "  3. Verify your GitHub token has 'repo' scope"
     echo -e "  4. Check that your OS is supported"
     echo ""
-    echo -e "* ${COLOR_CYAN}For help, visit:${COLOR_NC} https://github.com/Muspelheim-Hosting/pyrodactyl-installer/issues"
+    echo -e "* ${COLOR_CYAN}For help, visit:${COLOR_NC} https://github.com/blueprintframework/hydrodactyl-installer/issues"
     echo ""
-    echo -e "* ${COLOR_RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_NC}"
+    echo -e "* ${COLOR_RED}â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”${COLOR_NC}"
     echo ""
   fi
 }
@@ -130,7 +130,7 @@ trap 'error_handler $LINENO' ERR
 
 # Cleanup function for temporary files
 print_brake() {
-  local char="${2:-─}"
+  local char="${2:-â”€}"
   for ((n = 0; n < $1; n++)); do
     echo -n "$char"
   done
@@ -142,19 +142,19 @@ print_header() {
   echo ""
 
   # Flame gradient header - smooth color transition from top to bottom
-  echo -e "${GRADIENT_1}    ╔══════════════════════════════════════════════════════════════════════════════════════╗"
-  echo -e "${GRADIENT_2}    ║                                                                                      ║"
-  echo -e "${GRADIENT_3}    ║  ███╗   ███╗██╗   ██╗███████╗██████╗ ███████╗██╗     ██╗  ██╗███████╗██╗███╗   ███╗  ║"
-  echo -e "${GRADIENT_4}    ║  ████╗ ████║██║   ██║██╔════╝██╔══██╗██╔════╝██║     ██║  ██║██╔════╝██║████╗ ████║  ║"
-  echo -e "${GRADIENT_5}    ║  ██╔████╔██║██║   ██║███████╗██████╔╝█████╗  ██║     ███████║█████╗  ██║██╔████╔██║  ║"
-  echo -e "${GRADIENT_6}    ║  ██║╚██╔╝██║██║   ██║╚════██║██╔═══╝ ██╔══╝  ██║     ██╔══██║██╔══╝  ██║██║╚██╔╝██║  ║"
-  echo -e "${GRADIENT_7}    ║  ██║ ╚═╝ ██║╚██████╔╝███████║██║     ███████╗███████╗██║  ██║███████╗██║██║ ╚═╝ ██║  ║"
-  echo -e "${GRADIENT_8}    ║  ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚═╝     ╚═╝  ║"
-  echo -e "${GRADIENT_9}    ║                                                                                      ║"
-  echo -e "${GRADIENT_10}    ║                            Pyrodactyl Installation Manager                           ║"
-  echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
+  echo -e "${GRADIENT_1}    â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
+  echo -e "${GRADIENT_2}    â•‘                                                                                      â•‘"
+  echo -e "${GRADIENT_3}    â•‘  â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—     â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ–ˆâ•—  â•‘"
+  echo -e "${GRADIENT_4}    â•‘  â–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ•‘  â•‘"
+  echo -e "${GRADIENT_5}    â•‘  â–ˆâ–ˆâ•”â–ˆâ–ˆâ–ˆâ–ˆâ•”â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â–ˆâ–ˆâ–ˆâ–ˆâ•”â–ˆâ–ˆâ•‘  â•‘"
+  echo -e "${GRADIENT_6}    â•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â•šâ•â•â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â• â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â•‘"
+  echo -e "${GRADIENT_7}    â•‘  â–ˆâ–ˆâ•‘ â•šâ•â• â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘ â•šâ•â• â–ˆâ–ˆâ•‘  â•‘"
+  echo -e "${GRADIENT_8}    â•‘  â•šâ•â•     â•šâ•â• â•šâ•â•â•â•â•â• â•šâ•â•â•â•â•â•â•â•šâ•â•     â•šâ•â•â•â•â•â•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•â•šâ•â•     â•šâ•â•  â•‘"
+  echo -e "${GRADIENT_9}    â•‘                                                                                      â•‘"
+  echo -e "${GRADIENT_10}    â•‘                            Hydrodactyl Installation Manager                           â•‘"
+  echo -e "${GRADIENT_11}    â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
   echo -e "${COLOR_NC}"
-  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Muspelheim Hosting"
+  echo -e "    ${COLOR_ORANGE}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_ORANGE}|${COLOR_NC}  ${COLOR_ORANGE}By:${COLOR_NC} Blueprint"
   echo ""
 }
 
@@ -168,7 +168,7 @@ print_flame() {
 
 # Cleanup function for temporary files
 cleanup() {
-  rm -f /tmp/pyrodactyl-lib.sh 2>/dev/null || true
+  rm -f /tmp/Hydrodactyl-lib.sh 2>/dev/null || true
   rm -f /tmp/lib.sh 2>/dev/null || true
 }
 
@@ -195,18 +195,18 @@ check_curl() {
 # Download and source library
 load_library() {
   # Download lib.sh from GitHub
-  [ -f /tmp/pyrodactyl-lib.sh ] && rm -rf /tmp/pyrodactyl-lib.sh
+  [ -f /tmp/Hydrodactyl-lib.sh ] && rm -rf /tmp/Hydrodactyl-lib.sh
 
   output "Loading installer library..."
 
-  if ! curl -sSL -o /tmp/pyrodactyl-lib.sh "$GITHUB_BASE_URL/$GITHUB_SOURCE/lib/lib.sh"; then
+  if ! curl -sSL -o /tmp/Hydrodactyl-lib.sh "$GITHUB_BASE_URL/$GITHUB_SOURCE/lib/lib.sh"; then
     error "Failed to download installer library."
     error "Please check your internet connection and try again."
     exit 1
   fi
 
   # shellcheck source=/dev/null
-  if ! source /tmp/pyrodactyl-lib.sh; then
+  if ! source /tmp/Hydrodactyl-lib.sh; then
     error "Failed to load installer library."
     exit 1
   fi
@@ -214,7 +214,7 @@ load_library() {
 
 # Log execution
 log_execution() {
-  echo -e "\n\n* pyrodactyl-installer $(date) \n\n" >> "$LOG_PATH" 2>/dev/null || true
+  echo -e "\n\n* Hydrodactyl-installer $(date) \n\n" >> "$LOG_PATH" 2>/dev/null || true
 }
 
 # Execute UI script
@@ -264,34 +264,34 @@ execute_ui() {
 # Check installations and set state variables
 check_installations() {
   PANEL_INSTALLED=false
-  ELYTRA_INSTALLED=false
+  Wings_INSTALLED=false
   PANEL_VERSION=""
-  ELYTRA_VERSION=""
+  Wings_VERSION=""
   PANEL_UPDATER_INSTALLED=false
-  ELYTRA_UPDATER_INSTALLED=false
+  Wings_UPDATER_INSTALLED=false
 
-  # Check for Pyrodactyl
-  if [ -d "/var/www/pyrodactyl" ]; then
+  # Check for Hydrodactyl
+  if [ -d "/var/www/Hydrodactyl" ]; then
     PANEL_INSTALLED=true
-    if [ -f "/var/www/pyrodactyl/config/app.php" ]; then
-      PANEL_VERSION=$(grep "'version'" "/var/www/pyrodactyl/config/app.php" 2>/dev/null | head -1 | cut -d"'" -f4 || echo "")
+    if [ -f "/var/www/Hydrodactyl/config/app.php" ]; then
+      PANEL_VERSION=$(grep "'version'" "/var/www/Hydrodactyl/config/app.php" 2>/dev/null | head -1 | cut -d"'" -f4 || echo "")
     fi
   fi
 
-  # Check for Elytra
-  if [ -f "/usr/local/bin/elytra" ]; then
-    ELYTRA_INSTALLED=true
-    if [ -f "/etc/pyrodactyl/elytra-version" ]; then
-      ELYTRA_VERSION=$(cat "/etc/pyrodactyl/elytra-version" 2>/dev/null || echo "")
+  # Check for Wings
+  if [ -f "/usr/local/bin/Wings" ]; then
+    Wings_INSTALLED=true
+    if [ -f "/etc/Hydrodactyl/Wings-version" ]; then
+      Wings_VERSION=$(cat "/etc/Hydrodactyl/Wings-version" 2>/dev/null || echo "")
     fi
   fi
 
-  if systemctl is-enabled --quiet pyrodactyl-panel-auto-update.timer 2>/dev/null; then
+  if systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
     PANEL_UPDATER_INSTALLED=true
   fi
 
-  if systemctl is-enabled --quiet pyrodactyl-elytra-auto-update.timer 2>/dev/null; then
-    ELYTRA_UPDATER_INSTALLED=true
+  if systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
+    Wings_UPDATER_INSTALLED=true
   fi
 }
 
@@ -313,27 +313,27 @@ show_welcome() {
   check_installations
 
   if [ "$PANEL_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${PANEL_VERSION:+ ($PANEL_VERSION)}"
+    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Panel installed${PANEL_VERSION:+ ($PANEL_VERSION)}"
   else
-    echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel not installed"
+    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Panel not installed"
   fi
 
-  if [ "$ELYTRA_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Elytra installed${ELYTRA_VERSION:+ ($ELYTRA_VERSION)}"
+  if [ "$Wings_INSTALLED" == true ]; then
+    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Wings installed${Wings_VERSION:+ ($Wings_VERSION)}"
   else
-    echo -e "  ${COLOR_RED}✗${COLOR_NC} Elytra not installed"
+    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Wings not installed"
   fi
 
   if [ "$PANEL_UPDATER_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel auto-updater enabled"
+    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Panel auto-updater enabled"
   else
-    echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel auto-updater not installed"
+    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Panel auto-updater not installed"
   fi
 
-  if [ "$ELYTRA_UPDATER_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Elytra auto-updater enabled"
+  if [ "$Wings_UPDATER_INSTALLED" == true ]; then
+    echo -e "  ${COLOR_GREEN}âœ“${COLOR_NC} Wings auto-updater enabled"
   else
-    echo -e "  ${COLOR_RED}✗${COLOR_NC} Elytra auto-updater not installed"
+    echo -e "  ${COLOR_RED}âœ—${COLOR_NC} Wings auto-updater not installed"
   fi
 
   echo ""
@@ -345,22 +345,22 @@ show_welcome() {
 
 run_panel_update() {
   print_header
-  print_flame "Update Pyrodactyl Panel"
+  print_flame "Update Hydrodactyl Panel"
 
-  if [ ! -d "/var/www/pyrodactyl" ]; then
-    error "Panel is not installed at /var/www/pyrodactyl"
+  if [ ! -d "/var/www/Hydrodactyl" ]; then
+    error "Panel is not installed at /var/www/Hydrodactyl"
     return 1
   fi
 
   # Check if auto-updater env file exists
-  if [ -f "/etc/pyrodactyl/auto-update-panel.env" ]; then
+  if [ -f "/etc/Hydrodactyl/auto-update-panel.env" ]; then
     output "Using existing auto-updater configuration..."
   else
     # Create temporary env file with defaults
-    mkdir -p /etc/pyrodactyl
-    echo "PANEL_REPO=\"pyrodactyl-oss/pyrodactyl\"" > /etc/pyrodactyl/auto-update-panel.env
-    echo "GITHUB_TOKEN=\"\"" >> /etc/pyrodactyl/auto-update-panel.env
-    chmod 600 /etc/pyrodactyl/auto-update-panel.env
+    mkdir -p /etc/Hydrodactyl
+    echo "PANEL_REPO=\"blueprintframework/hydrodactyl\"" > /etc/Hydrodactyl/auto-update-panel.env
+    echo "GITHUB_TOKEN=\"\"" >> /etc/Hydrodactyl/auto-update-panel.env
+    chmod 600 /etc/Hydrodactyl/auto-update-panel.env
   fi
 
   output "Getting and running panel auto-updater..."
@@ -376,31 +376,31 @@ run_panel_update() {
   read -r
 }
 
-run_elytra_update() {
+run_Wings_update() {
   print_header
-  print_flame "Update Elytra Daemon"
+  print_flame "Update Wings Daemon"
 
-  if [ ! -f "/usr/local/bin/elytra" ]; then
-    error "Elytra is not installed at /usr/local/bin/elytra"
+  if [ ! -f "/usr/local/bin/Wings" ]; then
+    error "Wings is not installed at /usr/local/bin/Wings"
     return 1
   fi
 
   # Check if auto-updater env file exists
-  if [ -f "/etc/pyrodactyl/auto-update-elytra.env" ]; then
+  if [ -f "/etc/Hydrodactyl/auto-update-Wings.env" ]; then
     output "Using existing auto-updater configuration..."
   else
     # Create temporary env file with defaults
-    mkdir -p /etc/pyrodactyl
-    echo "ELYTRA_REPO=\"pyrohost/elytra\"" > /etc/pyrodactyl/auto-update-elytra.env
-    echo "GITHUB_TOKEN=\"\"" >> /etc/pyrodactyl/auto-update-elytra.env
-    chmod 600 /etc/pyrodactyl/auto-update-elytra.env
+    mkdir -p /etc/Hydrodactyl
+    echo "Wings_REPO=\"pterodactyl/wings\"" > /etc/Hydrodactyl/auto-update-Wings.env
+    echo "GITHUB_TOKEN=\"\"" >> /etc/Hydrodactyl/auto-update-Wings.env
+    chmod 600 /etc/Hydrodactyl/auto-update-Wings.env
   fi
 
-  output "Getting and running Elytra auto-updater..."
+  output "Getting and running Wings auto-updater..."
   echo ""
 
   # Get and run the auto-update script
-  if ! get_script "installers" "auto-update-elytra"; then
+  if ! get_script "installers" "auto-update-Wings"; then
     error "Update failed"
     return 1
   fi
@@ -411,11 +411,11 @@ run_elytra_update() {
 
 run_both_updates() {
   print_header
-  print_flame "Update Both Panel and Elytra"
+  print_flame "Update Both Panel and Wings"
 
   run_panel_update
   echo ""
-  run_elytra_update
+  run_Wings_update
 }
 
 
@@ -430,29 +430,29 @@ show_menu() {
     echo ""
     output "${COLOR_ORANGE}What would you like to do?${COLOR_NC}"
     echo ""
-    output "[${COLOR_ORANGE}0${COLOR_NC}] Install Pyrodactyl Panel"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Install Elytra Daemon"
-    output "[${COLOR_ORANGE}2${COLOR_NC}] Install both Panel and Elytra (same machine)"
+    output "[${COLOR_ORANGE}0${COLOR_NC}] Install Hydrodactyl Panel"
+    output "[${COLOR_ORANGE}1${COLOR_NC}] Install Wings Daemon"
+    output "[${COLOR_ORANGE}2${COLOR_NC}] Install both Panel and Wings (same machine)"
     echo ""
 
     # Update options - gray out if not installed
     local COLOR_DARK_GRAY='\033[90m'
     if [ "$PANEL_INSTALLED" == true ]; then
-      output "[${COLOR_ORANGE}3${COLOR_NC}] Update Pyrodactyl Panel"
+      output "[${COLOR_ORANGE}3${COLOR_NC}] Update Hydrodactyl Panel"
     else
-      echo -e "* [3] ${COLOR_DARK_GRAY}Update Pyrodactyl Panel (not installed)${COLOR_NC}"
+      echo -e "* [3] ${COLOR_DARK_GRAY}Update Hydrodactyl Panel (not installed)${COLOR_NC}"
     fi
 
-    if [ "$ELYTRA_INSTALLED" == true ]; then
-      output "[${COLOR_ORANGE}4${COLOR_NC}] Update Elytra Daemon"
+    if [ "$Wings_INSTALLED" == true ]; then
+      output "[${COLOR_ORANGE}4${COLOR_NC}] Update Wings Daemon"
     else
-      echo -e "* [4] ${COLOR_DARK_GRAY}Update Elytra Daemon (not installed)${COLOR_NC}"
+      echo -e "* [4] ${COLOR_DARK_GRAY}Update Wings Daemon (not installed)${COLOR_NC}"
     fi
 
-    if [ "$PANEL_INSTALLED" == true ] && [ "$ELYTRA_INSTALLED" == true ]; then
-      output "[${COLOR_ORANGE}5${COLOR_NC}] Update both Panel and Elytra"
+    if [ "$PANEL_INSTALLED" == true ] && [ "$Wings_INSTALLED" == true ]; then
+      output "[${COLOR_ORANGE}5${COLOR_NC}] Update both Panel and Wings"
     else
-      echo -e "* [5] ${COLOR_DARK_GRAY}Update both Panel and Elytra (not available)${COLOR_NC}"
+      echo -e "* [5] ${COLOR_DARK_GRAY}Update both Panel and Wings (not available)${COLOR_NC}"
     fi
 
     echo ""
@@ -462,7 +462,7 @@ show_menu() {
     echo ""
     output "[${COLOR_ORANGE}8${COLOR_NC}] Health Check"
     echo ""
-    output "[${COLOR_ORANGE}9${COLOR_NC}] Uninstall Pyrodactyl / Elytra"
+    output "[${COLOR_ORANGE}9${COLOR_NC}] Uninstall Hydrodactyl / Wings"
     echo ""
     output "[${COLOR_ORANGE}10${COLOR_NC}] View Installation Information"
     echo ""
@@ -478,7 +478,7 @@ show_menu() {
         continue
         ;;
       1)
-        execute_ui "elytra"
+        execute_ui "Wings"
         continue
         ;;
       2)
@@ -487,7 +487,7 @@ show_menu() {
         ;;
       3)
         if [ "$PANEL_INSTALLED" == false ]; then
-          error "Pyrodactyl Panel is not installed"
+          error "Hydrodactyl Panel is not installed"
           sleep 2
           continue
         fi
@@ -495,17 +495,17 @@ show_menu() {
         continue
         ;;
       4)
-        if [ "$ELYTRA_INSTALLED" == false ]; then
-          error "Elytra Daemon is not installed"
+        if [ "$Wings_INSTALLED" == false ]; then
+          error "Wings Daemon is not installed"
           sleep 2
           continue
         fi
-        run_elytra_update
+        run_Wings_update
         continue
         ;;
       5)
-        if [ "$PANEL_INSTALLED" == false ] || [ "$ELYTRA_INSTALLED" == false ]; then
-          error "Both Panel and Elytra must be installed to use this option"
+        if [ "$PANEL_INSTALLED" == false ] || [ "$Wings_INSTALLED" == false ]; then
+          error "Both Panel and Wings must be installed to use this option"
           sleep 2
           continue
         fi
@@ -522,14 +522,14 @@ show_menu() {
         ;;
       8)
         # Health Check - runs based on what's installed
-        if [ "$PANEL_INSTALLED" == true ] && [ "$ELYTRA_INSTALLED" == true ]; then
+        if [ "$PANEL_INSTALLED" == true ] && [ "$Wings_INSTALLED" == true ]; then
           check_both_health
         elif [ "$PANEL_INSTALLED" == true ]; then
           check_panel_health
-        elif [ "$ELYTRA_INSTALLED" == true ]; then
-          check_elytra_health
+        elif [ "$Wings_INSTALLED" == true ]; then
+          check_Wings_health
         else
-          error "Nothing installed to check. Install Pyrodactyl or Elytra first."
+          error "Nothing installed to check. Install Hydrodactyl or Wings first."
           sleep 2
           continue
         fi
@@ -590,7 +590,7 @@ main() {
     fi
   fi
 
-  # Check Docker compatibility for Elytra installations
+  # Check Docker compatibility for Wings installations
   echo ""
   output "${COLOR_ORANGE}Checking Docker compatibility...${COLOR_NC}"
   check_docker_compatibility || true
@@ -598,7 +598,7 @@ main() {
   # Run menu/installation
   if show_menu; then
     echo ""
-    print_flame "Thank you for using Pyrodactyl Installer!"
+    print_flame "Thank you for using Hydrodactyl Installer!"
   fi
 
   # Always show log location at the end

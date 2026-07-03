@@ -4,13 +4,13 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Health Check UI                                                         #
+# Hydrodactyl Health Check UI                                                         #
 #                                                                                    #
-# Health check and diagnostics for Pyrodactyl Panel and Elytra                       #
+# Health check and diagnostics for Hydrodactyl Panel and Wings                       #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
-# https://github.com/Muspelheim-Hosting/pyrodactyl-installer                         #
+# https://github.com/blueprintframework/hydrodactyl-installer                         #
 #                                                                                    #
 ######################################################################################
 
@@ -18,17 +18,17 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
-  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+  if [ -f /tmp/Hydrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+    if ! source /tmp/Hydrodactyl-lib.sh 2>/dev/null; then
       # Temp file exists but failed to load (corrupt/invalid) - remove it
-      rm -f /tmp/pyrodactyl-lib.sh
+      rm -f /tmp/Hydrodactyl-lib.sh
     fi
   fi
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
@@ -64,7 +64,7 @@ check_system_resources_health() {
   elif [ "$cpu_cores" -lt "$REC_CPU_CORES" ]; then
     info "  CPU cores below recommended ($REC_CPU_CORES)"
   else
-    output "  ✓ CPU meets recommended requirements"
+    output "  âœ“ CPU meets recommended requirements"
   fi
   
   output "RAM:              $(get_ram_human) (${ram_mb}MB)"
@@ -74,7 +74,7 @@ check_system_resources_health() {
   elif [ "$ram_mb" -lt "$REC_RAM_MB" ]; then
     info "  RAM below recommended (${REC_RAM_MB}MB / 4GB)"
   else
-    output "  ✓ RAM meets recommended requirements"
+    output "  âœ“ RAM meets recommended requirements"
   fi
   
   output "Disk (root):      $(get_disk_human) (${disk_gb}GB)"
@@ -84,7 +84,7 @@ check_system_resources_health() {
   elif [ "$disk_gb" -lt "$REC_DISK_GB" ]; then
     info "  Disk below recommended (${REC_DISK_GB}GB)"
   else
-    output "  ✓ Disk meets recommended requirements"
+    output "  âœ“ Disk meets recommended requirements"
   fi
   
   output "Swap:             $(get_swap_human)"
@@ -92,10 +92,10 @@ check_system_resources_health() {
     warning "  No swap configured - recommended for system stability"
     has_warnings=true
   else
-    output "  ✓ Swap is configured"
+    output "  âœ“ Swap is configured"
   fi
   
-  # Check Docker compatibility for Elytra
+  # Check Docker compatibility for Wings
   echo ""
   output "Docker Compatibility:"
   if ! check_docker_compatibility; then
@@ -115,17 +115,17 @@ check_system_resources_health() {
 # ------------------ Detection Functions ----------------- #
 
 detect_panel_location() {
-  # Check for Pyrodactyl first (install script location)
-  if [ -d "/var/www/pyrodactyl" ] && [ -f "/var/www/pyrodactyl/artisan" ]; then
-    echo "/var/www/pyrodactyl"
+  # Check for Hydrodactyl first (install script location)
+  if [ -d "/var/www/Hydrodactyl" ] && [ -f "/var/www/Hydrodactyl/artisan" ]; then
+    echo "/var/www/Hydrodactyl"
     return 0
   fi
 
-  # Check for Pterodactyl location (might be Pyrodactyl migrated)
+  # Check for Pterodactyl location (might be Hydrodactyl migrated)
   if [ -d "/var/www/pterodactyl" ] && [ -f "/var/www/pterodactyl/artisan" ]; then
-    # Verify it's actually Pyrodactyl
-    if grep -q "Pyrodactyl" "/var/www/pterodactyl/config/app.php" 2>/dev/null || \
-       grep -q "pyrodactyl" "/var/www/pterodactyl/composer.json" 2>/dev/null; then
+    # Verify it's actually Hydrodactyl
+    if grep -q "Hydrodactyl" "/var/www/pterodactyl/config/app.php" 2>/dev/null || \
+       grep -q "Hydrodactyl" "/var/www/pterodactyl/composer.json" 2>/dev/null; then
       echo "/var/www/pterodactyl"
       return 0
     fi
@@ -141,14 +141,14 @@ detect_panel_location() {
   return 1
 }
 
-detect_elytra_binary() {
-  if [ -f "/usr/local/bin/elytra" ]; then
-    echo "/usr/local/bin/elytra"
+detect_Wings_binary() {
+  if [ -f "/usr/local/bin/Wings" ]; then
+    echo "/usr/local/bin/Wings"
     return 0
   fi
 
-  if [ -f "/usr/bin/elytra" ]; then
-    echo "/usr/bin/elytra"
+  if [ -f "/usr/bin/Wings" ]; then
+    echo "/usr/bin/Wings"
     return 0
   fi
 
@@ -168,7 +168,7 @@ show_health_menu() {
     output "${COLOR_ORANGE}What would you like to check?${COLOR_NC}"
     echo ""
     output "[${COLOR_ORANGE}0${COLOR_NC}] Check Panel Health"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Check Elytra Health"
+    output "[${COLOR_ORANGE}1${COLOR_NC}] Check Wings Health"
     output "[${COLOR_ORANGE}2${COLOR_NC}] Check Both"
     output "[${COLOR_ORANGE}3${COLOR_NC}] Check System Resources"
     echo ""
@@ -183,7 +183,7 @@ show_health_menu() {
         local panel_dir
         panel_dir=$(detect_panel_location) || {
           error "Panel installation not found"
-          output "Searched: /var/www/pyrodactyl, /var/www/pterodactyl"
+          output "Searched: /var/www/Hydrodactyl, /var/www/pterodactyl"
           sleep 2
           continue
         }
@@ -193,28 +193,28 @@ show_health_menu() {
         continue
         ;;
       1)
-        local elytra_binary
-        elytra_binary=$(detect_elytra_binary) || {
-          error "Elytra installation not found"
+        local Wings_binary
+        Wings_binary=$(detect_Wings_binary) || {
+          error "Wings installation not found"
           sleep 2
           continue
         }
-        check_elytra_health
+        check_Wings_health
         output "Press Enter to return to the menu..."
         read -r
         continue
         ;;
       2)
         local panel_dir
-        local elytra_binary
+        local Wings_binary
         local has_panel=false
-        local has_elytra=false
+        local has_Wings=false
 
         panel_dir=$(detect_panel_location) && has_panel=true
-        elytra_binary=$(detect_elytra_binary) && has_elytra=true
+        Wings_binary=$(detect_Wings_binary) && has_Wings=true
 
-        if [ "$has_panel" == false ] && [ "$has_elytra" == false ]; then
-          error "Neither Panel nor Elytra installation found"
+        if [ "$has_panel" == false ] && [ "$has_Wings" == false ]; then
+          error "Neither Panel nor Wings installation found"
           sleep 2
           continue
         fi
@@ -223,8 +223,8 @@ show_health_menu() {
           check_panel_health "$panel_dir"
         fi
 
-        if [ "$has_elytra" == true ]; then
-          check_elytra_health
+        if [ "$has_Wings" == true ]; then
+          check_Wings_health
         fi
 
         output "Press Enter to return to the menu..."

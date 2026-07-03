@@ -4,7 +4,7 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Installer - FQDN Verification                                           #
+# Hydrodactyl Installer - FQDN Verification                                           #
 #                                                                                    #
 # This script verifies that a FQDN is valid and resolves to this server              #
 #                                                                                    #
@@ -14,17 +14,17 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
-  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+  if [ -f /tmp/Hydrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+    if ! source /tmp/Hydrodactyl-lib.sh 2>/dev/null; then
       # Temp file exists but failed to load (corrupt/invalid) - remove it
-      rm -f /tmp/pyrodactyl-lib.sh
+      rm -f /tmp/Hydrodactyl-lib.sh
     fi
   fi
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -fsSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh") || true
+    source <(curl -fsSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh") || true
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi

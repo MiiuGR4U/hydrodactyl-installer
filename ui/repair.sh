@@ -4,13 +4,13 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Repair Tool UI                                                          #
+# Hydrodactyl Repair Tool UI                                                          #
 #                                                                                    #
-# Repair and fix common issues with Pyrodactyl Panel and Elytra                      #
+# Repair and fix common issues with Hydrodactyl Panel and Wings                      #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
-# https://github.com/Muspelheim-Hosting/pyrodactyl-installer                         #
+# https://github.com/blueprintframework/hydrodactyl-installer                         #
 #                                                                                    #
 ######################################################################################
 
@@ -18,17 +18,17 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
-  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+  if [ -f /tmp/Hydrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+    if ! source /tmp/Hydrodactyl-lib.sh 2>/dev/null; then
       # Temp file exists but failed to load (corrupt/invalid) - remove it
-      rm -f /tmp/pyrodactyl-lib.sh
+      rm -f /tmp/Hydrodactyl-lib.sh
     fi
   fi
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
@@ -47,17 +47,17 @@ check_root
 # ------------------ Detection Functions ----------------- #
 
 detect_panel_location() {
-  # Check for Pyrodactyl first (install script location)
-  if [ -d "/var/www/pyrodactyl" ] && [ -f "/var/www/pyrodactyl/artisan" ]; then
-    echo "/var/www/pyrodactyl"
+  # Check for Hydrodactyl first (install script location)
+  if [ -d "/var/www/Hydrodactyl" ] && [ -f "/var/www/Hydrodactyl/artisan" ]; then
+    echo "/var/www/Hydrodactyl"
     return 0
   fi
   
-  # Check for Pterodactyl location (might be Pyrodactyl migrated)
+  # Check for Pterodactyl location (might be Hydrodactyl migrated)
   if [ -d "/var/www/pterodactyl" ] && [ -f "/var/www/pterodactyl/artisan" ]; then
-    # Verify it's actually Pyrodactyl
-    if grep -q "Pyrodactyl" "/var/www/pterodactyl/config/app.php" 2>/dev/null || \
-       grep -q "pyrodactyl" "/var/www/pterodactyl/composer.json" 2>/dev/null; then
+    # Verify it's actually Hydrodactyl
+    if grep -q "Hydrodactyl" "/var/www/pterodactyl/config/app.php" 2>/dev/null || \
+       grep -q "Hydrodactyl" "/var/www/pterodactyl/composer.json" 2>/dev/null; then
       echo "/var/www/pterodactyl"
       return 0
     fi
@@ -73,33 +73,33 @@ detect_panel_location() {
   return 1
 }
 
-detect_elytra_binary() {
-  if [ -f "/usr/local/bin/elytra" ]; then
-    echo "/usr/local/bin/elytra"
+detect_Wings_binary() {
+  if [ -f "/usr/local/bin/Wings" ]; then
+    echo "/usr/local/bin/Wings"
     return 0
   fi
   
-  if [ -f "/usr/bin/elytra" ]; then
-    echo "/usr/bin/elytra"
+  if [ -f "/usr/bin/Wings" ]; then
+    echo "/usr/bin/Wings"
     return 0
   fi
   
   return 1
 }
 
-detect_elytra_config_dir() {
-  if [ -d "/etc/elytra" ] && [ -f "/etc/elytra/config.yml" ]; then
-    echo "/etc/elytra"
+detect_Wings_config_dir() {
+  if [ -d "/etc/Wings" ] && [ -f "/etc/Wings/config.yml" ]; then
+    echo "/etc/Wings"
     return 0
   fi
   
-  if [ -n "$ELYTRA_DIR" ] && [ -d "$ELYTRA_DIR" ] && [ -f "$ELYTRA_DIR/config.yml" ]; then
-    echo "$ELYTRA_DIR"
+  if [ -n "$Wings_DIR" ] && [ -d "$Wings_DIR" ] && [ -f "$Wings_DIR/config.yml" ]; then
+    echo "$Wings_DIR"
     return 0
   fi
   
   # Default fallback
-  echo "/etc/elytra"
+  echo "/etc/Wings"
   return 0
 }
 
@@ -111,7 +111,7 @@ fix_panel_permissions() {
   local panel_dir
   panel_dir=$(detect_panel_location) || {
     error "Panel installation not found at any standard location"
-    output "Searched: /var/www/pyrodactyl, /var/www/pterodactyl"
+    output "Searched: /var/www/Hydrodactyl, /var/www/pterodactyl"
     return 1
   }
 
@@ -139,54 +139,54 @@ fix_panel_permissions() {
   return 0
 }
 
-fix_elytra_permissions() {
-  print_flame "Fixing Elytra Permissions"
+fix_Wings_permissions() {
+  print_flame "Fixing Wings Permissions"
 
-  local elytra_binary
-  local elytra_dir
+  local Wings_binary
+  local Wings_dir
   
-  elytra_binary=$(detect_elytra_binary) || {
-    error "Elytra binary not found at /usr/local/bin/elytra or /usr/bin/elytra"
+  Wings_binary=$(detect_Wings_binary) || {
+    error "Wings binary not found at /usr/local/bin/Wings or /usr/bin/Wings"
     return 1
   }
   
-  elytra_dir=$(detect_elytra_config_dir)
+  Wings_dir=$(detect_Wings_config_dir)
 
-  output "Found Elytra binary at: $elytra_binary"
-  output "Found Elytra config at: $elytra_dir"
+  output "Found Wings binary at: $Wings_binary"
+  output "Found Wings config at: $Wings_dir"
   
   output "Setting binary permissions..."
-  chmod +x "$elytra_binary"
+  chmod +x "$Wings_binary"
 
-  output "Creating Elytra data directories if needed..."
-  mkdir -p /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
+  output "Creating Wings data directories if needed..."
+  mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
   
-  output "Setting ownership on Elytra data directories..."
-  chown -R 8888:8888 /var/lib/elytra/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/elytra/backups 2>/dev/null || true
-  chown -R 8888:8888 "$elytra_dir" 2>/dev/null || true
+  output "Setting ownership on Wings data directories..."
+  chown -R 8888:8888 /var/lib/Wings/volumes 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/Wings/archives 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/Wings/backups 2>/dev/null || true
+  chown -R 8888:8888 "$Wings_dir" 2>/dev/null || true
 
-  output "Setting permissions on Elytra data directories..."
+  output "Setting permissions on Wings data directories..."
   # Note: 777 is required for containerized game servers to access these directories
-  # Ensure parent /var/lib/elytra is accessible
-  chmod 755 /var/lib/elytra 2>/dev/null || true
+  # Ensure parent /var/lib/Wings is accessible
+  chmod 755 /var/lib/Wings 2>/dev/null || true
   # Ensure the volumes directory itself and all contents have 777
-  chmod 777 /var/lib/elytra/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/volumes/* 2>/dev/null || true
-  chmod 777 /var/lib/elytra/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/archives/* 2>/dev/null || true
-  chmod 777 /var/lib/elytra/backups 2>/dev/null || true
-  chmod -R 777 /var/lib/elytra/backups/* 2>/dev/null || true
-  chmod -R 755 "$elytra_dir" 2>/dev/null || true
+  chmod 777 /var/lib/Wings/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/Wings/volumes/* 2>/dev/null || true
+  chmod 777 /var/lib/Wings/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/Wings/archives/* 2>/dev/null || true
+  chmod 777 /var/lib/Wings/backups 2>/dev/null || true
+  chmod -R 777 /var/lib/Wings/backups/* 2>/dev/null || true
+  chmod -R 755 "$Wings_dir" 2>/dev/null || true
   
-  # Disable check_permissions_on_boot to prevent Elytra from resetting permissions
-  if [ -f "$elytra_dir/config.yml" ]; then
-    output "Disabling permission checks in Elytra config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$elytra_dir/config.yml" 2>/dev/null || true
+  # Disable check_permissions_on_boot to prevent Wings from resetting permissions
+  if [ -f "$Wings_dir/config.yml" ]; then
+    output "Disabling permission checks in Wings config..."
+    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$Wings_dir/config.yml" 2>/dev/null || true
   fi
 
-  success "Elytra permissions fixed"
+  success "Wings permissions fixed"
   return 0
 }
 
@@ -233,19 +233,19 @@ restart_services() {
     warning "PHP-FPM not found or not running"
   fi
 
-  output "Restarting queue worker (pyroq)..."
-  systemctl restart pyroq 2>/dev/null || warning "Failed to restart pyroq (may not be installed)"
+  output "Restarting queue worker (pteroq)..."
+  systemctl restart pteroq 2>/dev/null || warning "Failed to restart pteroq (may not be installed)"
 
   output "Restarting Redis..."
   systemctl restart redis-server 2>/dev/null || \
   systemctl restart redis 2>/dev/null || \
   warning "Failed to restart redis (may not be installed)"
 
-  local elytra_binary
-  elytra_binary=$(detect_elytra_binary 2>/dev/null)
-  if [ -n "$elytra_binary" ]; then
-    output "Restarting Elytra..."
-    systemctl restart elytra 2>/dev/null || warning "Failed to restart elytra (may not be installed)"
+  local Wings_binary
+  Wings_binary=$(detect_Wings_binary 2>/dev/null)
+  if [ -n "$Wings_binary" ]; then
+    output "Restarting Wings..."
+    systemctl restart Wings 2>/dev/null || warning "Failed to restart Wings (may not be installed)"
   fi
 
   success "Services restarted"
@@ -349,12 +349,12 @@ fix_database_permissions() {
 
   local db_root_pass=""
 
-  if [ -f /root/.config/pyrodactyl/db-credentials ]; then
-    db_root_pass=$(grep '^root:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  if [ -f /root/.config/Hydrodactyl/db-credentials ]; then
+    db_root_pass=$(grep '^root:' /root/.config/Hydrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
   fi
 
   if [ -z "$db_root_pass" ]; then
-    error "Database root password not found in /root/.config/pyrodactyl/db-credentials"
+    error "Database root password not found in /root/.config/Hydrodactyl/db-credentials"
     echo ""
     output "Please enter the MySQL/MariaDB root password:"
     read -r -s db_root_pass
@@ -367,28 +367,28 @@ fix_database_permissions() {
     return 1
   fi
 
-  # Extract and validate pyrodactyl password
-  local pyro_pass
-  pyro_pass=$(grep '^pyrodactyl:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  # Extract and validate Hydrodactyl password
+  local hydro_pass
+  hydro_pass=$(grep '^Hydrodactyl:' /root/.config/Hydrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
 
-  if [ -z "$pyro_pass" ]; then
-    error "pyrodactyl user password not found in credentials file"
+  if [ -z "$hydro_pass" ]; then
+    error "Hydrodactyl user password not found in credentials file"
     return 1
   fi
 
   # Escape single quotes in password for SQL (replace ' with '')
-  local pyro_pass_escaped="${pyro_pass//\'/''}"
+  local hydro_pass_escaped="${hydro_pass//\'/''}"
 
-  output "Ensuring pyrodactyl database user exists..."
+  output "Ensuring Hydrodactyl database user exists..."
   mysql -u root -p"${db_root_pass}" -e "
-    GRANT ALL PRIVILEGES ON panel.* TO 'pyrodactyl'@'127.0.0.1' IDENTIFIED BY '${pyro_pass_escaped}' WITH GRANT OPTION;
+    GRANT ALL PRIVILEGES ON panel.* TO 'Hydrodactyl'@'127.0.0.1' IDENTIFIED BY '${hydro_pass_escaped}' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
-  " 2>/dev/null || warning "Failed to update pyrodactyl user permissions"
+  " 2>/dev/null || warning "Failed to update Hydrodactyl user permissions"
 
   output "Testing database connectivity..."
   local db_pass
-  db_pass=$(grep '^pyrodactyl:' /root/.config/pyrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
-  if mysql -u pyrodactyl -p"${db_pass}" -h 127.0.0.1 -e "SELECT 1" panel >/dev/null 2>&1; then
+  db_pass=$(grep '^Hydrodactyl:' /root/.config/Hydrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  if mysql -u Hydrodactyl -p"${db_pass}" -h 127.0.0.1 -e "SELECT 1" panel >/dev/null 2>&1; then
     success "Database connection successful"
   else
     warning "Database connection test failed"
@@ -410,7 +410,7 @@ run_all_fixes() {
   fix_panel_permissions || has_errors=true
   echo ""
 
-  fix_elytra_permissions || has_errors=true
+  fix_Wings_permissions || has_errors=true
   echo ""
 
   clear_caches || has_errors=true
@@ -449,7 +449,7 @@ show_repair_menu() {
     output "${COLOR_ORANGE}What would you like to repair?${COLOR_NC}"
     echo ""
     output "[${COLOR_ORANGE}0${COLOR_NC}] Fix Panel Permissions"
-    output "[${COLOR_ORANGE}1${COLOR_NC}] Fix Elytra Permissions"
+    output "[${COLOR_ORANGE}1${COLOR_NC}] Fix Wings Permissions"
     output "[${COLOR_ORANGE}2${COLOR_NC}] Clear Laravel Caches"
     output "[${COLOR_ORANGE}3${COLOR_NC}] Restart All Services"
     output "[${COLOR_ORANGE}4${COLOR_NC}] Fix Database Permissions"
@@ -470,7 +470,7 @@ show_repair_menu() {
         continue
         ;;
       1)
-        fix_elytra_permissions
+        fix_Wings_permissions
         output "Press Enter to return to the menu..."
         read -r
         continue

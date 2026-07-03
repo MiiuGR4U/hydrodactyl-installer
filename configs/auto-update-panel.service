@@ -1,10 +1,10 @@
 [Unit]
-Description=Pyrodactyl Panel Auto-Updater
+Description=Hydrodactyl Panel Auto-Updater
 After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/pyrodactyl-auto-update-panel.sh
-EnvironmentFile=/etc/pyrodactyl/auto-update-panel.env
+ExecStart=/usr/local/bin/Hydrodactyl-auto-update-panel.sh
+EnvironmentFile=/etc/Hydrodactyl/auto-update-panel.env
 StandardOutput=journal
 StandardError=journal

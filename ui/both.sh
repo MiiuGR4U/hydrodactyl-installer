@@ -4,9 +4,9 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Panel + Elytra Combined Installation UI                                 #
+# Hydrodactyl Panel + Wings Combined Installation UI                                 #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
 ######################################################################################
 
@@ -14,17 +14,17 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
-  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+  if [ -f /tmp/Hydrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+    if ! source /tmp/Hydrodactyl-lib.sh 2>/dev/null; then
       # Temp file exists but failed to load (corrupt/invalid) - remove it
-      rm -f /tmp/pyrodactyl-lib.sh
+      rm -f /tmp/Hydrodactyl-lib.sh
     fi
   fi
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
@@ -47,20 +47,20 @@ PANEL_ADMIN_PASSWORD=""
 CONFIGURE_LETSENCRYPT=false
 CONFIGURE_FIREWALL=false
 INSTALL_AUTO_UPDATER_PANEL=false
-INSTALL_AUTO_UPDATER_ELYTRA=false
+INSTALL_AUTO_UPDATER_Wings=false
 SSL_CERT_PATH=""
 SSL_KEY_PATH=""
 DB_HOST="127.0.0.1"
 DB_PORT="3306"
 DB_NAME="panel"
-DB_USER="pyrodactyl"
+DB_USER="Hydrodactyl"
 DB_PASSWORD=""
 
-# Elytra Configuration
-ELYTRA_REPO=""
-ELYTRA_REPO_PRIVATE=false
-GITHUB_TOKEN_ELYTRA=""
-ELYTRA_RELEASE_VERSION="${ELYTRA_RELEASE_VERSION:-latest}"
+# Wings Configuration
+Wings_REPO=""
+Wings_REPO_PRIVATE=false
+GITHUB_TOKEN_Wings=""
+Wings_RELEASE_VERSION="${Wings_RELEASE_VERSION:-latest}"
 NODE_NAME="local"
 NODE_DESCRIPTION="Local Node"
 BEHIND_PROXY=false
@@ -71,7 +71,7 @@ configure_panel_repository() {
   print_header
   print_flame "Panel Repository Configuration"
 
-  output "The default Pyrodactyl Panel repository is:"
+  output "The default Hydrodactyl Panel repository is:"
   output "  ${COLOR_ORANGE}${DEFAULT_PANEL_REPO}${COLOR_NC}"
   echo ""
 
@@ -275,44 +275,44 @@ configure_panel_settings() {
 
 }
 
-# ------------------ Elytra Configuration ----------------- #
+# ------------------ Wings Configuration ----------------- #
 
-configure_elytra_settings() {
+configure_Wings_settings() {
   print_header
-  print_flame "Elytra Repository Configuration"
+  print_flame "Wings Repository Configuration"
 
-  output "The default Elytra repository is:"
-  output "  ${COLOR_ORANGE}${DEFAULT_ELYTRA_REPO}${COLOR_NC}"
+  output "The default Wings repository is:"
+  output "  ${COLOR_ORANGE}${DEFAULT_Wings_REPO}${COLOR_NC}"
   echo ""
 
   local use_default=""
   bool_input use_default "Use default repository?" "y"
 
   if [ "$use_default" == "y" ]; then
-    ELYTRA_REPO="$DEFAULT_ELYTRA_REPO"
+    Wings_REPO="$DEFAULT_Wings_REPO"
   else
-    required_input ELYTRA_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
+    required_input Wings_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
 
-    if [[ ! "$ELYTRA_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+    if [[ ! "$Wings_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
       error "Invalid repository format. Must be 'owner/repo'"
       exit 1
     fi
   fi
 
   echo ""
-  output "Repository: ${COLOR_ORANGE}${ELYTRA_REPO}${COLOR_NC}"
+  output "Repository: ${COLOR_ORANGE}${Wings_REPO}${COLOR_NC}"
 
   # Only ask about private repo if not using default (default is public)
   if [ "$use_default" == "n" ]; then
     local is_private=""
     bool_input is_private "Is this a private repository?" "n" || true
     if [ "$is_private" == "y" ]; then
-      ELYTRA_REPO_PRIVATE="true"
+      Wings_REPO_PRIVATE="true"
     else
-      ELYTRA_REPO_PRIVATE="false"
+      Wings_REPO_PRIVATE="false"
     fi
 
-    if [ "$ELYTRA_REPO_PRIVATE" == "true" ]; then
+    if [ "$Wings_REPO_PRIVATE" == "true" ]; then
       echo ""
       output "A GitHub Personal Access Token is required for private repositories."
       output "Create one at: https://github.com/settings/tokens"
@@ -320,10 +320,10 @@ configure_elytra_settings() {
 
       local token_valid=false
       while [ "$token_valid" == false ]; do
-        password_input GITHUB_TOKEN_ELYTRA "Enter your GitHub token: " "Token cannot be empty"
+        password_input GITHUB_TOKEN_Wings "Enter your GitHub token: " "Token cannot be empty"
 
         output "Validating token..."
-        if validate_github_token "$GITHUB_TOKEN_ELYTRA" "$ELYTRA_REPO"; then
+        if validate_github_token "$GITHUB_TOKEN_Wings" "$Wings_REPO"; then
           success "Token validated successfully"
           token_valid=true
         else
@@ -332,46 +332,46 @@ configure_elytra_settings() {
       done
     fi
   else
-    ELYTRA_REPO_PRIVATE="false"
+    Wings_REPO_PRIVATE="false"
   fi
 
   output "Checking for releases in repository..."
-  if ! check_releases_exist "$ELYTRA_REPO" "$GITHUB_TOKEN_ELYTRA"; then
+  if ! check_releases_exist "$Wings_REPO" "$GITHUB_TOKEN_Wings"; then
     echo ""
-    error "No releases found in repository: ${ELYTRA_REPO}"
-    warning "Elytra must be installed from a release."
+    error "No releases found in repository: ${Wings_REPO}"
+    warning "Wings must be installed from a release."
     exit 1
   fi
 
   local latest_release
-  latest_release=$(get_latest_release "$ELYTRA_REPO" "$GITHUB_TOKEN_ELYTRA")
+  latest_release=$(get_latest_release "$Wings_REPO" "$GITHUB_TOKEN_Wings")
   success "Found releases in repository"
 
-  # Select Elytra release version (skip interactive if already set via env)
+  # Select Wings release version (skip interactive if already set via env)
   local selected_version
-  if [ "$ELYTRA_RELEASE_VERSION" != "latest" ]; then
-    selected_version="$ELYTRA_RELEASE_VERSION"
-    info "Using Elytra release version from environment: $selected_version"
+  if [ "$Wings_RELEASE_VERSION" != "latest" ]; then
+    selected_version="$Wings_RELEASE_VERSION"
+    info "Using Wings release version from environment: $selected_version"
   else
     echo ""
-    selected_version=$(select_release_version "$ELYTRA_REPO" "elytra" "$GITHUB_TOKEN_ELYTRA")
+    selected_version=$(select_release_version "$Wings_REPO" "Wings" "$GITHUB_TOKEN_Wings")
     if [ -z "$selected_version" ]; then
       error "Failed to select release version"
       exit 1
     fi
   fi
-  ELYTRA_RELEASE_VERSION="$selected_version"
-  if [ "$ELYTRA_RELEASE_VERSION" == "latest" ]; then
-    success "Will install latest Elytra release: ${latest_release}"
+  Wings_RELEASE_VERSION="$selected_version"
+  if [ "$Wings_RELEASE_VERSION" == "latest" ]; then
+    success "Will install latest Wings release: ${latest_release}"
   else
-    success "Will install Elytra release: ${ELYTRA_RELEASE_VERSION}"
+    success "Will install Wings release: ${Wings_RELEASE_VERSION}"
   fi
 
   echo ""
-  print_flame "Elytra Node Configuration"
+  print_flame "Wings Node Configuration"
   echo ""
 
-  output "Configuring Elytra to connect to the panel at: ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
+  output "Configuring Wings to connect to the panel at: ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
   output "(This will be set automatically - no panel URL input needed)"
   echo ""
 
@@ -424,10 +424,10 @@ configure_auto_updaters() {
     INSTALL_AUTO_UPDATER_PANEL=true
   fi
 
-  local install_elytra_au=""
-  bool_input install_elytra_au "Install auto-updater for Elytra?" "n" || true
-  if [ "$install_elytra_au" == "y" ]; then
-    INSTALL_AUTO_UPDATER_ELYTRA=true
+  local install_Wings_au=""
+  bool_input install_Wings_au "Install auto-updater for Wings?" "n" || true
+  if [ "$install_Wings_au" == "y" ]; then
+    INSTALL_AUTO_UPDATER_Wings=true
   fi
 }
 
@@ -446,9 +446,9 @@ show_summary() {
   print_header
   print_flame "Installation Summary"
 
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
   output "  Panel Configuration"
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
   echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${PANEL_REPO} $([ "$PANEL_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
   echo -e "  ${COLOR_ORANGE}Install Method:${COLOR_NC}    ${PANEL_INSTALL_METHOD}"
   echo -e "  ${COLOR_ORANGE}Release Version:${COLOR_NC}   ${PANEL_RELEASE_VERSION}"
@@ -459,21 +459,21 @@ show_summary() {
   echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_PANEL" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  output "  Elytra Configuration"
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${ELYTRA_REPO} $([ "$ELYTRA_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
-  echo -e "  ${COLOR_ORANGE}Release Version:${COLOR_NC}   ${ELYTRA_RELEASE_VERSION}"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+  output "  Wings Configuration"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+  echo -e "  ${COLOR_ORANGE}Repository:${COLOR_NC}        ${Wings_REPO} $([ "$Wings_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
+  echo -e "  ${COLOR_ORANGE}Release Version:${COLOR_NC}   ${Wings_RELEASE_VERSION}"
   echo -e "  ${COLOR_ORANGE}Panel URL:${COLOR_NC}         https://${PANEL_FQDN} (auto-configured)"
   echo -e "  ${COLOR_ORANGE}Node Name:${COLOR_NC}         ${NODE_NAME}"
   echo -e "  ${COLOR_ORANGE}Node Description:${COLOR_NC}  ${NODE_DESCRIPTION}"
   echo -e "  ${COLOR_ORANGE}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
-  echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_ELYTRA" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_ORANGE}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_Wings" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
   output "  Minecraft Server"
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
   echo -e "  ${COLOR_ORANGE}Auto-Create:${COLOR_NC}       $([ "$CREATE_MINECRAFT_SERVER" == "true" ] && echo 'Yes' || echo 'No')"
   if [ "$CREATE_MINECRAFT_SERVER" == "true" ]; then
     echo -e "  ${COLOR_ORANGE}Server Type:${COLOR_NC}       Vanilla Minecraft Java"
@@ -481,9 +481,9 @@ show_summary() {
     echo -e "  ${COLOR_ORANGE}Disk:${COLOR_NC}              32GB"
   fi
   echo ""
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
   output "  General Settings"
-  output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
   echo -e "  ${COLOR_ORANGE}Firewall:${COLOR_NC}          $([ "$CONFIGURE_FIREWALL" == "true" ] && echo 'Enabled' || echo 'Disabled')"
   if [ "$CONFIGURE_FIREWALL" == "true" ]; then
     echo -e "  ${COLOR_ORANGE}Game Support:${COLOR_NC}      Minecraft, CS:GO/TF2/GMod, ARK, Rust, Valheim, FiveM"
@@ -491,7 +491,7 @@ show_summary() {
   echo ""
 
   local confirm=""
-  bool_input confirm "Proceed with installation of both Panel and Elytra?" "y"
+  bool_input confirm "Proceed with installation of both Panel and Wings?" "y"
 
   if [ "$confirm" != "y" ]; then
     error "Installation aborted"
@@ -519,7 +519,7 @@ export_variables() {
   export CONFIGURE_FIREWALL
   export INSTALL_AUTO_UPDATER="$INSTALL_AUTO_UPDATER_PANEL"
   export INSTALL_AUTO_UPDATER_PANEL
-  export INSTALL_AUTO_UPDATER_ELYTRA
+  export INSTALL_AUTO_UPDATER_Wings
   export SSL_CERT_PATH
   export SSL_KEY_PATH
   export DB_HOST
@@ -528,11 +528,11 @@ export_variables() {
   export DB_USER
   export DB_PASSWORD
 
-  # Elytra variables
-  export ELYTRA_REPO
-  export ELYTRA_REPO_PRIVATE
-  export GITHUB_TOKEN_ELYTRA
-  export ELYTRA_RELEASE_VERSION
+  # Wings variables
+  export Wings_REPO
+  export Wings_REPO_PRIVATE
+  export GITHUB_TOKEN_Wings
+  export Wings_RELEASE_VERSION
   export NODE_NAME
   export NODE_DESCRIPTION
   export BEHIND_PROXY
@@ -547,11 +547,11 @@ export_variables() {
 # ------------------ Main ----------------- #
 
 main() {
-  print_flame "Welcome to the Pyrodactyl + Elytra Combined Installer"
+  print_flame "Welcome to the Hydrodactyl + Wings Combined Installer"
 
   configure_panel_repository
   configure_panel_settings
-  configure_elytra_settings
+  configure_Wings_settings
   configure_auto_updaters
   configure_minecraft_server
   configure_firewall_settings

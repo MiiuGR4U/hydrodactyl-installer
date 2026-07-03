@@ -1,6 +1,6 @@
-# Pyrodactyl Panel + Elytra Daemon - Same Machine Installation Guide
+# Hydrodactyl Panel + Wings Daemon - Same Machine Installation Guide
 
-This guide covers installing both the Pyrodactyl Panel and Elytra Daemon on the same physical or virtual server. This setup is suitable for small deployments, development environments, or single-node installations.
+This guide covers installing both the Hydrodactyl Panel and Wings Daemon on the same physical or virtual server. This setup is suitable for small deployments, development environments, or single-node installations.
 
 ## Table of Contents
 
@@ -10,8 +10,8 @@ This guide covers installing both the Pyrodactyl Panel and Elytra Daemon on the 
 4. [Step 1: System Preparation](#step-1-system-preparation)
 5. [Step 2: Install Dependencies](#step-2-install-dependencies)
 6. [Step 3: Database Setup](#step-3-database-setup)
-7. [Step 4: Install and Configure Pyrodactyl Panel](#step-4-install-and-configure-pyrodactyl-panel)
-8. [Step 5: Install and Configure Elytra Daemon](#step-5-install-and-configure-elytra-daemon)
+7. [Step 4: Install and Configure Hydrodactyl Panel](#step-4-install-and-configure-Hydrodactyl-panel)
+8. [Step 5: Install and Configure Wings Daemon](#step-5-install-and-configure-Wings-daemon)
 9. [Step 6: SSL/TLS Configuration](#step-6-ssltls-configuration)
 10. [Step 7: Configure Firewall](#step-7-configure-firewall)
 11. [Step 8: Create Node and Connect Services](#step-8-create-node-and-connect-services)
@@ -25,30 +25,30 @@ This guide covers installing both the Pyrodactyl Panel and Elytra Daemon on the 
 When running both Panel and Daemon on the same machine:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Single Server                      │
-│                                                     │
-│  ┌──────────────────────────────────────────┐       │
-│  │          Pyrodactyl Panel                │       │
-│  │   - Nginx (Port 80/443)                  │       │
-│  │   - PHP-FPM (Unix Socket)                │       │
-│  │   - MariaDB (Port 3306)                  │       │
-│  │   - Redis (Port 6379)                    │       │
-│  └──────────────────────────────────────────┘       │
-│                                                     │
-│  ┌──────────────────────────────────────────┐       │
-│  │          Elytra Daemon                   │       │
-│  │   - API Server (Port 8080)               │       │
-│  │   - Docker (Internal 172.18.0.0/16)      │       │
-│  │   - Game Servers (Various Ports)         │       │
-│  └──────────────────────────────────────────┘       │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                  Single Server                      â”‚
+â”‚                                                     â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”       â”‚
+â”‚  â”‚          Hydrodactyl Panel                â”‚       â”‚
+â”‚  â”‚   - Nginx (Port 80/443)                  â”‚       â”‚
+â”‚  â”‚   - PHP-FPM (Unix Socket)                â”‚       â”‚
+â”‚  â”‚   - MariaDB (Port 3306)                  â”‚       â”‚
+â”‚  â”‚   - Redis (Port 6379)                    â”‚       â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜       â”‚
+â”‚                                                     â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”       â”‚
+â”‚  â”‚          Wings Daemon                   â”‚       â”‚
+â”‚  â”‚   - API Server (Port 8080)               â”‚       â”‚
+â”‚  â”‚   - Docker (Internal 172.18.0.0/16)      â”‚       â”‚
+â”‚  â”‚   - Game Servers (Various Ports)         â”‚       â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜       â”‚
+â”‚                                                     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 **Communication Flow:**
-- Panel communicates with Elytra via HTTPS on port 8080 (localhost)
-- Elytra communicates with Panel API via HTTPS on port 443
+- Panel communicates with Wings via HTTPS on port 8080 (localhost)
+- Wings communicates with Panel API via HTTPS on port 443
 - Both share the same database (MariaDB)
 - Both use Redis (can be shared)
 
@@ -73,7 +73,7 @@ When running both Panel and Daemon on the same machine:
 | **Storage** | 100+ GB SSD |
 | **Network** | Both IPv4 and IPv6 |
 
-**Note:** Running both services on the same machine requires more resources than running them separately. Game servers (managed by Elytra) will consume additional resources.
+**Note:** Running both services on the same machine requires more resources than running them separately. Game servers (managed by Wings) will consume additional resources.
 
 ---
 
@@ -84,7 +84,7 @@ Before beginning:
 - **Two domain names or subdomains:**
   - Panel domain: `panel.yourdomain.com`
   - Daemon domain: `daemon.yourdomain.com` (can be same IP)
-  - Alternatively, use `panel.yourdomain.com` for Panel and `panel.yourdomain.com:8080` for Elytra
+  - Alternatively, use `panel.yourdomain.com` for Panel and `panel.yourdomain.com:8080` for Wings
 - Basic understanding of Docker and Linux
 - Server must support Docker (KVM/VMware/Xen - NOT OpenVZ/LXC)
 
@@ -120,7 +120,7 @@ systemctl enable --now chronyd
 
 ## Step 2: Install Dependencies
 
-Install all dependencies for both Panel and Elytra at once:
+Install all dependencies for both Panel and Wings at once:
 
 ### Ubuntu/Debian
 ```bash
@@ -202,40 +202,40 @@ mysql_secure_installation
 ```bash
 mysql -u root -p <<EOF
 CREATE DATABASE panel CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'pyrodactyl'@'127.0.0.1' IDENTIFIED BY 'YOUR_SECURE_PASSWORD';
-GRANT ALL PRIVILEGES ON panel.* TO 'pyrodactyl'@'127.0.0.1' WITH GRANT OPTION;
+CREATE USER 'Hydrodactyl'@'127.0.0.1' IDENTIFIED BY 'YOUR_SECURE_PASSWORD';
+GRANT ALL PRIVILEGES ON panel.* TO 'Hydrodactyl'@'127.0.0.1' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EOF
 ```
 
-Save the password - you'll need it twice (for Panel and Elytra doesn't need it but Panel does).
+Save the password - you'll need it twice (for Panel and Wings doesn't need it but Panel does).
 
 ---
 
-## Step 4: Install and Configure Pyrodactyl Panel
+## Step 4: Install and Configure Hydrodactyl Panel
 
 ### Create Directory
 ```bash
-mkdir -p /var/www/pyrodactyl
-cd /var/www/pyrodactyl
+mkdir -p /var/www/Hydrodactyl
+cd /var/www/Hydrodactyl
 ```
 
 ### Download Panel
 ```bash
-curl -Lo panel.tar.gz $(curl -s https://api.github.com/repos/pyrodactyl-oss/pyrodactyl/releases/latest | grep "tarball_url" | cut -d'"' -f4)
+curl -Lo panel.tar.gz $(curl -s https://api.github.com/repos/blueprintframework/hydrodactyl/releases/latest | grep "tarball_url" | cut -d'"' -f4)
 tar -xzf panel.tar.gz --strip-components=1
 rm panel.tar.gz
 ```
 
 ### Set Permissions
 ```bash
-chown -R www-data:www-data /var/www/pyrodactyl
-chmod -R 755 /var/www/pyrodactyl
+chown -R www-data:www-data /var/www/Hydrodactyl
+chmod -R 755 /var/www/Hydrodactyl
 ```
 
 ### Install Dependencies
 ```bash
-cd /var/www/pyrodactyl
+cd /var/www/Hydrodactyl
 composer install --no-dev --optimize-autoloader --no-interaction
 ```
 
@@ -251,7 +251,7 @@ APP_URL=https://panel.yourdomain.com
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=panel
-DB_USERNAME=pyrodactyl
+DB_USERNAME=Hydrodactyl
 DB_PASSWORD=YOUR_SECURE_PASSWORD
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
@@ -276,12 +276,12 @@ php artisan view:cache
 ```
 
 ### Configure Nginx
-Create `/etc/nginx/sites-available/pyrodactyl`:
+Create `/etc/nginx/sites-available/Hydrodactyl`:
 ```nginx
 server {
     listen 80;
     server_name panel.yourdomain.com;
-    root /var/www/pyrodactyl/public;
+    root /var/www/Hydrodactyl/public;
     index index.php;
 
     location / {
@@ -309,17 +309,17 @@ server {
 
 Enable:
 ```bash
-ln -s /etc/nginx/sites-available/pyrodactyl /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/Hydrodactyl /etc/nginx/sites-enabled/
 rm /etc/nginx/sites-enabled/default 2>/dev/null || true
 nginx -t
 systemctl restart nginx
 ```
 
 ### Queue Worker Service
-Create `/etc/systemd/system/pyroq.service`:
+Create `/etc/systemd/system/pteroq.service`:
 ```ini
 [Unit]
-Description=Pyrodactyl Queue Worker
+Description=Hydrodactyl Queue Worker
 After=redis-server.service mariadb.service
 
 [Service]
@@ -327,7 +327,7 @@ Type=simple
 User=www-data
 Group=www-data
 Restart=always
-ExecStart=/usr/bin/php /var/www/pyrodactyl/artisan queue:work --queue=high,standard,low --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000 --memory=512
+ExecStart=/usr/bin/php /var/www/Hydrodactyl/artisan queue:work --queue=high,standard,low --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000 --memory=512
 OOMScoreAdjust=-100
 RestartSec=5s
 
@@ -338,50 +338,50 @@ WantedBy=multi-user.target
 Enable:
 ```bash
 systemctl daemon-reload
-systemctl enable --now pyroq
+systemctl enable --now pteroq
 ```
 
 ### Cron Job
 ```bash
 crontab -e
 # Add:
-* * * * * cd /var/www/pyrodactyl && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/Hydrodactyl && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ---
 
-## Step 5: Install and Configure Elytra Daemon
+## Step 5: Install and Configure Wings Daemon
 
 ### Create Directories
 ```bash
-mkdir -p /var/lib/pyrodactyl/volumes /var/lib/pyrodactyl/archives /var/lib/pyrodactyl/backups /etc/elytra
+mkdir -p /var/lib/Hydrodactyl/volumes /var/lib/Hydrodactyl/archives /var/lib/Hydrodactyl/backups /etc/Wings
 ```
 
-### Download Elytra
+### Download Wings
 ```bash
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-curl -Lo /usr/local/bin/elytra "https://github.com/pyrohost/elytra/releases/latest/download/elytra_linux_${ARCH}"
-chmod +x /usr/local/bin/elytra
+curl -Lo /usr/local/bin/Wings "https://github.com/pterodactyl/wings/releases/latest/download/Wings_linux_${ARCH}"
+chmod +x /usr/local/bin/Wings
 ```
 
 ### Create System User
 ```bash
-groupadd --system --gid 8888 pyrodactyl 2>/dev/null || true
-useradd --system --no-create-home --shell /usr/sbin/nologin --uid 8888 --gid 8888 pyrodactyl 2>/dev/null || true
+groupadd --system --gid 8888 Hydrodactyl 2>/dev/null || true
+useradd --system --no-create-home --shell /usr/sbin/nologin --uid 8888 --gid 8888 Hydrodactyl 2>/dev/null || true
 
-chown -R 8888:8888 /var/lib/elytra /etc/elytra
+chown -R 8888:8888 /var/lib/Wings /etc/Wings
 
 # SECURITY NOTE: 777 is required because containerized game servers run as
 # various UIDs and must read/write game data. This grants all users access.
-# Ensure /var/lib/elytra parent directory restricts access.
-chmod -R 777 /var/lib/elytra/volumes /var/lib/elytra/archives /var/lib/elytra/backups
-chmod -R 755 /etc/elytra
+# Ensure /var/lib/Wings parent directory restricts access.
+chmod -R 777 /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
+chmod -R 755 /etc/Wings
 # SECURITY: Config contains daemon credentials - restrict to owner-only
-[ -f /etc/elytra/config.yml ] && chmod 600 /etc/elytra/config.yml
+[ -f /etc/Wings/config.yml ] && chmod 600 /etc/Wings/config.yml
 ```
 
 ### Initial Config (Temporary)
-Create `/etc/elytra/config.yml` with placeholder:
+Create `/etc/Wings/config.yml` with placeholder:
 ```yaml
 debug: false
 uuid: PLACEHOLDER
@@ -396,9 +396,9 @@ api:
     upload-limit: 100
 
 system:
-    data: /var/lib/pyrodactyl/volumes
-    archive: /var/lib/pyrodactyl/archives
-    backup: /var/lib/pyrodactyl/backups
+    data: /var/lib/Hydrodactyl/volumes
+    archive: /var/lib/Hydrodactyl/archives
+    backup: /var/lib/Hydrodactyl/backups
 
 remote: https://panel.yourdomain.com
 
@@ -417,19 +417,19 @@ throttles:
 installed: true
 ```
 
-### Create Elytra Service
-Create `/etc/systemd/system/elytra.service`:
+### Create Wings Service
+Create `/etc/systemd/system/Wings.service`:
 ```ini
 [Unit]
-Description=Elytra Daemon
+Description=Wings Daemon
 After=docker.service network.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/etc/elytra
-ExecStart=/usr/local/bin/elytra
+WorkingDirectory=/etc/Wings
+ExecStart=/usr/local/bin/Wings
 Restart=on-failure
 RestartSec=5s
 
@@ -437,7 +437,7 @@ RestartSec=5s
 WantedBy=multi-user.target
 ```
 
-**Don't start Elytra yet** - we need to configure the node first.
+**Don't start Wings yet** - we need to configure the node first.
 
 ---
 
@@ -452,27 +452,27 @@ certbot --nginx -d panel.yourdomain.com --non-interactive --agree-tos --email yo
 certbot --nginx -d daemon.yourdomain.com --non-interactive --agree-tos --email your@email.com
 ```
 
-### Elytra SSL Configuration
-If using Let's Encrypt for Elytra:
+### Wings SSL Configuration
+If using Let's Encrypt for Wings:
 ```bash
-mkdir -p /etc/elytra
+mkdir -p /etc/Wings
 # Use symlinks instead of copies so certificates auto-update on renewal
-ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/fullchain.pem /etc/elytra/certificate.pem
-ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/privkey.pem /etc/elytra/certificate.key
-chown 8888:8888 /etc/elytra/certificate.*
-chmod 644 /etc/elytra/certificate.pem
-chmod 600 /etc/elytra/certificate.key
+ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/fullchain.pem /etc/Wings/certificate.pem
+ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/privkey.pem /etc/Wings/certificate.key
+chown 8888:8888 /etc/Wings/certificate.*
+chmod 644 /etc/Wings/certificate.pem
+chmod 600 /etc/Wings/certificate.key
 ```
 
-Update `/etc/elytra/config.yml`:
+Update `/etc/Wings/config.yml`:
 ```yaml
 api:
     host: 0.0.0.0
     port: 8080
     ssl:
         enabled: true
-        certificate: /etc/elytra/certificate.pem
-        key: /etc/elytra/certificate.key
+        certificate: /etc/Wings/certificate.pem
+        key: /etc/Wings/certificate.key
 ```
 
 ### Auto-Renewal Hook
@@ -480,21 +480,21 @@ Create `/etc/letsencrypt/renewal-hooks/deploy/combined-restart.sh`:
 ```bash
 cat > /etc/letsencrypt/renewal-hooks/deploy/combined-restart.sh << 'EOF'
 #!/bin/bash
-echo "[$(date)] Certificate renewed" >> /var/log/pyrodactyl-certbot-renewal.log
+echo "[$(date)] Certificate renewed" >> /var/log/Hydrodactyl-certbot-renewal.log
 
-# Ensure Elytra certificate symlinks are valid (re-create if needed)
+# Ensure Wings certificate symlinks are valid (re-create if needed)
 # Symlinks automatically point to latest certs, just need to ensure they exist
 if [ -d "/etc/letsencrypt/live/daemon.yourdomain.com" ]; then
-    ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/fullchain.pem /etc/elytra/certificate.pem
-    ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/privkey.pem /etc/elytra/certificate.key
-    chown 8888:8888 /etc/elytra/certificate.*
-    chmod 644 /etc/elytra/certificate.pem
-    chmod 600 /etc/elytra/certificate.key
-    echo "[$(date)] Elytra certificates updated" >> /var/log/pyrodactyl-certbot-renewal.log
+    ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/fullchain.pem /etc/Wings/certificate.pem
+    ln -sf /etc/letsencrypt/live/daemon.yourdomain.com/privkey.pem /etc/Wings/certificate.key
+    chown 8888:8888 /etc/Wings/certificate.*
+    chmod 644 /etc/Wings/certificate.pem
+    chmod 600 /etc/Wings/certificate.key
+    echo "[$(date)] Wings certificates updated" >> /var/log/Hydrodactyl-certbot-renewal.log
 fi
 
 systemctl restart nginx
-systemctl restart elytra
+systemctl restart Wings
 EOF
 
 chmod +x /etc/letsencrypt/renewal-hooks/deploy/combined-restart.sh
@@ -516,10 +516,10 @@ ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
 
-# Elytra API
+# Wings API
 ufw allow 8080/tcp
 
-# SFTP (Elytra)
+# SFTP (Wings)
 ufw allow 2022/tcp
 
 # Game Server Ports (adjust as needed)
@@ -550,7 +550,7 @@ firewall-cmd --reload
 
 1. Visit `https://panel.yourdomain.com`
 2. Login with admin credentials
-3. Go to **Admin** → **Nodes**
+3. Go to **Admin** â†’ **Nodes**
 4. Click **Create New**
 5. Configure:
    - **Name:** `Local Node` or `Main Node`
@@ -568,9 +568,9 @@ firewall-cmd --reload
 2. Go to **Configuration** tab
 3. Copy the `uuid`, `token-id`, and `token` values
 
-### Update Elytra Configuration
+### Update Wings Configuration
 
-Edit `/etc/elytra/config.yml`:
+Edit `/etc/Wings/config.yml`:
 ```yaml
 uuid: YOUR-COPIED-UUID
 token-id: YOUR-COPIED-TOKEN-ID
@@ -580,19 +580,19 @@ remote: https://panel.yourdomain.com
 
 Save and set permissions:
 ```bash
-chown -R 8888:8888 /etc/elytra
+chown -R 8888:8888 /etc/Wings
 ```
 
-### Start Elytra
+### Start Wings
 ```bash
 systemctl daemon-reload
-systemctl enable --now elytra
+systemctl enable --now Wings
 
 # Check status
-systemctl status elytra
+systemctl status Wings
 
 # View logs
-journalctl -u elytra -f
+journalctl -u Wings -f
 ```
 
 You should see connection successful messages in the logs.
@@ -607,25 +607,25 @@ echo "=== Panel Services ==="
 systemctl status nginx | grep Active
 systemctl status php8.4-fpm | grep Active
 systemctl status mariadb | grep Active
-systemctl status pyroq | grep Active
+systemctl status pteroq | grep Active
 
-echo "=== Elytra/Docker ==="
-systemctl status elytra | grep Active
+echo "=== Wings/Docker ==="
+systemctl status Wings | grep Active
 systemctl status docker | grep Active
 docker ps
 
 echo "=== Resources ==="
 free -h
-df -h /var/lib/pyrodactyl
+df -h /var/lib/Hydrodactyl
 ```
 
 ### Test Panel Access
 - Visit `https://panel.yourdomain.com`
 - Login with admin credentials
-- Navigate to **Admin** → **Nodes**
+- Navigate to **Admin** â†’ **Nodes**
 - Node should show as **Healthy** (green heart icon)
 
-### Test Elytra Connection
+### Test Wings Connection
 ```bash
 # From the server
 curl -k https://localhost:8080/api/servers 2>/dev/null | head -1
@@ -635,11 +635,11 @@ curl -k https://localhost:8080/api/servers 2>/dev/null | head -1
 
 ### Create Test Server
 
-1. In Panel, go to your Node → **Allocations**
+1. In Panel, go to your Node â†’ **Allocations**
 2. Create allocation:
    - IP: `0.0.0.0` (listens on all interfaces) or your server IP
    - Port: `25565` (or any available port)
-3. Go to **Servers** → **Create New**
+3. Go to **Servers** â†’ **Create New**
 4. Select a Nest/Egg (e.g., Minecraft)
 5. Select your node and allocation
 6. Create and start the server
@@ -651,14 +651,14 @@ curl -k https://localhost:8080/api/servers 2>/dev/null | head -1
 
 ### Port Conflicts
 
-**Problem:** Elytra won't start, port 8080 in use
+**Problem:** Wings won't start, port 8080 in use
 
 **Solution:** Check what's using port 8080:
 ```bash
 netstat -tlnp | grep 8080
 lsof -i :8080
 
-# Change Elytra port in /etc/elytra/config.yml if needed
+# Change Wings port in /etc/Wings/config.yml if needed
 # Then update Panel node configuration to match
 ```
 
@@ -669,7 +669,7 @@ lsof -i :8080
 **Solution:**
 ```bash
 # Test connection
-mysql -u pyrodactyl -p -h 127.0.0.1 panel -e "SELECT 1"
+mysql -u Hydrodactyl -p -h 127.0.0.1 panel -e "SELECT 1"
 
 # Check if MariaDB is bound to localhost
 grep bind-address /etc/mysql/mariadb.conf.d/50-server.cnf
@@ -678,7 +678,7 @@ grep bind-address /etc/mysql/mariadb.conf.d/50-server.cnf
 
 ### Docker Permission Denied
 
-**Problem:** Elytra can't create containers
+**Problem:** Wings can't create containers
 
 **Solution:**
 ```bash
@@ -692,12 +692,12 @@ systemctl restart docker
 docker run hello-world
 ```
 
-### Panel Can't Connect to Elytra
+### Panel Can't Connect to Wings
 
 **Problem:** Node shows as unhealthy
 
 **Check:**
-1. Elytra is running: `systemctl status elytra`
+1. Wings is running: `systemctl status Wings`
 2. Firewall allows port 8080
 3. SSL certificate is valid (if using HTTPS)
 4. Token values match exactly
@@ -748,26 +748,26 @@ reboot
 
 Create a weekly update check:
 ```bash
-cat > /etc/cron.weekly/pyrodactyl-update << 'EOF'
+cat > /etc/cron.weekly/Hydrodactyl-update << 'EOF'
 #!/bin/bash
 # Update check script
 # Only run git fetch if this is a git installation
-if [ -d /var/www/pyrodactyl/.git ]; then
-  cd /var/www/pyrodactyl && git fetch origin
+if [ -d /var/www/Hydrodactyl/.git ]; then
+  cd /var/www/Hydrodactyl && git fetch origin
 fi
-/usr/local/bin/elytra --version
+/usr/local/bin/Wings --version
 EOF
 
-chmod +x /etc/cron.weekly/pyrodactyl-update
+chmod +x /etc/cron.weekly/Hydrodactyl-update
 ```
 
 ### Backup Strategy
 
 Create backup script:
 ```bash
-cat > /usr/local/bin/backup-pyrodactyl << 'EOF'
+cat > /usr/local/bin/backup-Hydrodactyl << 'EOF'
 #!/bin/bash
-BACKUP_DIR="/var/backups/pyrodactyl"
+BACKUP_DIR="/var/backups/Hydrodactyl"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 mkdir -p $BACKUP_DIR
@@ -776,10 +776,10 @@ mkdir -p $BACKUP_DIR
 mysqldump -u root panel > $BACKUP_DIR/panel_$DATE.sql
 
 # Backup Panel files
-tar -czf $BACKUP_DIR/panel_files_$DATE.tar.gz -C /var/www pyrodactyl
+tar -czf $BACKUP_DIR/panel_files_$DATE.tar.gz -C /var/www Hydrodactyl
 
-# Backup Elytra config
-tar -czf $BACKUP_DIR/elytra_config_$DATE.tar.gz -C /etc elytra
+# Backup Wings config
+tar -czf $BACKUP_DIR/Wings_config_$DATE.tar.gz -C /etc Wings
 
 # Keep only last 7 backups
 ls -t $BACKUP_DIR/*.sql | tail -n +8 | xargs -r rm
@@ -788,12 +788,12 @@ ls -t $BACKUP_DIR/*.tar.gz | tail -n +8 | xargs -r rm
 echo "Backup completed: $DATE"
 EOF
 
-chmod +x /usr/local/bin/backup-pyrodactyl
+chmod +x /usr/local/bin/backup-Hydrodactyl
 ```
 
 Run daily:
 ```bash
-echo "0 2 * * * root /usr/local/bin/backup-pyrodactyl" >> /etc/crontab
+echo "0 2 * * * root /usr/local/bin/backup-Hydrodactyl" >> /etc/crontab
 ```
 
 ### Monitoring
@@ -812,11 +812,11 @@ bash <(curl -Ss https://my-netdata.io/kickstart.sh)
 
 ## Support
 
-- Pyrodactyl Issues: https://github.com/pyrodactyl-oss/pyrodactyl/issues
-- Elytra Issues: https://github.com/pyrohost/elytra/issues
+- Hydrodactyl Issues: https://github.com/blueprintframework/hydrodactyl/issues
+- Wings Issues: https://github.com/pterodactyl/wings/issues
 - Docker Docs: https://docs.docker.com/
-- Community Discord: [Pyrodactyl Community]
+- Community Discord: [Hydrodactyl Community]
 
 ---
 
-**Congratulations!** You now have a complete Pyrodactyl Panel and Elytra Daemon installation on a single server. You can begin creating and managing game servers.
+**Congratulations!** You now have a complete Hydrodactyl Panel and Wings Daemon installation on a single server. You can begin creating and managing game servers.

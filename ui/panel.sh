@@ -1,5 +1,5 @@
  ```
-pyrodactyl\install-scripts\new\ui\panel.sh
+Hydrodactyl\install-scripts\new\ui\panel.sh
 ```
 #!/bin/bash
 
@@ -7,9 +7,9 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Panel Installation UI                                                   #
+# Hydrodactyl Panel Installation UI                                                   #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
 ######################################################################################
 
@@ -17,17 +17,17 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
-  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+  if [ -f /tmp/Hydrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+    if ! source /tmp/Hydrodactyl-lib.sh 2>/dev/null; then
       # Temp file exists but failed to load (corrupt/invalid) - remove it
-      rm -f /tmp/pyrodactyl-lib.sh
+      rm -f /tmp/Hydrodactyl-lib.sh
     fi
   fi
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
@@ -54,7 +54,7 @@ SSL_KEY_PATH=""
 DB_HOST="127.0.0.1"
 DB_PORT="3306"
 DB_NAME="panel"
-DB_USER="pyrodactyl"
+DB_USER="Hydrodactyl"
 DB_PASSWORD=""
 
 # ------------------ Repository Configuration ----------------- #
@@ -63,7 +63,7 @@ configure_github_repository() {
   print_header
   print_flame "GitHub Repository Configuration"
 
-  output "The default Pyrodactyl Panel repository is:"
+  output "The default Hydrodactyl Panel repository is:"
   output "  ${COLOR_ORANGE}${DEFAULT_PANEL_REPO}${COLOR_NC}"
   echo ""
 
@@ -269,7 +269,7 @@ configure_database() {
   fi
 
   required_input DB_NAME "Database name [panel]: " "" "panel"
-  required_input DB_USER "Database username [pyrodactyl]: " "" "pyrodactyl"
+  required_input DB_USER "Database username [Hydrodactyl]: " "" "Hydrodactyl"
   password_input DB_PASSWORD "Database password: " "Password cannot be empty"
 }
 
@@ -412,7 +412,7 @@ export_variables() {
 # ------------------ Main ----------------- #
 
 main() {
-  print_flame "Welcome to the Pyrodactyl Panel Installer"
+  print_flame "Welcome to the Hydrodactyl Panel Installer"
 
   configure_github_repository
   configure_installation_method

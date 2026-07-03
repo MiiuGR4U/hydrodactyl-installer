@@ -4,9 +4,9 @@ set -e
 
 ######################################################################################
 #                                                                                    #
-# Pyrodactyl Panel Installer                                                         #
+# Hydrodactyl Panel Installer                                                         #
 #                                                                                    #
-# Copyright (C) 2025, Muspelheim Hosting                                             #
+# Copyright (C) 2025, Blueprint                                             #
 #                                                                                    #
 ######################################################################################
 
@@ -14,24 +14,24 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
-  if [ -f /tmp/pyrodactyl-lib.sh ]; then
+  if [ -f /tmp/Hydrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    if ! source /tmp/pyrodactyl-lib.sh 2>/dev/null; then
+    if ! source /tmp/Hydrodactyl-lib.sh 2>/dev/null; then
       # Temp file exists but failed to load (corrupt/invalid) - remove it
-      rm -f /tmp/pyrodactyl-lib.sh
+      rm -f /tmp/Hydrodactyl-lib.sh
     fi
   fi
   # Fall back to downloading if temp file didn't load or doesn't exist
   if ! fn_exists lib_loaded; then
     # shellcheck source=/dev/null
-    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/Muspelheim-Hosting/pyrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
+    source <(curl -sSL "${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/blueprintframework/hydrodactyl-installer"}/${GITHUB_SOURCE:-"main"}/lib/lib.sh")
   fi
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
 # ------------------ Variables ----------------- #
 
-PANEL_REPO="${PANEL_REPO:-pyrodactyl-oss/pyrodactyl}"
+PANEL_REPO="${PANEL_REPO:-blueprintframework/hydrodactyl}"
 PANEL_INSTALL_METHOD="${PANEL_INSTALL_METHOD:-release}"
 PANEL_FQDN="${PANEL_FQDN:-}"
 PANEL_TIMEZONE="${PANEL_TIMEZONE:-UTC}"
@@ -54,7 +54,7 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-panel}"
-DB_USER="${DB_USER:-pyrodactyl}"
+DB_USER="${DB_USER:-Hydrodactyl}"
 # Load existing credentials or generate new ones
 if saved_pass=$(load_existing_db_credentials); then
   MYSQL_ROOT_PASSWORD="${saved_pass}"
@@ -184,14 +184,14 @@ setup_database() {
     error "Please either:"
     error "  1. Set MYSQL_ROOT_PASSWORD environment variable to the correct password"
     error "  2. Reset MariaDB root password manually"
-    error "  3. Remove /root/.config/pyrodactyl/db-credentials if you want to start fresh"
+    error "  3. Remove /root/.config/Hydrodactyl/db-credentials if you want to start fresh"
     exit 1
   fi
 
   # Save credentials
-  mkdir -p /root/.config/pyrodactyl
-  echo "root:${MYSQL_ROOT_PASSWORD}" > /root/.config/pyrodactyl/db-credentials
-  chmod 600 /root/.config/pyrodactyl/db-credentials
+  mkdir -p /root/.config/Hydrodactyl
+  echo "root:${MYSQL_ROOT_PASSWORD}" > /root/.config/Hydrodactyl/db-credentials
+  chmod 600 /root/.config/Hydrodactyl/db-credentials
 
   # Create panel database and user
   output "Creating panel database..."
@@ -284,9 +284,9 @@ install_panel_release() {
 
   # Save version from GitHub release tag to persistent location
   output "Recording version from GitHub: $release_tag"
-  mkdir -p /etc/pyrodactyl
-  echo "$release_tag" > /etc/pyrodactyl/panel-version
-  chmod 644 /etc/pyrodactyl/panel-version
+  mkdir -p /etc/Hydrodactyl
+  echo "$release_tag" > /etc/Hydrodactyl/panel-version
+  chmod 644 /etc/Hydrodactyl/panel-version
 
   output "Creating installation directory..."
   mkdir -p "$INSTALL_DIR"
@@ -388,9 +388,9 @@ install_panel_clone() {
   local commit_hash
   commit_hash=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
   output "Recording git commit hash: ${commit_hash:0:8}"
-  mkdir -p /etc/pyrodactyl
-  echo "git:${commit_hash}" > /etc/pyrodactyl/panel-version
-  chmod 644 /etc/pyrodactyl/panel-version
+  mkdir -p /etc/Hydrodactyl
+  echo "git:${commit_hash}" > /etc/Hydrodactyl/panel-version
+  chmod 644 /etc/Hydrodactyl/panel-version
 
   cp .env.example .env
 
@@ -513,7 +513,7 @@ setup_services() {
   insert_cronjob
 
   # Install queue worker
-  install_pyroq
+  install_pteroq
 
   # Ensure PHP 8.4 is the default (in case other packages changed it)
   ensure_php_default true
@@ -567,7 +567,7 @@ setup_auto_updater() {
 
 main() {
   print_header
-  print_flame "Starting Pyrodactyl Panel Installation"
+  print_flame "Starting Hydrodactyl Panel Installation"
 
   validate_configuration
 
@@ -598,17 +598,17 @@ main() {
   configure_mariadb_tcp
   setup_database_host "$PANEL_FQDN"
 
-  # Generate API key for Elytra setup
+  # Generate API key for Wings setup
   output "Generating Application API Key for node automation..."
   PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" 2>/dev/null || echo "")
   if [ -n "$PANEL_API_KEY" ]; then
     success "API Key generated successfully"
     # Save API key to credentials file for later use
-    mkdir -p /root/.config/pyrodactyl
-    echo "api_key:${PANEL_API_KEY}" >> /root/.config/pyrodactyl/db-credentials
-    chmod 600 /root/.config/pyrodactyl/db-credentials
+    mkdir -p /root/.config/Hydrodactyl
+    echo "api_key:${PANEL_API_KEY}" >> /root/.config/Hydrodactyl/db-credentials
+    chmod 600 /root/.config/Hydrodactyl/db-credentials
   else
-    warning "Failed to generate API key - you will need to create one manually for Elytra setup"
+    warning "Failed to generate API key - you will need to create one manually for Wings setup"
     warning "You can create one in Admin > API Keys after installation"
   fi
 
@@ -620,14 +620,14 @@ main() {
   print_flame "Installation Complete!"
 
   echo ""
-  output "🎉 Your Pyrodactyl Panel has been installed successfully!"
+  output "ðŸŽ‰ Your Hydrodactyl Panel has been installed successfully!"
   echo ""
   output "Panel URL: ${COLOR_ORANGE}https://${PANEL_FQDN}${COLOR_NC}"
   output "Admin Email: ${COLOR_ORANGE}${PANEL_ADMIN_EMAIL}${COLOR_NC}"
   output "Admin Username: ${COLOR_ORANGE}${PANEL_ADMIN_USERNAME}${COLOR_NC}"
   output "Admin Password: ${COLOR_ORANGE}**hidden** (hope you remember it!)${COLOR_NC}"
   echo ""
-  output "Database credentials saved to: ${COLOR_ORANGE}/root/.config/pyrodactyl/db-credentials${COLOR_NC}"
+  output "Database credentials saved to: ${COLOR_ORANGE}/root/.config/Hydrodactyl/db-credentials${COLOR_NC}"
   echo ""
   output "phpMyAdmin Access:"
   output "  URL: ${COLOR_ORANGE}http://${PANEL_FQDN}:8081${COLOR_NC}"
@@ -635,24 +635,24 @@ main() {
   output "  Password: ${COLOR_ORANGE}${PHPMYADMIN_PASSWORD}${COLOR_NC}"
   echo ""
   if [ -n "$PANEL_API_KEY" ]; then
-    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    output "  API Key for Elytra Setup"
-    output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    output "  API Key for Wings Setup"
+    output "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
     output "API Key: ${COLOR_ORANGE}${PANEL_API_KEY}${COLOR_NC}"
     echo ""
     output "Save this API key! You can use it to automatically configure"
-    output "Elytra without manually entering node ID and token."
-    output "When running elytra.sh, enter this API key when prompted."
+    output "Wings without manually entering node ID and token."
+    output "When running Wings.sh, enter this API key when prompted."
     echo ""
   fi
 
   if [ "$INSTALL_AUTO_UPDATER" == true ]; then
-    output "✅ Auto-updater is enabled and will check for updates hourly."
+    output "âœ… Auto-updater is enabled and will check for updates hourly."
     echo ""
   fi
 
   output "Service Commands:"
-  output "  ${COLOR_ORANGE}systemctl status pyroq${COLOR_NC}    - Panel queue worker"
+  output "  ${COLOR_ORANGE}systemctl status pteroq${COLOR_NC}    - Panel queue worker"
   output "  ${COLOR_ORANGE}systemctl status nginx${COLOR_NC}    - Web server"
   output "  ${COLOR_ORANGE}systemctl status mariadb${COLOR_NC}  - Database"
   echo ""
