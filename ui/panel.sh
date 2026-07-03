@@ -193,7 +193,7 @@ configure_fqdn() {
 
   local valid_fqdn=false
   while [ "$valid_fqdn" == false ]; do
-    required_input PANEL_FQDN "Domain/Subdomain: " "Domain is required"
+    required_input PANEL_FQDN "Domain/Subdomain or IP Address: " "Domain is required"
 
     if check_fqdn "$PANEL_FQDN"; then
       # Verify DNS resolution

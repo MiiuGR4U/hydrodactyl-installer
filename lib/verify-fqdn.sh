@@ -89,6 +89,13 @@ fi
 
 output "FQDN format is valid"
 
+# Check if it's an IP address
+if [[ "$FQDN" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  output "IP Address detected instead of domain. Skipping DNS resolution."
+  exit 0
+fi
+
+
 # Get server IP addresses
 output "Detecting server IP addresses..."
 

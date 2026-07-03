@@ -587,8 +587,6 @@ check_fqdn() {
   # Must contain at least one dot
   [[ "$fqdn" =~ \. ]] || return 1
 
-  # Must not be an IP address
-  [[ "$fqdn" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && return 1
 
   # Basic format validation
   [[ "$fqdn" =~ ^[a-zA-Z0-9][-a-zA-Z0-9.]*[a-zA-Z0-9]$ ]] || return 1

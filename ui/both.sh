@@ -189,7 +189,7 @@ configure_panel_settings() {
 
   local valid_fqdn=false
   while [ "$valid_fqdn" == false ]; do
-    required_input PANEL_FQDN "Enter the domain for your panel (e.g., panel.example.com): " "Domain is required"
+    required_input PANEL_FQDN "Enter the domain or IP address for your panel (e.g., panel.example.com or 192.168.1.5): " "Domain is required"
 
     if check_fqdn "$PANEL_FQDN"; then
       # Verify DNS resolution
