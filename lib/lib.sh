@@ -65,14 +65,13 @@ export COLOR_GRAY='\033[38;5;240m'
 export COLOR_NC='\033[0m'
 
 # ------------------ Gradient Colors for Header ----------------- #
-# Smooth flame gradient from red (top) to yellow (bottom)
 # Smooth water gradient colors (top to bottom) - deep blue to cyan
 export GRADIENT_1='\033[38;5;18m'    # Deep blue
 export GRADIENT_2='\033[38;5;20m'    # Dark blue
 export GRADIENT_3='\033[38;5;26m'    # Blue
 export GRADIENT_4='\033[38;5;32m'    # Light blue
 export GRADIENT_5='\033[38;5;33m'    # Bright blue
-export GRADIENT_6='\033[38;5;221m'   # Yellow-orange
+export GRADIENT_6='\033[38;5;38m'    # Dodger blue
 export GRADIENT_7='\033[38;5;39m'    # Deep sky blue
 export GRADIENT_8='\033[38;5;45m'    # Light sky blue
 export GRADIENT_9='\033[38;5;51m'    # Cyan
@@ -81,12 +80,12 @@ export GRADIENT_11='\033[38;5;123m'  # Pale cyan
 
 # Gradient array for flame effects
 GRADIENT_COLORS=(
-  '\033[38;5;196m'  # Dark red
-  '\033[38;5;202m'  # Red-Orange
-  '\033[38;5;208m'  # Orange
-  '\033[38;5;214m'  # Light Orange
-  '\033[38;5;220m'  # Yellow-Orange
-  '\033[38;5;226m'  # Yellow
+  '\033[38;5;18m'    # Deep blue
+  '\033[38;5;20m'    # Dark blue
+  '\033[38;5;26m'    # Blue
+  '\033[38;5;32m'    # Light blue
+  '\033[38;5;33m'    # Bright blue
+  '\033[38;5;38m'    # Dodger blue
 )
 
 # ------------------ Library Loaded Marker ----------------- #
