@@ -524,7 +524,7 @@ configure_panel_environment() {
     --name-first="$PANEL_ADMIN_FIRSTNAME" \
     --name-last="$PANEL_ADMIN_LASTNAME" \
     --password="$PANEL_ADMIN_PASSWORD" \
-    --admin=1 </dev/null
+    --admin </dev/null
 
   success "Environment configured"
 }
