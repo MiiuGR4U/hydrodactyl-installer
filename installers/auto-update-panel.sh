@@ -285,7 +285,12 @@ check_for_updates_releases() {
   current_version=$(get_current_version)
 
   local latest_version
-  latest_version=$(get_latest_release)
+  if [ -n "$TARGET_VERSION" ]; then
+    latest_version="$TARGET_VERSION"
+    FORCE_UPDATE=true
+  else
+    latest_version=$(get_latest_release)
+  fi
 
   if [ -z "$latest_version" ] || [ "$latest_version" == "null" ]; then
     error "Could not fetch latest version"

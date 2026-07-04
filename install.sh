@@ -378,6 +378,15 @@ run_panel_update() {
       output "Repository updated to: $NEW_REPO"
     fi
   fi
+  
+  echo ""
+  local CHANGE_VERSION=""
+  bool_input CHANGE_VERSION "Do you want to specify a specific release version (instead of latest)?" "n"
+  
+  if [ "$CHANGE_VERSION" == "y" ]; then
+    required_input TARGET_VERSION "Enter Release Version (e.g., v0.3): " ""
+    export TARGET_VERSION
+  fi
 
   output "Getting and running panel auto-updater..."
   echo ""
