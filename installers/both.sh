@@ -688,9 +688,9 @@ install_Wings_daemon() {
   # Create directories
   mkdir -p "$WINGS_DIR"
   mkdir -p "$PANEL_CONFIG_DIR"
-  mkdir -p /var/lib/Wings/volumes
-  mkdir -p /var/lib/Wings/archives
-  mkdir -p /var/lib/Wings/backups
+  mkdir -p /var/lib/pterodactyl/volumes
+  mkdir -p /var/lib/pterodactyl/archives
+  mkdir -p /var/lib/pterodactyl/backups
 
   # Create Hydrodactyl group first (required for user creation)
   output "Creating Hydrodactyl system group..."
@@ -742,8 +742,8 @@ install_Wings_daemon() {
 
   # Save version from GitHub release tag for auto-updater tracking
   mkdir -p /etc/hydrodactyl
-  echo "$latest_release" > /etc/hydrodactyl/Wings-version
-  chmod 644 /etc/hydrodactyl/Wings-version
+  echo "$latest_release" > /etc/hydrodactyl/wings-version
+  chmod 644 /etc/hydrodactyl/wings-version
 
   # Create Wings config directory
   output "Creating Wings config directory at ${WINGS_DIR}..."
@@ -832,22 +832,22 @@ install_Wings_daemon() {
 
   # Set proper ownership and permissions on Wings data directories (after service starts)
   output "Ensuring Wings data directories exist..."
-  mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
+  mkdir -p /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups
 
   output "Setting final permissions on Wings data directories..."
-  chown -R 8888:8888 /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups "$WINGS_DIR" 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups "$WINGS_DIR" 2>/dev/null || true
 
   # Set full permissions so containers can read/write/execute
   # Note: 777 is required for containerized game servers to access these directories
-  # Ensure parent /var/lib/Wings is accessible
-  chmod 755 /var/lib/Wings 2>/dev/null || true
+  # Ensure parent /var/lib/pterodactyl is accessible
+  chmod 755 /var/lib/pterodactyl 2>/dev/null || true
   # Ensure the volumes directory itself and all contents have 777
-  chmod 777 /var/lib/Wings/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/volumes/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/archives/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/backups 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/backups/* 2>/dev/null || true
+  chmod 777 /var/lib/pterodactyl/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/pterodactyl/volumes/* 2>/dev/null || true
+  chmod 777 /var/lib/pterodactyl/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/pterodactyl/archives/* 2>/dev/null || true
+  chmod 777 /var/lib/pterodactyl/backups 2>/dev/null || true
+  chmod -R 777 /var/lib/pterodactyl/backups/* 2>/dev/null || true
   chmod -R 755 "$WINGS_DIR" 2>/dev/null || true
   [ -f "$WINGS_DIR/config.yml" ] && chmod 600 "$WINGS_DIR/config.yml" 2>/dev/null || true
 
@@ -859,7 +859,7 @@ install_Wings_daemon() {
 
   # Run auto-fix to ensure proper permissions (fixes container access issues)
   output "Running Wings permission fix..."
-  auto_fix_Wings_issues || true
+  auto_fix_wings_issues || true
 
   success "Wings installed and started"
 }
@@ -920,7 +920,7 @@ install_auto_updaters() {
     export WINGS_REPO
     export WINGS_REPO_PRIVATE
     export GITHUB_TOKEN
-    install_auto_updater_Wings
+    install_auto_updater_wings
   fi
 }
 
@@ -1093,7 +1093,7 @@ main() {
   output "    --node '${NODE_ID}'${COLOR_NC}"
   output ""
   output "Or use the installer function (if running the installer):"
-  output "  ${COLOR_BLUE_THEME}configure_Wings 'https://${PANEL_FQDN}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
+  output "  ${COLOR_BLUE_THEME}configure_wings 'https://${PANEL_FQDN}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
   echo ""
 
   print_brake 70

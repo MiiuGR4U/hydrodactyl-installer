@@ -295,9 +295,9 @@ install_Wings() {
   output "Creating Wings directories..."
   mkdir -p "$WINGS_INSTALL_DIR" || { error "Failed to create $WINGS_INSTALL_DIR"; return 1; }
   mkdir -p "$PANEL_CONFIG_DIR" || { error "Failed to create $PANEL_CONFIG_DIR"; return 1; }
-  mkdir -p /var/lib/Wings/volumes || { error "Failed to create /var/lib/Wings/volumes"; return 1; }
-  mkdir -p /var/lib/Wings/archives || { error "Failed to create /var/lib/Wings/archives"; return 1; }
-  mkdir -p /var/lib/Wings/backups || { error "Failed to create /var/lib/Wings/backups"; return 1; }
+  mkdir -p /var/lib/pterodactyl/volumes || { error "Failed to create /var/lib/pterodactyl/volumes"; return 1; }
+  mkdir -p /var/lib/pterodactyl/archives || { error "Failed to create /var/lib/pterodactyl/archives"; return 1; }
+  mkdir -p /var/lib/pterodactyl/backups || { error "Failed to create /var/lib/pterodactyl/backups"; return 1; }
 
   # Create Hydrodactyl group first (required for user creation)
   output "Creating Hydrodactyl system group..."
@@ -356,8 +356,8 @@ install_Wings() {
 
   # Save version from GitHub release tag for auto-updater tracking
   mkdir -p /etc/hydrodactyl
-  echo "$target_release" > /etc/hydrodactyl/Wings-version
-  chmod 644 /etc/hydrodactyl/Wings-version
+  echo "$target_release" > /etc/hydrodactyl/wings-version
+  chmod 644 /etc/hydrodactyl/wings-version
 
   # Verify Wings binary works
   if /usr/local/bin/wings --version >/dev/null 2>&1; then

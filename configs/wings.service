@@ -8,10 +8,10 @@ Requires=docker.service
 [Service]
 User=root
 Group=root
-WorkingDirectory=/etc/Wings
+WorkingDirectory=/etc/wings
 LimitNOFILE=4096
-PIDFile=/run/Wings.pid
-ExecStart=/usr/local/bin/Wings
+PIDFile=/run/wings.pid
+ExecStart=/usr/local/bin/wings
 ExecStop=/bin/kill -s QUIT $MAINPID
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
