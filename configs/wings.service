@@ -9,15 +9,18 @@ Requires=docker.service
 User=root
 Group=root
 WorkingDirectory=/etc/pterodactyl
-LimitNOFILE=4096
+LimitNOFILE=1048576
+LimitNPROC=512
+LimitCORE=infinity
+TimeoutStartSec=900
 PIDFile=/run/wings.pid
 ExecStart=/usr/local/bin/wings
 ExecStop=/bin/kill -s QUIT $MAINPID
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
 RestartSec=5s
-StartLimitInterval=60s
-StartLimitBurst=3
+StartLimitInterval=180s
+StartLimitBurst=30
 
 [Install]
 WantedBy=multi-user.target
