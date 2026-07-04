@@ -34,13 +34,13 @@ done
 
 ######################################################################################
 #                                                                                    #
-# Hydrodactyl Installer                                                               #
+# Hydrodactyl Installer                                                              #
 #                                                                                    #
 # One-command installer for Hydrodactyl Panel and Wings Daemon                       #
 #                                                                                    #
-# Copyright (C) 2026, MiiuGR4U                                             #
+# Copyright (C) 2026, MiiuGR4U                                                       #
 #                                                                                    #
-# https://github.com/MiiuGR4U/hydrodactyl-installer                         #
+# https://github.com/MiiuGR4U/hydrodactyl-installer                                  #
 #                                                                                    #
 ######################################################################################
 

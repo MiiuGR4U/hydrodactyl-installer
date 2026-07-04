@@ -48,8 +48,8 @@ check_root
 
 detect_panel_location() {
   # Check for Hydrodactyl first (install script location)
-  if [ -d "/var/www/Hydrodactyl" ] && [ -f "/var/www/Hydrodactyl/artisan" ]; then
-    echo "/var/www/Hydrodactyl"
+  if [ -d "/var/www/hydrodactyl" ] && [ -f "/var/www/hydrodactyl/artisan" ]; then
+    echo "/var/www/hydrodactyl"
     return 0
   fi
   
@@ -111,7 +111,7 @@ fix_panel_permissions() {
   local panel_dir
   panel_dir=$(detect_panel_location) || {
     error "Panel installation not found at any standard location"
-    output "Searched: /var/www/Hydrodactyl, /var/www/pterodactyl"
+    output "Searched: /var/www/hydrodactyl, /var/www/pterodactyl"
     return 1
   }
 

@@ -28,7 +28,7 @@ fi
 # Default config (can be overridden by /etc/hydrodactyl/auto-update-panel.env)
 PANEL_REPO="${PANEL_REPO:-blueprintframework/hydrodactyl}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
-INSTALL_DIR="${INSTALL_DIR:-/var/www/Hydrodactyl}"
+INSTALL_DIR="${INSTALL_DIR:-/var/www/hydrodactyl}"
 LOG_FILE="${LOG_FILE:-/var/log/Hydrodactyl-panel-auto-update.log}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/Hydrodactyl}"
 LOCK_FILE="${LOCK_FILE:-/var/run/Hydrodactyl-panel-update.lock}"

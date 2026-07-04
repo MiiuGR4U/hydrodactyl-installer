@@ -111,7 +111,7 @@ configure_panel_auto_updater() {
   fi
 
   # Auto-detect update method based on existing installation
-  if [ -d "/var/www/Hydrodactyl/.git" ]; then
+  if [ -d "/var/www/hydrodactyl/.git" ]; then
     output "Detected git-based panel installation - will use git for updates"
     output "Verifying git repository access..."
     
@@ -256,11 +256,11 @@ show_remove_menu() {
   local panel_updater_installed=false
   local Wings_updater_installed=false
 
-  if systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
+  if systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
     panel_updater_installed=true
   fi
 
-  if systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
+  if systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
     Wings_updater_installed=true
   fi
 
@@ -356,7 +356,7 @@ trigger_panel_update() {
   print_header
   print_flame "Trigger Panel Update"
 
-  if ! systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
+  if ! systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
     error "Panel auto-updater is not installed."
     echo ""
     output "Please install the auto-updater first."
@@ -364,15 +364,15 @@ trigger_panel_update() {
   fi
 
   output "This will manually trigger the panel update check."
-  output "Update method: $([ -d "/var/www/Hydrodactyl/.git" ] && echo "git-based" || echo "release-based")"
+  output "Update method: $([ -d "/var/www/hydrodactyl/.git" ] && echo "git-based" || echo "release-based")"
   echo ""
 
   # Get current and latest versions for display
   local current_version="unknown"
   local latest_version="unknown"
   
-  if [ -f "/var/www/Hydrodactyl/config/app.php" ]; then
-    current_version=$(grep "'version'" "/var/www/Hydrodactyl/config/app.php" 2>/dev/null | head -1 | sed -E "s/.*'version' => '([^']+)'.*/\1/" || echo "unknown")
+  if [ -f "/var/www/hydrodactyl/config/app.php" ]; then
+    current_version=$(grep "'version'" "/var/www/hydrodactyl/config/app.php" 2>/dev/null | head -1 | sed -E "s/.*'version' => '([^']+)'.*/\1/" || echo "unknown")
   fi
   
   # Get latest version from GitHub
@@ -420,7 +420,7 @@ trigger_Wings_update() {
   print_header
   print_flame "Trigger Wings Update"
 
-  if ! systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
+  if ! systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
     error "Wings auto-updater is not installed."
     echo ""
     output "Please install the auto-updater first."
@@ -488,11 +488,11 @@ show_main_menu() {
   local panel_updater_installed=false
   local Wings_updater_installed=false
 
-  if systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
+  if systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
     panel_updater_installed=true
   fi
 
-  if systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
+  if systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
     Wings_updater_installed=true
   fi
 
@@ -561,10 +561,10 @@ show_main_menu() {
       5)
         show_remove_menu
         # Refresh status after potential removal
-        if ! systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
+        if ! systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
           panel_updater_installed=false
         fi
-        if ! systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
+        if ! systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
           Wings_updater_installed=false
         fi
         ;;

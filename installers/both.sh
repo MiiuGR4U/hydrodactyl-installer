@@ -81,7 +81,7 @@ WINGS_REPO_PRIVATE="${WINGS_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
 # Paths
-INSTALL_DIR="${INSTALL_DIR:-/var/www/Hydrodactyl}"
+INSTALL_DIR="${INSTALL_DIR:-/var/www/hydrodactyl}"
 WINGS_DIR="${WINGS_DIR:-/etc/pterodactyl}"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/hydrodactyl}"
 

@@ -116,8 +116,8 @@ check_system_resources_health() {
 
 detect_panel_location() {
   # Check for Hydrodactyl first (install script location)
-  if [ -d "/var/www/Hydrodactyl" ] && [ -f "/var/www/Hydrodactyl/artisan" ]; then
-    echo "/var/www/Hydrodactyl"
+  if [ -d "/var/www/hydrodactyl" ] && [ -f "/var/www/hydrodactyl/artisan" ]; then
+    echo "/var/www/hydrodactyl"
     return 0
   fi
 
@@ -183,7 +183,7 @@ show_health_menu() {
         local panel_dir
         panel_dir=$(detect_panel_location) || {
           error "Panel installation not found"
-          output "Searched: /var/www/Hydrodactyl, /var/www/pterodactyl"
+          output "Searched: /var/www/hydrodactyl, /var/www/pterodactyl"
           sleep 2
           continue
         }

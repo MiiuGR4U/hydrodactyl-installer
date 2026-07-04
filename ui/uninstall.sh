@@ -56,7 +56,7 @@ detect_installed_components() {
   PANEL_UPDATER_INSTALLED=false
   WINGS_UPDATER_INSTALLED=false
 
-  if [ -d "/var/www/Hydrodactyl" ]; then
+  if [ -d "/var/www/hydrodactyl" ]; then
     PANEL_INSTALLED=true
   fi
 
@@ -64,11 +64,11 @@ detect_installed_components() {
     WINGS_INSTALLED=true
   fi
 
-  if systemctl is-enabled --quiet Hydrodactyl-panel-auto-update.timer 2>/dev/null; then
+  if systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
     PANEL_UPDATER_INSTALLED=true
   fi
 
-  if systemctl is-enabled --quiet Hydrodactyl-Wings-auto-update.timer 2>/dev/null; then
+  if systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
     WINGS_UPDATER_INSTALLED=true
   fi
 }
@@ -189,7 +189,7 @@ confirm_uninstall() {
 
   if [ "$REMOVE_PANEL" == true ]; then
     output "Panel removal includes:"
-    output "  - Panel files (/var/www/Hydrodactyl)"
+    output "  - Panel files (/var/www/hydrodactyl)"
     output "  - Nginx configuration"
     output "  - Systemd services (pteroq)"
     output "  - Cron jobs"
@@ -256,7 +256,7 @@ main() {
     output "No Hydrodactyl components were detected on this system."
     echo ""
     output "If you believe this is an error, you may need to manually remove:"
-    output "  - /var/www/Hydrodactyl (Panel files)"
+    output "  - /var/www/hydrodactyl (Panel files)"
     output "  - /usr/local/bin/wings (Wings binary)"
     output "  - /etc/Wings (Wings configuration)"
     exit 0

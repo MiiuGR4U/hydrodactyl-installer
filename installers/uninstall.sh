@@ -6,7 +6,7 @@ set -e
 source /tmp/Hydrodactyl-lib.sh
 
 # Configuration
-PANEL_DIR="/var/www/Hydrodactyl"
+PANEL_DIR="/var/www/hydrodactyl"
 Wings_DIR="/etc/Wings"
 PANEL_DATA_DIR="/var/lib/Hydrodactyl"
 
