@@ -6,7 +6,7 @@ set -e
 #                                                                                    #
 # Hydrodactyl Panel + Wings Combined Installation UI                                 #
 #                                                                                    #
-# Copyright (C) 2025, Blueprint                                             #
+# Copyright (C) 2026, MiiuGR4U                                                       #
 #                                                                                    #
 ######################################################################################
 

@@ -609,8 +609,8 @@ configure_wings() {
   output "wings configured successfully"
 
   # Disable permission checking to prevent Wings from resetting permissions
-  output "Disabling permission checks in Wings config..."
-  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${WINGS_INSTALL_DIR}/config.yml" 2>/dev/null || true
+  output "Enabling permission checks in Wings config..."
+  sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' "${WINGS_INSTALL_DIR}/config.yml" 2>/dev/null || true
 
   # Update container limits for better game server compatibility
   output "Updating container limits in Wings config..."
@@ -930,7 +930,7 @@ main() {
 
     # Run auto-fix to ensure proper permissions, ACL defaults, and service restart
     # This handles: ownership, chmod, config permissions, ACL inheritance,
-    # check_permissions_on_boot disable, and Wings service restart+verify
+    # check_permissions_on_boot enable, and Wings service restart+verify
     # (matches both.sh behavior)
     output "Running Wings permission fix..."
     auto_fix_wings_issues || true

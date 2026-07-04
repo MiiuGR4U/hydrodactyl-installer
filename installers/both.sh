@@ -781,8 +781,8 @@ install_Wings_daemon() {
   output "DEBUG: wings configured successfully"
 
   # Disable permission checking to prevent Wings from resetting permissions
-  output "Disabling permission checks in Wings config..."
-  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${WINGS_DIR}/config.yml" 2>/dev/null || true
+  output "Enabling permission checks in Wings config..."
+  sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' "${WINGS_DIR}/config.yml" 2>/dev/null || true
 
   # Update container limits for better game server compatibility
   output "Updating container limits in Wings config..."
@@ -853,10 +853,10 @@ install_Wings_daemon() {
   chmod -R 755 "$WINGS_DIR" 2>/dev/null || true
   [ -f "$WINGS_DIR/config.yml" ] && chmod 600 "$WINGS_DIR/config.yml" 2>/dev/null || true
 
-  # Disable check_permissions_on_boot to prevent Wings from resetting permissions
+  # Enable check_permissions_on_boot so Wings properly chowns volumes for containers
   if [ -f "$WINGS_DIR/config.yml" ]; then
-    output "Disabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$WINGS_DIR/config.yml" 2>/dev/null || true
+    output "Enabling permission checks in Wings config..."
+    sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' "$WINGS_DIR/config.yml" 2>/dev/null || true
   fi
 
   # Run auto-fix to ensure proper permissions (fixes container access issues)

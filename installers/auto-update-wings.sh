@@ -664,10 +664,10 @@ auto_fix_Wings_issues() {
     setfacl -R -b /var/lib/pterodactyl/backups 2>/dev/null || true
   fi
   
-  # Disable check_permissions_on_boot to prevent Wings from resetting permissions
+  # Enable check_permissions_on_boot so Wings properly chowns volumes for containers
   if [ -f "/etc/pterodactyl/config.yml" ]; then
-    info "Disabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/pterodactyl/config.yml 2>/dev/null || true
+    info "Enabling permission checks in Wings config..."
+    sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' /etc/pterodactyl/config.yml 2>/dev/null || true
   fi
   
   # Wings config directory - create if needed and set more restrictive permissions

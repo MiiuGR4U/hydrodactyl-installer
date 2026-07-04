@@ -187,10 +187,10 @@ fix_Wings_permissions() {
   fi
   chmod -R 755 "$Wings_dir" 2>/dev/null || true
   
-  # Disable check_permissions_on_boot to prevent Wings from resetting permissions
+  # Enable check_permissions_on_boot so Wings properly chowns volumes for containers
   if [ -f "$Wings_dir/config.yml" ]; then
-    output "Disabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$Wings_dir/config.yml" 2>/dev/null || true
+    output "Enabling permission checks in Wings config..."
+    sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' "$Wings_dir/config.yml" 2>/dev/null || true
   fi
 
   success "Wings permissions fixed"
