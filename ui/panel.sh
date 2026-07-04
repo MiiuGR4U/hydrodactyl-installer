@@ -195,6 +195,9 @@ configure_fqdn() {
   while [ "$valid_fqdn" == false ]; do
     required_input PANEL_FQDN "Domain/Subdomain or IP Address: " "Domain is required"
 
+        # Strip http://, https://, and trailing slashes
+    PANEL_FQDN=$(echo "$PANEL_FQDN" | sed -e 's|^http://||' -e 's|^https://||' -e 's|/$||')
+
     if check_fqdn "$PANEL_FQDN"; then
       # Verify DNS resolution
       output "Verifying DNS for ${PANEL_FQDN}..."
@@ -208,7 +211,7 @@ configure_fqdn() {
         error "Please fix your DNS configuration or enter a different domain."
       fi
     else
-      error "Invalid FQDN format. Must be a valid domain name (not IP address)."
+      error "Invalid FQDN format. Must be a valid domain name or IP address."
     fi
   done
 

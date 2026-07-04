@@ -191,6 +191,9 @@ configure_panel_settings() {
   while [ "$valid_fqdn" == false ]; do
     required_input PANEL_FQDN "Enter the domain or IP address for your panel (e.g., panel.example.com or 192.168.1.5): " "Domain is required"
 
+        # Strip http://, https://, and trailing slashes
+    PANEL_FQDN=$(echo "$PANEL_FQDN" | sed -e 's|^http://||' -e 's|^https://||' -e 's|/$||')
+
     if check_fqdn "$PANEL_FQDN"; then
       # Verify DNS resolution
       local verify_result=1
@@ -203,7 +206,7 @@ configure_panel_settings() {
         error "Please fix your DNS configuration or enter a different domain."
       fi
     else
-      error "Invalid FQDN format. Must be a valid domain name."
+      error "Invalid FQDN format. Must be a valid domain name or IP address."
     fi
   done
 

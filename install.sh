@@ -355,12 +355,28 @@ run_panel_update() {
   # Check if auto-updater env file exists
   if [ -f "/etc/hydrodactyl/auto-update-panel.env" ]; then
     output "Using existing auto-updater configuration..."
+    source /etc/hydrodactyl/auto-update-panel.env 2>/dev/null || true
   else
     # Create temporary env file with defaults
     mkdir -p /etc/hydrodactyl
     echo "PANEL_REPO=\"blueprintframework/hydrodactyl\"" > /etc/hydrodactyl/auto-update-panel.env
     echo "GITHUB_TOKEN=\"\"" >> /etc/hydrodactyl/auto-update-panel.env
     chmod 600 /etc/hydrodactyl/auto-update-panel.env
+    source /etc/hydrodactyl/auto-update-panel.env 2>/dev/null || true
+  fi
+  
+  echo ""
+  output "Current repository: ${COLOR_BLUE_THEME}${PANEL_REPO:-blueprintframework/hydrodactyl}${COLOR_NC}"
+  local CHANGE_REPO=""
+  bool_input CHANGE_REPO "Do you want to change the repository (to switch panels/forks)?" "n"
+  
+  if [ "$CHANGE_REPO" == "y" ]; then
+    required_input NEW_REPO "Enter GitHub Repository (e.g., MiiuGR4U/hydrodactyl): " "${PANEL_REPO:-blueprintframework/hydrodactyl}"
+    if [ -n "$NEW_REPO" ]; then
+      sed -i "s|PANEL_REPO=.*|PANEL_REPO=\"$NEW_REPO\"|g" /etc/hydrodactyl/auto-update-panel.env 2>/dev/null || true
+      export PANEL_REPO="$NEW_REPO"
+      output "Repository updated to: $NEW_REPO"
+    fi
   fi
 
   output "Getting and running panel auto-updater..."
