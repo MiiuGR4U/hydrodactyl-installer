@@ -393,7 +393,8 @@ auto_configure_wings() {
 
   local api_key="$1"
   local panel_url="${2%/}"
-  local node_name="${3:-}"
+  local scheme="${3:-https}"
+  local node_name="${4:-}"
   [ -z "$node_name" ] && node_name="Wings-Node-$(hostname -s)"
 
   output "Starting automatic Wings configuration..."
@@ -417,28 +418,19 @@ auto_configure_wings() {
   output "Step 2: Creating node..."
   local memory_mb
   local disk_mb
-  memory_mb=$(get_system_memory)
+  memory_mb=$(get_ram_mb)
   disk_mb=$(df -m / | awk 'NR==2 {print $2}')
 
-  # Determine node FQDN - must be set explicitly or detectable via hostname
   local node_fqdn
   if [ -n "$FQDN" ]; then
     node_fqdn="$FQDN"
     info "Using configured node FQDN: ${node_fqdn}"
   else
-    node_fqdn=$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "")
-    if [ -z "$node_fqdn" ] || [ "$node_fqdn" == "localhost" ]; then
-      error "Could not determine node FQDN"
-      error "Set FQDN via --fqdn flag or FQDN environment variable"
-      error "Example: Wings.sh --fqdn node.example.com"
-      return 1
-    else
-      info "Detected node FQDN from hostname: ${node_fqdn}"
-    fi
+    node_fqdn=""
   fi
 
-  if ! NODE_ID=$(create_node_via_api "$api_key" "$panel_url" "$location_id" "$node_name" "$memory_mb" "$disk_mb" "false" "$node_fqdn"); then
-    error "Failed to create node"
+  if ! NODE_ID=$(create_node_via_api "$api_key" "$panel_url" "$location_id" "$node_name" "$memory_mb" "$disk_mb" "false" "$node_fqdn" "$scheme"); then
+    error "Failed to create node via API"
     return 1
   fi
 
@@ -865,17 +857,32 @@ main() {
     output "  4. This node's FQDN (for SSL certificate setup)"
     output ""
 
-    local do_manual=""
-    bool_input do_manual "Would you like to enter configuration details now?" "y"
+    local do_config=""
+    bool_input do_config "Would you like to configure Wings now?" "y"
 
-    if [ "$do_manual" == "y" ]; then
+    if [ "$do_config" == "y" ]; then
       echo ""
-      read -rp "* Enter Panel URL: " PANEL_URL
-      read -rp "* Enter Panel API Key: " PANEL_API_KEY
-      read -rp "* Enter Node ID: " NODE_ID
+      read -rp "* Enter Panel URL (e.g. http://panel.example.com): " PANEL_URL
+      
+      output ""
+      output "Choose Configuration Method:"
+      output "[0] Auto-Create Node via API (Requires Application API Key)"
+      output "[1] Manual Configuration (Requires Node ID and Panel API Key)"
+      local config_method=""
+      while [[ "$config_method" != "0" && "$config_method" != "1" ]]; do
+        read -rp "* Enter choice [0/1]: " config_method
+      done
+      
+      if [ "$config_method" == "0" ]; then
+        read -rp "* Enter Application API Key: " PANEL_API_KEY
+      else
+        read -rp "* Enter Panel API Key: " PANEL_API_KEY
+        read -rp "* Enter Node ID: " NODE_ID
+      fi
+      
       echo ""
-
       # Ask if they want SSL and then FQDN
+      local scheme="https"
       if [ -z "$FQDN" ]; then
         output ""
         local want_ssl=""
@@ -885,13 +892,23 @@ main() {
           output "This is used to locate SSL certificates for secure connections."
           read -rp "* Node FQDN: " FQDN
         else
-          output "Skipping SSL configuration."
+          output "Skipping SSL configuration. Public IP will be used."
           FQDN=""
+          scheme="http"
         fi
       fi
       echo ""
 
-      configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
+      if [ "$config_method" == "0" ]; then
+        auto_configure_wings "$PANEL_API_KEY" "$PANEL_URL" "$scheme"
+        if [ $? -eq 0 ]; then
+          configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
+        else
+          error "Auto-configuration failed."
+        fi
+      else
+        configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
+      fi
     else
       output ""
       output "Skipping configuration. Wings is installed but not configured."

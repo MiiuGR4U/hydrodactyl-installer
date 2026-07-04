@@ -3059,6 +3059,7 @@ create_node_via_api() {
   local disk_mb="$6"
   local behind_proxy="${7:-false}"
   local panel_fqdn="${8:-}"
+  local scheme="${9:-https}"
 
   output "Creating node: ${COLOR_BLUE_THEME}${node_name}${COLOR_NC}" >&2
 
@@ -3101,7 +3102,8 @@ create_node_via_api() {
   if [ -n "$panel_fqdn" ]; then
     fqdn="$panel_fqdn"
   else
-    fqdn="localhost"
+    fqdn=$(curl -s -4 ifconfig.me 2>/dev/null || curl -s -4 icanhazip.com 2>/dev/null || echo "localhost")
+    output "DEBUG: Using Public IP as FQDN: $fqdn" >&2
   fi
   # Sanitize FQDN - remove quotes and backslashes that would break JSON
   fqdn=$(echo "$fqdn" | sed 's/["\\]//g')
@@ -3121,10 +3123,11 @@ create_node_via_api() {
       --arg desc "Wings node auto-created on $current_date" \
       --argjson location_id "$location_id" \
       --arg fqdn "$fqdn" \
+      --arg scheme "$scheme" \
       --argjson behind_proxy "$json_behind_proxy" \
       --argjson memory "$memory_mb" \
       --argjson disk "$disk_mb" \
-      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: "https", behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "wings", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
+      '{name: $name, description: $desc, location_id: $location_id, fqdn: $fqdn, scheme: $scheme, behind_proxy: $behind_proxy, public: true, memory: $memory, memory_overallocate: 0, disk: $disk, disk_overallocate: 0, upload_size: 100, daemon_listen: 8080, daemon_sftp: 2022, maintenance_mode: false, daemon_type: "wings", backup_disk: "rustic_local"}' > "$json_file" 2>&1; then
       error "Failed to build JSON with jq"
       error "jq error: $(cat "$json_file")"
       rm -f "$json_file"
@@ -3132,8 +3135,8 @@ create_node_via_api() {
     fi
   else
     # Fallback: write JSON directly to file
-    printf '{"name":"%s","description":"Wings node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"https","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"wings","backup_disk":"rustic_local"}' \
-      "$node_name" "$current_date" "$location_id" "$fqdn" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
+    printf '{"name":"%s","description":"Wings node auto-created on %s","location_id":%s,"fqdn":"%s","scheme":"%s","behind_proxy":%s,"public":true,"memory":%s,"memory_overallocate":0,"disk":%s,"disk_overallocate":0,"upload_size":100,"daemon_listen":8080,"daemon_sftp":2022,"maintenance_mode":false,"daemon_type":"wings","backup_disk":"rustic_local"}' \
+      "$node_name" "$current_date" "$location_id" "$fqdn" "$scheme" "$json_behind_proxy" "$memory_mb" "$disk_mb" > "$json_file"
   fi
 
   output "DEBUG: POST ${panel_url}/api/application/nodes" >&2
@@ -3867,4 +3870,57 @@ auto_fix_wings_issues() {
   fi
 
   success "Auto-fix completed"
+}
+
+# Run pre-flight checks before installing Wings
+pre_flight_checks_wings() {
+  print_flame "Pre-Flight Checks"
+  output "Running system diagnostics..."
+  
+  # Check Architecture
+  local arch
+  arch=$(uname -m)
+  if [[ "$arch" != "x86_64" && "$arch" != "aarch64" && "$arch" != "arm64" ]]; then
+    error "Unsupported architecture: $arch. Wings requires x86_64 or arm64."
+    exit 1
+  fi
+  success "Architecture supported: $arch"
+  
+  # Check RAM
+  local ram_mb
+  ram_mb=$(get_ram_mb)
+  if [ "$ram_mb" -lt 1000 ]; then
+    warning "System memory is below 1GB (${ram_mb}MB) Wings requires at least 1GB to run comfortably."
+  else
+    success "System memory is sufficient (${ram_mb}MB)"
+  fi
+  
+  # Check Ports 8080 and 2022
+  if cmd_exists ss || cmd_exists netstat; then
+    local check_cmd="ss -tulpn"
+    cmd_exists netstat && check_cmd="netstat -tulpn"
+    
+    if $check_cmd 2>/dev/null | grep -q ":8080 "; then
+      error "Port 8080 is already in use by another process. Wings requires port 8080."
+      exit 1
+    fi
+    
+    if $check_cmd 2>/dev/null | grep -q ":2022 "; then
+      error "Port 2022 is already in use by another process. Wings requires port 2022 for SFTP."
+      exit 1
+    fi
+    success "Required ports (8080, 2022) are available"
+  fi
+  
+  # Check GitHub API limit
+  local rate_limit_response
+  rate_limit_response=$(curl -s -L "https://api.github.com/rate_limit")
+  if echo "$rate_limit_response" | grep -q '"remaining": 0'; then
+    warning "GitHub API rate limit exceeded! Installation might fail."
+  else
+    success "GitHub API rate limit is okay"
+  fi
+  
+  output "Pre-flight checks passed!"
+  echo ""
 }
