@@ -15,7 +15,7 @@ set -e
 # ------------------ Version Configuration ----------------- #
 
 export GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
-export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v1.0.0}"
+export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v2.0.0}"
 export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer}"
 export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
@@ -3767,7 +3767,7 @@ check_wings_health() {
   fi
 
   # Check data directories
-  for dir in /var/lib/wings/volumes /var/lib/wings/archives /var/lib/wings/backups; do
+  for dir in /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups; do
     if [ -d "$dir" ]; then
       output "✓ Data directory exists: $dir"
     else

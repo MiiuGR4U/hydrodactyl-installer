@@ -373,9 +373,9 @@ ask_skip_auto_config() {
 
   echo ""
   output "Auto-configuration will:"
-  output "  Ã¢â‚¬Â¢ Create a new location (or use existing) in your panel"
-  output "  Ã¢â‚¬Â¢ Create a new node in your panel"
-  output "  Ã¢â‚¬Â¢ Automatically configure Wings with the new node"
+  output "  • Create a new location (or use existing) in your panel"
+  output "  • Create a new node in your panel"
+  output "  • Automatically configure Wings with the new node"
   echo ""
 
   bool_input skip_auto "Would you like to skip auto-configuration and configure manually?" "n"
@@ -761,20 +761,20 @@ configure_firewall() {
     fi
 
     output "Opening ports for Wings daemon and game servers..."
-    output "  Ã¢â‚¬Â¢ 22 (SSH)"
-    output "  Ã¢â‚¬Â¢ 80 (HTTP - needed for certbot renewal)"
+    output "  • 22 (SSH)"
+    output "  • 80 (HTTP - needed for certbot renewal)"
     if [ "$CONFIGURE_LETSENCRYPT" == true ] || [ "$ASSUME_SSL" == true ] || [ -n "$SSL_CERT_PATH" ]; then
-      output "  Ã¢â‚¬Â¢ 443 (HTTPS/SSL)"
+      output "  • 443 (HTTPS/SSL)"
     fi
-    output "  Ã¢â‚¬Â¢ 8080 (Wings API)"
-    output "  Ã¢â‚¬Â¢ 2022 (SFTP)"
-    output "  Ã¢â‚¬Â¢ 25565-25665 (Minecraft)"
-    output "  Ã¢â‚¬Â¢ 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
-    output "  Ã¢â‚¬Â¢ 7777-8000 (Unreal Engine - ARK, Satisfactory)"
-    output "  Ã¢â‚¬Â¢ 28015-28025 (Rust)"
-    output "  Ã¢â‚¬Â¢ 2456-2466 (Valheim)"
-    output "  Ã¢â‚¬Â¢ 30120-30130 (FiveM/GTA)"
-    output "  Ã¢â‚¬Â¢ ${GAME_PORT_START}-${GAME_PORT_END} (Additional range)"
+    output "  • 8080 (Wings API)"
+    output "  • 2022 (SFTP)"
+    output "  • 25565-25665 (Minecraft)"
+    output "  • 27015-27150 (Source Engine - CS:GO, TF2, GMod)"
+    output "  • 7777-8000 (Unreal Engine - ARK, Satisfactory)"
+    output "  • 28015-28025 (Rust)"
+    output "  • 2456-2466 (Valheim)"
+    output "  • 30120-30130 (FiveM/GTA)"
+    output "  • ${GAME_PORT_START}-${GAME_PORT_END} (Additional range)"
 
     # Configure firewall with all game ports
     # Pass SSL flag so port 443 is opened when SSL is configured
@@ -949,9 +949,9 @@ main() {
   echo ""
 
   if [ -f "${WINGS_INSTALL_DIR}/config.yml" ]; then
-    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
+  output "──────────────────────────────────────────────────────────────────────"
     output "  Connection Details"
-    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
+  output "──────────────────────────────────────────────────────────────────────"
     output "Panel URL: ${COLOR_BLUE_THEME}${PANEL_URL:-Not configured}${COLOR_NC}"
     output "Node ID: ${COLOR_BLUE_THEME}${NODE_ID:-Not configured}${COLOR_NC}"
     if [ -n "$PANEL_API_KEY" ]; then
@@ -990,9 +990,9 @@ main() {
     output "  ${COLOR_BLUE_THEME}journalctl -u wings -f${COLOR_NC}   - View logs"
     echo ""
 
-    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
+  output "──────────────────────────────────────────────────────────────────────"
     output "  Manual Reconfiguration"
-    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
+  output "──────────────────────────────────────────────────────────────────────"
     output "If you need to reconfigure Wings manually, run:"
     output ""
     output "  ${COLOR_BLUE_THEME}cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
@@ -1004,9 +1004,9 @@ main() {
     output "  ${COLOR_BLUE_THEME}configure_wings '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
     echo ""
   else
-    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
+  output "──────────────────────────────────────────────────────────────────────"
     output "  Configuration Required"
-    output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
+  output "──────────────────────────────────────────────────────────────────────"
     output "Wings is installed but NOT configured."
     output ""
     output "The config directory has been created at ${WINGS_INSTALL_DIR}."
