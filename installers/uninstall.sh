@@ -98,8 +98,8 @@ remove_wings() {
 
     # Stop and remove service
     output "Stopping Wings service..."
-    systemctl stop Wings 2>/dev/null || true
-    systemctl disable Wings 2>/dev/null || true
+    systemctl stop wings 2>/dev/null || true
+    systemctl disable wings 2>/dev/null || true
 
     # Remove binary
     output "Removing Wings binary..."

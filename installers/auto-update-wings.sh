@@ -293,7 +293,7 @@ cleanup_old_backups() {
 stop_wings() {
   info "Stopping Wings service..."
   if systemctl is-active --quiet wings 2>/dev/null; then
-    systemctl stop Wings
+    systemctl stop wings
     sleep 2
     success "Wings stopped"
   else

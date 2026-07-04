@@ -162,7 +162,7 @@ check_existing() {
     fi
 
     # Stop services if they exist
-    systemctl stop Wings 2>/dev/null || true
+    systemctl stop wings 2>/dev/null || true
     systemctl stop pteroq 2>/dev/null || true
   fi
 }

@@ -281,7 +281,7 @@ check_existing() {
     fi
 
     # Stop existing service
-    systemctl stop Wings 2>/dev/null || true
+    systemctl stop wings 2>/dev/null || true
   fi
 }
 
