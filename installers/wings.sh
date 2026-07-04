@@ -825,7 +825,7 @@ main() {
       # User wants auto-configuration
       local _node_name="${NODE_NAME:-}"
       [ -z "$_node_name" ] && _node_name="Wings-Node-$(hostname -s)"
-      if auto_configure_wings "$PANEL_API_KEY" "$PANEL_URL" "$_node_name"; then
+      if auto_configure_wings "$PANEL_API_KEY" "$PANEL_URL" "https" "${NODE_NAME:-}"; then
         success "Wings auto-configured via API"
       else
         error "Auto-configuration failed."
@@ -900,7 +900,7 @@ main() {
       echo ""
 
       if [ "$config_method" == "0" ]; then
-        auto_configure_wings "$PANEL_API_KEY" "$PANEL_URL" "$scheme"
+        auto_configure_wings "$PANEL_API_KEY" "$PANEL_URL" "$scheme" "${NODE_NAME:-}"
         if [ $? -eq 0 ]; then
           configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
         else
