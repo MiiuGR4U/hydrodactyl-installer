@@ -1038,7 +1038,7 @@ main() {
   read -r
 
   # Show completion screen
-  show_Wings_completion "install"
+  show_wings_completion "install"
 
   # Run health check only if configured
   if [ -f "${WINGS_INSTALL_DIR}/config.yml" ]; then
