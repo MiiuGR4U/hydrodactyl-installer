@@ -1743,19 +1743,28 @@ setup_swap() {
   # If memory is less than ~3GB (3000000 kB) and swap is less than ~2GB (2000000 kB)
   if [ "$total_mem" -lt 3000000 ] && [ "$total_swap" -lt 2000000 ]; then
     warning "System has less than 3GB of RAM and insufficient Swap."
-    output "Creating a 2GB swap file to prevent out-of-memory errors during build..."
     
-    fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
-    chmod 600 /swapfile
-    mkswap /swapfile
-    swapon /swapfile
-    
-    # Add to fstab if not already present
-    if ! grep -q "/swapfile" /etc/fstab; then
-      echo "/swapfile none swap sw 0 0" >> /etc/fstab
+    local free_space
+    free_space=$(df -k / | awk 'NR==2 {print $4}')
+    if [ "$free_space" -lt 2500000 ]; then
+      warning "Not enough disk space (need 2.5GB) to create a 2GB swap file. Skipping swap creation."
+    else
+      output "Creating a 2GB swap file to prevent out-of-memory errors during build..."
+      
+      fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 2>/dev/null || true
+      if [ -f /swapfile ]; then
+        chmod 600 /swapfile || true
+        mkswap /swapfile || true
+        swapon /swapfile || true
+        
+        # Add to fstab if not already present
+        if ! grep -q "/swapfile" /etc/fstab; then
+          echo "/swapfile none swap sw 0 0" >> /etc/fstab
+        fi
+        
+        success "2GB Swap file created and activated."
+      fi
     fi
-    
-    success "2GB Swap file created and activated."
   else
     output "System has sufficient memory/swap. Skipping swap creation."
   fi
