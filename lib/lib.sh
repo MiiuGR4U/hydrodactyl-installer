@@ -2211,6 +2211,16 @@ selinux_allow() {
     setsebool -P httpd_execmem 1 2>/dev/null || true
     success "SELinux configured"
   fi
+
+  if command -v setenforce >/dev/null 2>&1; then
+    if getenforce 2>/dev/null | grep -qi "enforcing"; then
+      output "Setting SELinux to permissive mode (required for Docker volumes)..."
+      setenforce 0 2>/dev/null || true
+      if [ -f "/etc/selinux/config" ]; then
+        sed -i 's/^SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
+      fi
+    fi
+  fi
 }
 
 # ------------------ Cron Functions ----------------- #
@@ -3810,49 +3820,48 @@ auto_fix_wings_issues() {
 
   # Fix data directory permissions
   info "Fixing data directory permissions..."
-  mkdir -p /var/lib/wings/volumes /var/lib/wings/archives /var/lib/wings/backups
+  mkdir -p /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups
 
-  chown -R 8888:8888 /var/lib/wings/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/wings/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/wings/backups 2>/dev/null || true
-  chown -R 8888:8888 /etc/wings 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/volumes 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/archives 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/backups 2>/dev/null || true
+  chown -R 999:999 /etc/pterodactyl 2>/dev/null || true
 
   # Fix permissions
   info "Fixing Wings permissions..."
 
   # Create directories if they don't exist
-  mkdir -p /var/lib/wings/volumes /var/lib/wings/archives /var/lib/wings/backups
+  mkdir -p /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups
 
   # Set permissions for containerized game servers
   # Note: 777 is required because game server containers run as arbitrary UIDs
   # and must be able to read/write/execute in these directories
   info "Setting 777 permissions on data directories for container access..."
-  # Ensure parent /var/lib/wings is accessible
-  chmod 755 /var/lib/wings 2>/dev/null || true
+  # Ensure parent /var/lib/pterodactyl is accessible
+  chmod 755 /var/lib/pterodactyl 2>/dev/null || true
   # Ensure the volumes directory itself and all contents have 777
-  chmod 777 /var/lib/wings/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/wings/volumes/* 2>/dev/null || true
-  chmod 777 /var/lib/wings/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/wings/archives/* 2>/dev/null || true
-  chmod 777 /var/lib/wings/backups 2>/dev/null || true
-  chmod -R 777 /var/lib/wings/backups/* 2>/dev/null || true
+  chmod 777 /var/lib/pterodactyl/volumes 2>/dev/null || true
+  chmod -R 777 /var/lib/pterodactyl/volumes/* 2>/dev/null || true
+  chmod 777 /var/lib/pterodactyl/archives 2>/dev/null || true
+  chmod -R 777 /var/lib/pterodactyl/archives/* 2>/dev/null || true
+  chmod 777 /var/lib/pterodactyl/backups 2>/dev/null || true
+  chmod -R 777 /var/lib/pterodactyl/backups/* 2>/dev/null || true
 
   # Set ACL default permissions so new directories inherit 777
   if command -v setfacl >/dev/null 2>&1; then
     info "Setting default ACL permissions for new files..."
-    setfacl -R -m d:o:rx /var/lib/wings/volumes 2>/dev/null || true
-    setfacl -R -m d:g:rx /var/lib/wings/volumes 2>/dev/null || true
+    setfacl -R -m d:o:rx /var/lib/pterodactyl/volumes 2>/dev/null || true
+    setfacl -R -m d:g:rx /var/lib/pterodactyl/volumes 2>/dev/null || true
   fi
 
   # Disable check_permissions_on_boot in Wings config to prevent permission resets
-  if [ -f "/etc/wings/config.yml" ]; then
+  if [ -f "/etc/pterodactyl/config.yml" ]; then
     info "Disabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/wings/config.yml 2>/dev/null || true
   fi
 
   # Wings config directory - create if needed and set more restrictive permissions
-  mkdir -p /etc/wings
-  find /etc/wings -type d -exec chmod 755 {} \; 2>/dev/null || true
+  mkdir -p /etc/pterodactyl
+  find /etc/pterodactyl -type d -exec chmod 755 {} \; 2>/dev/null || true
   # SECURITY: Config contains daemon credentials - restrict to owner-only
   find /etc/wings -type f -name "config.yml" -exec chmod 600 {} \; 2>/dev/null || true
   find /etc/wings -type f ! -name "config.yml" -exec chmod 640 {} \; 2>/dev/null || true
