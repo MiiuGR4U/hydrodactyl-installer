@@ -46,7 +46,7 @@ SSL_KEY_PATH=""
 SSL_EMAIL=""
 BEHIND_PROXY=false
 FQDN=""
-WINGS_INSTALL_DIR="/etc/Wings"
+WINGS_INSTALL_DIR="/etc/pterodactyl"
 
 # ------------------ Repository Configuration ----------------- #
 

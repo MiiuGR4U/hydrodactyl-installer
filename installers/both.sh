@@ -82,7 +82,7 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
 # Paths
 INSTALL_DIR="${INSTALL_DIR:-/var/www/Hydrodactyl}"
-Wings_DIR="${Wings_DIR:-/etc/Wings}"
+WINGS_DIR="${WINGS_DIR:-/etc/pterodactyl}"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/hydrodactyl}"
 
 # Node ID (will be set during installation)
@@ -588,7 +588,9 @@ create_node_in_panel() {
 
   # Check if we have API key for API-based creation
   if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_FQDN" ]; then
-    local panel_url="https://${PANEL_FQDN}"
+    local panel_url="http://${PANEL_FQDN}"
+    [ "$ASSUME_SSL" == true ] && panel_url="https://${PANEL_FQDN}"
+    [ "$CONFIGURE_LETSENCRYPT" == true ] && panel_url="https://${PANEL_FQDN}"
 
     # Step 1: Detect country and get/create location
     output "Detecting server location..."
@@ -683,7 +685,7 @@ install_Wings_daemon() {
   install_docker
 
   # Create directories
-  mkdir -p "$Wings_DIR"
+  mkdir -p "$WINGS_DIR"
   mkdir -p "$PANEL_CONFIG_DIR"
   mkdir -p /var/lib/Wings/volumes
   mkdir -p /var/lib/Wings/archives
@@ -743,25 +745,27 @@ install_Wings_daemon() {
   chmod 644 /etc/hydrodactyl/Wings-version
 
   # Create Wings config directory
-  output "Creating Wings config directory at ${Wings_DIR}..."
-  mkdir -p "${Wings_DIR}"
-  if [ ! -d "${Wings_DIR}" ]; then
-    error "Failed to create Wings config directory at ${Wings_DIR}"
+  output "Creating Wings config directory at ${WINGS_DIR}..."
+  mkdir -p "${WINGS_DIR}"
+  if [ ! -d "${WINGS_DIR}" ]; then
+    error "Failed to create Wings config directory at ${WINGS_DIR}"
     exit 1
   fi
 
   # Determine panel URL - always use HTTPS for API
-  local panel_url="https://${PANEL_FQDN}"
+  local panel_url="http://${PANEL_FQDN}"
+    [ "$ASSUME_SSL" == true ] && panel_url="https://${PANEL_FQDN}"
+    [ "$CONFIGURE_LETSENCRYPT" == true ] && panel_url="https://${PANEL_FQDN}"
 
   # Debug output
   output "DEBUG: Wings configuration values:"
   output "DEBUG: NODE_ID=${NODE_ID}"
   output "DEBUG: PANEL_FQDN=${PANEL_FQDN}"
-  output "DEBUG: Wings_DIR=${Wings_DIR}"
+  output "DEBUG: WINGS_DIR=${WINGS_DIR}"
 
   # Configure Wings using the official configure command
   output "Configuring Wings using 'wings configure' command..."
-  cd "${Wings_DIR}" && wings configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
+  cd "${WINGS_DIR}" && wings configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
 
   if [ $? -ne 0 ]; then
     error "Failed to configure Wings"
@@ -772,22 +776,22 @@ install_Wings_daemon() {
 
   # Disable permission checking to prevent Wings from resetting permissions
   output "Disabling permission checks in Wings config..."
-  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${Wings_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${WINGS_DIR}/config.yml" 2>/dev/null || true
 
   # Update container limits for better game server compatibility
   output "Updating container limits in Wings config..."
-  sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${Wings_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${WINGS_DIR}/config.yml" 2>/dev/null || true
   # Update installer_limits memory and cpu values
-  sed -i 's/memory: 1024/memory: 2048/' "${Wings_DIR}/config.yml" 2>/dev/null || true
-  sed -i 's/cpu: 100/cpu: 200/' "${Wings_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/memory: 1024/memory: 2048/' "${WINGS_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/cpu: 100/cpu: 200/' "${WINGS_DIR}/config.yml" 2>/dev/null || true
 
   # Configure SSL for Wings using Let's Encrypt certificates
   output "Configuring SSL for Wings..."
   if [ -f "/etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/${PANEL_FQDN}/privkey.pem" ]; then
     # Enable SSL and set certificate paths
-    sed -i 's/enabled: false/enabled: true/' "${Wings_DIR}/config.yml"
-    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem|" "${Wings_DIR}/config.yml"
-    sed -i "s|key: .*|key: /etc/letsencrypt/live/${PANEL_FQDN}/privkey.pem|" "${Wings_DIR}/config.yml"
+    sed -i 's/enabled: false/enabled: true/' "${WINGS_DIR}/config.yml"
+    sed -i "s|certificate: .*|certificate: /etc/letsencrypt/live/${PANEL_FQDN}/fullchain.pem|" "${WINGS_DIR}/config.yml"
+    sed -i "s|key: .*|key: /etc/letsencrypt/live/${PANEL_FQDN}/privkey.pem|" "${WINGS_DIR}/config.yml"
     success "SSL configured for Wings using Let's Encrypt certificates"
   else
     warning "Let's Encrypt certificates not found, SSL may need manual configuration"
@@ -825,7 +829,7 @@ install_Wings_daemon() {
   mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
 
   output "Setting final permissions on Wings data directories..."
-  chown -R 8888:8888 /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups "$Wings_DIR" 2>/dev/null || true
+  chown -R 8888:8888 /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups "$WINGS_DIR" 2>/dev/null || true
 
   # Set full permissions so containers can read/write/execute
   # Note: 777 is required for containerized game servers to access these directories
@@ -838,13 +842,13 @@ install_Wings_daemon() {
   chmod -R 777 /var/lib/Wings/archives/* 2>/dev/null || true
   chmod 777 /var/lib/Wings/backups 2>/dev/null || true
   chmod -R 777 /var/lib/Wings/backups/* 2>/dev/null || true
-  chmod -R 755 "$Wings_DIR" 2>/dev/null || true
-  [ -f "$Wings_DIR/config.yml" ] && chmod 600 "$Wings_DIR/config.yml" 2>/dev/null || true
+  chmod -R 755 "$WINGS_DIR" 2>/dev/null || true
+  [ -f "$WINGS_DIR/config.yml" ] && chmod 600 "$WINGS_DIR/config.yml" 2>/dev/null || true
 
   # Disable check_permissions_on_boot to prevent Wings from resetting permissions
-  if [ -f "$Wings_DIR/config.yml" ]; then
+  if [ -f "$WINGS_DIR/config.yml" ]; then
     output "Disabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$Wings_DIR/config.yml" 2>/dev/null || true
+    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "$WINGS_DIR/config.yml" 2>/dev/null || true
   fi
 
   # Run auto-fix to ensure proper permissions (fixes container access issues)
@@ -975,7 +979,9 @@ main() {
 
     if [ -n "$ALLOCATION_ID" ]; then
       # Determine panel URL - always use HTTPS for API
-      PANEL_URL="https://${PANEL_FQDN}"
+      PANEL_URL="http://${PANEL_FQDN}"
+      [ "$ASSUME_SSL" == true ] && PANEL_URL="https://${PANEL_FQDN}"
+      [ "$CONFIGURE_LETSENCRYPT" == true ] && PANEL_URL="https://${PANEL_FQDN}"
 
       # Create the server
       if create_minecraft_server "$PANEL_URL" "$PANEL_API_KEY" "$NODE_ID" "$LOCATION_ID" "$ALLOCATION_ID"; then
@@ -1075,7 +1081,7 @@ main() {
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "If you need to reconfigure Wings manually, run:"
   output ""
-  output "  ${COLOR_BLUE_THEME}cd /etc/Wings && sudo wings configure \\"
+  output "  ${COLOR_BLUE_THEME}cd /etc/pterodactyl && sudo wings configure \\"
   output "    --panel-url 'https://${PANEL_FQDN}' \\"
   output "    --token '<your-api-key>' \\"
   output "    --node '${NODE_ID}'${COLOR_NC}"

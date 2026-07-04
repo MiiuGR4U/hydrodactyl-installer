@@ -197,7 +197,7 @@ parse_arguments "$@"
 
 # Installation paths
 # Use WINGS_INSTALL_DIR to avoid collision with lib.sh's INSTALL_DIR (which is /var/www/Hydrodactyl for the panel)
-WINGS_INSTALL_DIR="/etc/Wings"
+WINGS_INSTALL_DIR="/etc/pterodactyl"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/hydrodactyl}"
 WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
 
