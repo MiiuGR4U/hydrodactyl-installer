@@ -21,7 +21,7 @@ KillMode=process
 
 # Memory leak prevention: restart worker after 1 hour or 1000 jobs
 # This prevents memory leaks from long-running PHP processes
-ExecStart=/usr/bin/php /var/www/Hydrodactyl/artisan queue:work --queue=high,standard,low --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000 --memory=512
+ExecStart=/usr/bin/php /var/www/hydrodactyl/artisan queue:work --queue=high,standard,low --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000 --memory=512
 
 # Make this process less likely to be killed by OOM killer
 OOMScoreAdjust=-100
