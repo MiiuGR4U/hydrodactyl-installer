@@ -512,6 +512,7 @@ export_variables() {
   export PANEL_INSTALL_METHOD
   export PANEL_RELEASE_VERSION
   export PANEL_FQDN
+  export FQDN="$PANEL_FQDN"
   export PANEL_TIMEZONE
   export PANEL_ADMIN_EMAIL
   export PANEL_ADMIN_USERNAME
