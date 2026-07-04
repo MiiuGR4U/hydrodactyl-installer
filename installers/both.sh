@@ -611,7 +611,12 @@ create_node_in_panel() {
       memory_mb=$(get_system_memory)
       disk_mb=$(df -m / | awk 'NR==2 {print $2}')
 
-      if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY" "$PANEL_FQDN"); then
+      local node_scheme="https"
+      if [ "$ASSUME_SSL" == "false" ] && [ "$CONFIGURE_LETSENCRYPT" != "true" ]; then
+        node_scheme="http"
+      fi
+
+      if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY" "$PANEL_FQDN" "$node_scheme"); then
         error "Failed to create node via API, falling back to manual method"
         # Fall through to manual method below
       else
