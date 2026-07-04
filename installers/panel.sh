@@ -417,7 +417,12 @@ configure_panel() {
 
   # Generate application key
   output "Generating application key..."
-  php artisan key:generate --force
+  if grep -q "^APP_KEY=" .env; then
+    sed -i "s|^APP_KEY=.*$|APP_KEY=base64:$(head -c 32 /dev/urandom | base64 | tr -d '\n')|g" .env
+  else
+    echo "APP_KEY=base64:$(head -c 32 /dev/urandom | base64 | tr -d '\n')" >> .env
+  fi
+  php artisan config:clear || true
 
   # Determine app URL
   local app_url="http://$PANEL_FQDN"
