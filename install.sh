@@ -199,7 +199,7 @@ load_library() {
 
   output "Loading installer library..."
 
-  if ! curl -sSL -o /tmp/hydrodactyl-lib.sh "$GITHUB_BASE_URL/$GITHUB_SOURCE/lib/lib.sh"; then
+  if ! curl -sSL -o /tmp/hydrodactyl-lib.sh "$GITHUB_BASE_URL/$GITHUB_SOURCE/lib/lib.sh?v=$RANDOM"; then
     error "Failed to download installer library."
     error "Please check your internet connection and try again."
     exit 1
