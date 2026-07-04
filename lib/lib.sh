@@ -1815,6 +1815,7 @@ build_panel_assets() {
 
   # Build frontend assets
   output "Building frontend assets..."
+  export NODE_OPTIONS="--max_old_space_size=4096"
   pnpm run build
 
   success "Frontend assets built successfully"
