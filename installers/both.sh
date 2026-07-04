@@ -1115,7 +1115,7 @@ main() {
   save_panel_install_info "install"
 
   # Save Wings installation information
-  save_Wings_install_info "install"
+  save_wings_install_info "install"
 
   # Show completion screen
   show_both_completion

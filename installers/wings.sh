@@ -1006,7 +1006,7 @@ main() {
   print_brake 70
 
   # Save installation information
-  save_Wings_install_info "install"
+  save_wings_install_info "install"
 
   # Pause to let user review logs before showing completion screen
   echo ""
