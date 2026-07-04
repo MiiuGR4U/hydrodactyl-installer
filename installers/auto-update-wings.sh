@@ -28,7 +28,7 @@ fi
 # Default config (can be overridden by /etc/hydrodactyl/auto-update-Wings.env)
 WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
-INSTALL_DIR="${INSTALL_DIR:-/etc/Wings}"
+INSTALL_DIR="${INSTALL_DIR:-/etc/pterodactyl}"
 LOG_FILE="${LOG_FILE:-/var/log/Hydrodactyl-Wings-auto-update.log}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/Wings}"
 LOCK_FILE="${LOCK_FILE:-/var/run/Hydrodactyl-Wings-update.lock}"
@@ -524,7 +524,7 @@ EOF
         echo "- Wings config file not found" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
 
-      for dir in /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups; do
+      for dir in /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups; do
         if [ ! -d "$dir" ]; then
           echo "- Data directory missing: $dir" >> "$INSTALL_DIR/update-health-check-failure.log"
         fi
@@ -593,7 +593,7 @@ post_update_health_check() {
   fi
 
   debug "Checking data directories..."
-  for dir in /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups; do
+  for dir in /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups; do
     if [ ! -d "$dir" ]; then
       warning "Data directory missing: $dir"
       has_errors=true
@@ -631,45 +631,51 @@ auto_fix_Wings_issues() {
 
   # Fix data directory permissions
   info "Fixing data directory permissions..."
-  mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
+  mkdir -p /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups
 
-  chown -R 8888:8888 /var/lib/Wings/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/Wings/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/Wings/backups 2>/dev/null || true
-  chown -R 8888:8888 /etc/Wings 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/volumes 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/archives 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/backups 2>/dev/null || true
+  chown -R 999:999 /etc/pterodactyl 2>/dev/null || true
 
   # Fix permissions
   info "Fixing Wings permissions..."
   
   # Create directories if they don't exist
-  mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
+  mkdir -p /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups
   
   # Set permissions for containerized game servers
-  # Note: 777 is required because game server containers run as arbitrary UIDs
-  # and must be able to read/write/execute in these directories
-  info "Setting 777 permissions on data directories for container access..."
-  # Ensure parent /var/lib/Wings is accessible
-  chmod 755 /var/lib/Wings 2>/dev/null || true
-  # Ensure the volumes directory itself and all contents have 777
-  chmod 777 /var/lib/Wings/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/volumes/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/archives/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/backups 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/backups/* 2>/dev/null || true
+  # Note: Pterodactyl daemon runs containers as 999:999 by default.
+  # We should use standard permissions and let Wings handle volume ownership.
+  info "Setting standard permissions on data directories for container access..."
+  # Ensure parent /var/lib/pterodactyl is accessible
+  chmod 755 /var/lib/pterodactyl 2>/dev/null || true
+  
+  # Ensure the volumes directory has standard permissions
+  chmod 755 /var/lib/pterodactyl/volumes 2>/dev/null || true
+  chmod 755 /var/lib/pterodactyl/archives 2>/dev/null || true
+  chmod 755 /var/lib/pterodactyl/backups 2>/dev/null || true
+
+  # Remove any broken ACLs set by previous versions of the script
+  if command -v setfacl >/dev/null 2>&1; then
+    info "Cleaning up ACL permissions..."
+    setfacl -R -b /var/lib/pterodactyl/volumes 2>/dev/null || true
+    setfacl -R -b /var/lib/pterodactyl/archives 2>/dev/null || true
+    setfacl -R -b /var/lib/pterodactyl/backups 2>/dev/null || true
+  fi
   
   # Disable check_permissions_on_boot to prevent Wings from resetting permissions
-  if [ -f "/etc/Wings/config.yml" ]; then
+  if [ -f "/etc/pterodactyl/config.yml" ]; then
     info "Disabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/Wings/config.yml 2>/dev/null || true
+    sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' /etc/pterodactyl/config.yml 2>/dev/null || true
   fi
   
   # Wings config directory - create if needed and set more restrictive permissions
-  mkdir -p /etc/Wings
-  find /etc/Wings -type d -exec chmod 755 {} \; 2>/dev/null || true
+  mkdir -p /etc/pterodactyl
+  find /etc/pterodactyl -type d -exec chmod 755 {} \; 2>/dev/null || true
   # SECURITY: Config contains daemon credentials - restrict to owner-only
-  find /etc/Wings -type f -name "config.yml" -exec chmod 600 {} \; 2>/dev/null || true
-  find /etc/Wings -type f ! -name "config.yml" -exec chmod 640 {} \; 2>/dev/null || true
+  find /etc/pterodactyl -type f -name "config.yml" -exec chmod 600 {} \; 2>/dev/null || true
+  find /etc/pterodactyl -type f ! -name "config.yml" -exec chmod 640 {} \; 2>/dev/null || true
 
   # Restart Wings service
   info "Restarting Wings service..."
