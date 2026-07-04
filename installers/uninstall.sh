@@ -58,11 +58,43 @@ remove_panel() {
         certbot delete --cert-name "$(hostname -f)" 2>/dev/null || true
     fi
 
+    # Remove Panel install info
+    rm -f /etc/hydrodactyl/install-info/panel-info
+
     success "Panel removed"
 }
 
 remove_wings() {
     print_flame "Removing Wings"
+
+    # Attempt to remove Node from Panel
+    if [ -f "/etc/hydrodactyl/install-info/wings-info" ]; then
+        output "Attempting to remove Node from Panel via API..."
+        local api_key panel_url node_id
+        api_key=$(grep -m1 '^API_KEY=' "/etc/hydrodactyl/install-info/wings-info" | cut -d'"' -f2 || true)
+        panel_url=$(grep -m1 '^PANEL_URL=' "/etc/hydrodactyl/install-info/wings-info" | cut -d'"' -f2 || true)
+        node_id=$(grep -m1 '^NODE_ID=' "/etc/hydrodactyl/install-info/wings-info" | cut -d'"' -f2 || true)
+        
+        if [ -n "$api_key" ] && [ -n "$panel_url" ] && [ -n "$node_id" ]; then
+            panel_url="${panel_url%/}"
+            local status_code
+            status_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$panel_url/api/application/nodes/$node_id" \
+                -H "Authorization: Bearer $api_key" \
+                -H "Accept: application/json")
+            
+            if [ "$status_code" == "204" ] || [ "$status_code" == "200" ]; then
+                success "Node successfully removed from Panel"
+            elif [ "$status_code" == "400" ]; then
+                warning "Could not remove Node from Panel (Status 400). It may have active servers attached."
+            elif [ "$status_code" == "404" ]; then
+                success "Node already removed or not found in Panel"
+            else
+                warning "Failed to remove Node from Panel. API returned status: $status_code"
+            fi
+        else
+            warning "Missing API credentials in wings-info file, skipping Node removal from Panel."
+        fi
+    fi
 
     # Stop and remove service
     output "Stopping Wings service..."
@@ -94,8 +126,9 @@ remove_wings() {
         rm -rf /var/lib/pterodactyl
     fi
 
-    # Remove Wings version file
+    # Remove Wings install info and version
     rm -f /etc/hydrodactyl/Wings-version
+    rm -f /etc/hydrodactyl/install-info/wings-info
 
     # Remove Hydrodactyl user (if it exists)
     if id -u Hydrodactyl >/dev/null 2>&1; then
