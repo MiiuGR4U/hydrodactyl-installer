@@ -60,7 +60,7 @@ detect_installed_components() {
     PANEL_INSTALLED=true
   fi
 
-  if [ -f "/usr/local/bin/Wings" ]; then
+  if [ -f "/usr/local/bin/wings" ]; then
     WINGS_INSTALLED=true
   fi
 
@@ -207,7 +207,7 @@ confirm_uninstall() {
   if [ "$REMOVE_Wings" == true ]; then
     echo ""
     output "Wings removal includes:"
-    output "  - Wings binary (/usr/local/bin/Wings)"
+    output "  - Wings binary (/usr/local/bin/wings)"
     output "  - Wings configuration (/etc/Wings)"
     output "  - Systemd service (Wings)"
     output "  - Docker containers (game servers will be stopped)"
@@ -257,7 +257,7 @@ main() {
     echo ""
     output "If you believe this is an error, you may need to manually remove:"
     output "  - /var/www/Hydrodactyl (Panel files)"
-    output "  - /usr/local/bin/Wings (Wings binary)"
+    output "  - /usr/local/bin/wings (Wings binary)"
     output "  - /etc/Wings (Wings configuration)"
     exit 0
   fi

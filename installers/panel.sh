@@ -284,9 +284,9 @@ install_panel_release() {
 
   # Save version from GitHub release tag to persistent location
   output "Recording version from GitHub: $release_tag"
-  mkdir -p /etc/Hydrodactyl
-  echo "$release_tag" > /etc/Hydrodactyl/panel-version
-  chmod 644 /etc/Hydrodactyl/panel-version
+  mkdir -p /etc/hydrodactyl
+  echo "$release_tag" > /etc/hydrodactyl/panel-version
+  chmod 644 /etc/hydrodactyl/panel-version
 
   output "Creating installation directory..."
   mkdir -p "$INSTALL_DIR"
@@ -388,9 +388,9 @@ install_panel_clone() {
   local commit_hash
   commit_hash=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
   output "Recording git commit hash: ${commit_hash:0:8}"
-  mkdir -p /etc/Hydrodactyl
-  echo "git:${commit_hash}" > /etc/Hydrodactyl/panel-version
-  chmod 644 /etc/Hydrodactyl/panel-version
+  mkdir -p /etc/hydrodactyl
+  echo "git:${commit_hash}" > /etc/hydrodactyl/panel-version
+  chmod 644 /etc/hydrodactyl/panel-version
 
   cp .env.example .env
 

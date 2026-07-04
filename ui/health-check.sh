@@ -142,8 +142,8 @@ detect_panel_location() {
 }
 
 detect_Wings_binary() {
-  if [ -f "/usr/local/bin/Wings" ]; then
-    echo "/usr/local/bin/Wings"
+  if [ -f "/usr/local/bin/wings" ]; then
+    echo "/usr/local/bin/wings"
     return 0
   fi
 

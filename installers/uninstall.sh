@@ -60,7 +60,7 @@ remove_Wings() {
 
     # Remove binary
     output "Removing Wings binary..."
-    rm -f /usr/local/bin/Wings
+    rm -f /usr/local/bin/wings
 
     # Remove configuration
     if [ -d "$Wings_DIR" ]; then
@@ -74,7 +74,7 @@ remove_Wings() {
     docker ps -aq --filter "name=fly-" | xargs -r docker rm 2>/dev/null || true
 
     # Remove systemd service
-    rm -f /etc/systemd/system/Wings.service
+    rm -f /etc/systemd/system/wings.service
     systemctl daemon-reload
 
     # Remove Wings data directory
@@ -84,7 +84,7 @@ remove_Wings() {
     fi
 
     # Remove Wings version file
-    rm -f /etc/Hydrodactyl/Wings-version
+    rm -f /etc/hydrodactyl/Wings-version
 
     # Remove Hydrodactyl user (if it exists)
     if id -u Hydrodactyl >/dev/null 2>&1; then
@@ -109,9 +109,9 @@ remove_auto_updaters() {
     rm -rf /var/backups/Hydrodactyl
     rm -rf /var/backups/Wings
 
-    # Remove /etc/Hydrodactyl directory if empty
-    if [ -d "/etc/Hydrodactyl" ]; then
-        rmdir /etc/Hydrodactyl 2>/dev/null || true
+    # Remove /etc/hydrodactyl directory if empty
+    if [ -d "/etc/hydrodactyl" ]; then
+        rmdir /etc/hydrodactyl 2>/dev/null || true
     fi
 
     success "Auto-updaters removed"

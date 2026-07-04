@@ -83,7 +83,7 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 # Paths
 INSTALL_DIR="${INSTALL_DIR:-/var/www/Hydrodactyl}"
 Wings_DIR="${Wings_DIR:-/etc/Wings}"
-PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/Hydrodactyl}"
+PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/hydrodactyl}"
 
 # Node ID (will be set during installation)
 NODE_ID=""
@@ -280,9 +280,9 @@ install_panel_release() {
 
   # Save version from GitHub release tag to persistent location
   output "Recording version from GitHub: $release_tag"
-  mkdir -p /etc/Hydrodactyl
-  echo "$release_tag" > /etc/Hydrodactyl/panel-version
-  chmod 644 /etc/Hydrodactyl/panel-version
+  mkdir -p /etc/hydrodactyl
+  echo "$release_tag" > /etc/hydrodactyl/panel-version
+  chmod 644 /etc/hydrodactyl/panel-version
 
   output "Creating installation directory..."
   mkdir -p "$INSTALL_DIR"
@@ -398,9 +398,9 @@ install_panel_clone() {
   local commit_hash
   commit_hash=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
   output "Recording git commit hash: ${commit_hash:0:8}"
-  mkdir -p /etc/Hydrodactyl
-  echo "git:${commit_hash}" > /etc/Hydrodactyl/panel-version
-  chmod 644 /etc/Hydrodactyl/panel-version
+  mkdir -p /etc/hydrodactyl
+  echo "git:${commit_hash}" > /etc/hydrodactyl/panel-version
+  chmod 644 /etc/hydrodactyl/panel-version
 
   success "Panel cloned to $INSTALL_DIR"
 }
@@ -714,7 +714,7 @@ install_Wings_daemon() {
   arch=$(uname -m)
   [[ $arch == x86_64 ]] && arch=amd64 || arch=arm64
 
-  local asset_name="Wings_linux_${arch}"
+  local asset_name="wings_linux_${arch}"
 
   # Get latest release
   output "Fetching latest Wings release..."
@@ -730,17 +730,17 @@ install_Wings_daemon() {
 
   # Download binary
   output "Downloading Wings binary..."
-  if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/Wings" "$GITHUB_TOKEN"; then
+  if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/wings" "$GITHUB_TOKEN"; then
     error "Failed to download Wings binary"
     exit 1
   fi
 
-  chmod +x /usr/local/bin/Wings
+  chmod +x /usr/local/bin/wings
 
   # Save version from GitHub release tag for auto-updater tracking
-  mkdir -p /etc/Hydrodactyl
-  echo "$latest_release" > /etc/Hydrodactyl/Wings-version
-  chmod 644 /etc/Hydrodactyl/Wings-version
+  mkdir -p /etc/hydrodactyl
+  echo "$latest_release" > /etc/hydrodactyl/Wings-version
+  chmod 644 /etc/hydrodactyl/Wings-version
 
   # Create Wings config directory
   output "Creating Wings config directory at ${Wings_DIR}..."
@@ -760,15 +760,15 @@ install_Wings_daemon() {
   output "DEBUG: Wings_DIR=${Wings_DIR}"
 
   # Configure Wings using the official configure command
-  output "Configuring Wings using 'Wings configure' command..."
-  cd "${Wings_DIR}" && Wings configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
+  output "Configuring Wings using 'wings configure' command..."
+  cd "${Wings_DIR}" && wings configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
 
   if [ $? -ne 0 ]; then
     error "Failed to configure Wings"
     exit 1
   fi
 
-  output "DEBUG: Wings configured successfully"
+  output "DEBUG: wings configured successfully"
 
   # Disable permission checking to prevent Wings from resetting permissions
   output "Disabling permission checks in Wings config..."
@@ -793,7 +793,7 @@ install_Wings_daemon() {
     warning "Let's Encrypt certificates not found, SSL may need manual configuration"
   fi
 
-  # Step 4: Create allocations via API (after Wings configure)
+  # Step 4: Create allocations via API (after wings configure)
   output "Creating allocations via API..."
   create_node_allocations "$PANEL_API_KEY" "$panel_url" "$NODE_ID" "$GAME_PORT_START" "$GAME_PORT_END" || true
 
@@ -802,19 +802,19 @@ install_Wings_daemon() {
 
   # Get systemd service
   output "Setting up Wings service..."
-  if ! get_config "Wings.service" "/etc/systemd/system/Wings.service"; then
+  if ! get_config "wings.service" "/etc/systemd/system/wings.service"; then
     error "Failed to get Wings service file"
     exit 1
   fi
 
   systemctl daemon-reload
-  systemctl enable Wings
-  systemctl restart Wings
+  systemctl enable wings
+  systemctl restart wings
 
   # Wait for service to start
   sleep 3
 
-  if systemctl is-active --quiet Wings; then
+  if systemctl is-active --quiet wings; then
     success "Wings is running"
   else
     warning "Wings service may not have started properly"
@@ -1066,8 +1066,8 @@ main() {
 
   output "Service Commands:"
   output "  ${COLOR_BLUE_THEME}systemctl status pteroq${COLOR_NC}    - Panel queue worker"
-  output "  ${COLOR_BLUE_THEME}systemctl status Wings${COLOR_NC}    - Wings daemon"
-  output "  ${COLOR_BLUE_THEME}journalctl -u Wings -f${COLOR_NC}   - View Wings logs"
+  output "  ${COLOR_BLUE_THEME}systemctl status wings${COLOR_NC}    - Wings daemon"
+  output "  ${COLOR_BLUE_THEME}journalctl -u wings -f${COLOR_NC}   - View Wings logs"
   echo ""
 
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
@@ -1075,7 +1075,7 @@ main() {
   output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
   output "If you need to reconfigure Wings manually, run:"
   output ""
-  output "  ${COLOR_BLUE_THEME}cd /etc/Wings && sudo Wings configure \\"
+  output "  ${COLOR_BLUE_THEME}cd /etc/Wings && sudo wings configure \\"
   output "    --panel-url 'https://${PANEL_FQDN}' \\"
   output "    --token '<your-api-key>' \\"
   output "    --node '${NODE_ID}'${COLOR_NC}"

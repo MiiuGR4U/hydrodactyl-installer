@@ -20,20 +20,20 @@ set -e
 # ------------------ Configuration ----------------- #
 
 # Load environment file if it exists (for systemd service)
-if [ -f /etc/Hydrodactyl/auto-update-Wings.env ]; then
+if [ -f /etc/hydrodactyl/auto-update-Wings.env ]; then
   # shellcheck source=/dev/null
-  source /etc/Hydrodactyl/auto-update-Wings.env
+  source /etc/hydrodactyl/auto-update-Wings.env
 fi
 
-# Default config (can be overridden by /etc/Hydrodactyl/auto-update-Wings.env)
+# Default config (can be overridden by /etc/hydrodactyl/auto-update-Wings.env)
 WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 INSTALL_DIR="${INSTALL_DIR:-/etc/Wings}"
 LOG_FILE="${LOG_FILE:-/var/log/Hydrodactyl-Wings-auto-update.log}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/Wings}"
 LOCK_FILE="${LOCK_FILE:-/var/run/Hydrodactyl-Wings-update.lock}"
-CONFIG_FILE="${CONFIG_FILE:-/etc/Hydrodactyl/auto-update-Wings.env}"
-VERSION_FILE="${VERSION_FILE:-/etc/Hydrodactyl/Wings-version}"
+CONFIG_FILE="${CONFIG_FILE:-/etc/hydrodactyl/auto-update-Wings.env}"
+VERSION_FILE="${VERSION_FILE:-/etc/hydrodactyl/Wings-version}"
 KEEP_BACKUPS="${KEEP_BACKUPS:-5}"
 AUTO_UPDATE="${AUTO_UPDATE:-true}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-3600}"
@@ -166,9 +166,9 @@ get_current_version() {
   fi
 
   # Fall back to binary --version (for backwards compatibility)
-  if [ -x "/usr/local/bin/Wings" ]; then
+  if [ -x "/usr/local/bin/wings" ]; then
     local binary_version
-    binary_version=$(/usr/local/bin/Wings --version 2>/dev/null)
+    binary_version=$(/usr/local/bin/wings --version 2>/dev/null)
     if [ -n "$binary_version" ] && [ "$binary_version" != "unknown" ]; then
       echo "$binary_version"
       return 0
@@ -244,8 +244,8 @@ create_backup() {
 
   # Backup binary
   debug "Backing up Wings binary..."
-  if [ -f "/usr/local/bin/Wings" ]; then
-    cp "/usr/local/bin/Wings" "${backup_path}.binary" 2>/dev/null || {
+  if [ -f "/usr/local/bin/wings" ]; then
+    cp "/usr/local/bin/wings" "${backup_path}.binary" 2>/dev/null || {
       warning "Failed to backup binary"
     }
   fi
@@ -292,7 +292,7 @@ cleanup_old_backups() {
 
 stop_Wings() {
   info "Stopping Wings service..."
-  if systemctl is-active --quiet Wings 2>/dev/null; then
+  if systemctl is-active --quiet wings 2>/dev/null; then
     systemctl stop Wings
     sleep 2
     success "Wings stopped"
@@ -303,10 +303,10 @@ stop_Wings() {
 
 start_Wings() {
   info "Starting Wings service..."
-  systemctl start Wings
+  systemctl start wings
   sleep 3
 
-  if systemctl is-active --quiet Wings; then
+  if systemctl is-active --quiet wings; then
     success "Wings started successfully"
     return 0
   else
@@ -317,10 +317,10 @@ start_Wings() {
 
 restart_Wings() {
   info "Restarting Wings service..."
-  systemctl restart Wings
+  systemctl restart wings
   sleep 3
 
-  if systemctl is-active --quiet Wings; then
+  if systemctl is-active --quiet wings; then
     success "Wings restarted successfully"
     return 0
   else
@@ -339,7 +339,7 @@ get_download_url() {
   arch=$(uname -m)
   [[ $arch == x86_64 ]] && arch=amd64 || arch=arm64
 
-  local asset_name="Wings_linux_${arch}"
+  local asset_name="wings_linux_${arch}"
 
   # Get asset download URL from GitHub API
   local release_info
@@ -464,14 +464,14 @@ perform_update() {
 
   # Install new binary
   info "Installing new binary..."
-  if ! mv "$temp_file" "/usr/local/bin/Wings"; then
+  if ! mv "$temp_file" "/usr/local/bin/wings"; then
     error "Failed to install binary"
     rm -f "$temp_file"
     start_Wings || true
     return $EXIT_UPDATE_FAILED
   fi
 
-  chmod +x /usr/local/bin/Wings
+  chmod +x /usr/local/bin/wings
 
   # Start service
   if ! start_Wings; then
@@ -484,8 +484,8 @@ perform_update() {
 
     if [ -n "$latest_backup" ]; then
       info "Restoring from backup: $latest_backup"
-      cp "$latest_backup" "/usr/local/bin/Wings"
-      chmod +x "/usr/local/bin/Wings"
+      cp "$latest_backup" "/usr/local/bin/wings"
+      chmod +x "/usr/local/bin/wings"
       restart_Wings || true
     fi
 
@@ -514,9 +514,9 @@ Failed Checks:
 EOF
 
       # Append specific failed checks to log
-      if [ ! -f "/usr/local/bin/Wings" ]; then
+      if [ ! -f "/usr/local/bin/wings" ]; then
         echo "- Wings binary not found" >> "$INSTALL_DIR/update-health-check-failure.log"
-      elif [ ! -x "/usr/local/bin/Wings" ]; then
+      elif [ ! -x "/usr/local/bin/wings" ]; then
         echo "- Wings binary is not executable" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
 
@@ -534,7 +534,7 @@ EOF
         echo "- Docker is not running" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
 
-      if ! systemctl is-active --quiet Wings 2>/dev/null; then
+      if ! systemctl is-active --quiet wings 2>/dev/null; then
         echo "- Wings service is not running" >> "$INSTALL_DIR/update-health-check-failure.log"
       fi
 
@@ -551,8 +551,8 @@ EOF
       latest_backup=$(ls -t ${BACKUP_DIR}/Wings-backup-*.binary 2>/dev/null | head -1)
       if [ -n "$latest_backup" ]; then
         info "Restoring from backup: $latest_backup"
-        cp "$latest_backup" "/usr/local/bin/Wings"
-        chmod +x "/usr/local/bin/Wings"
+        cp "$latest_backup" "/usr/local/bin/wings"
+        chmod +x "/usr/local/bin/wings"
         restart_Wings || true
       fi
       
@@ -576,12 +576,12 @@ post_update_health_check() {
   local has_errors=false
 
   debug "Checking Wings binary..."
-  if [ ! -f "/usr/local/bin/Wings" ]; then
+  if [ ! -f "/usr/local/bin/wings" ]; then
     error "Wings binary not found"
     return 1
   fi
 
-  if [ ! -x "/usr/local/bin/Wings" ]; then
+  if [ ! -x "/usr/local/bin/wings" ]; then
     warning "Wings binary is not executable"
     has_errors=true
   fi
@@ -607,7 +607,7 @@ post_update_health_check() {
   fi
 
   debug "Checking Wings service..."
-  if ! systemctl is-active --quiet Wings 2>/dev/null; then
+  if ! systemctl is-active --quiet wings 2>/dev/null; then
     warning "Wings service is not running"
     has_errors=true
   fi
@@ -624,9 +624,9 @@ auto_fix_Wings_issues() {
   info "Attempting to auto-fix issues..."
 
   # Fix binary permissions
-  if [ -f "/usr/local/bin/Wings" ]; then
+  if [ -f "/usr/local/bin/wings" ]; then
     info "Fixing binary permissions..."
-    chmod +x /usr/local/bin/Wings
+    chmod +x /usr/local/bin/wings
   fi
 
   # Fix data directory permissions
@@ -673,11 +673,11 @@ auto_fix_Wings_issues() {
 
   # Restart Wings service
   info "Restarting Wings service..."
-  systemctl restart Wings 2>/dev/null || true
+  systemctl restart wings 2>/dev/null || true
 
   # Verify Wings started
   sleep 3
-  if systemctl is-active --quiet Wings 2>/dev/null; then
+  if systemctl is-active --quiet wings 2>/dev/null; then
     success "Wings is now running"
   else
     warning "Wings may still have issues - manual intervention may be required"
@@ -833,8 +833,8 @@ main() {
   fi
 
   # Check if Wings is installed
-  if [ ! -f "/usr/local/bin/Wings" ]; then
-    error "Wings not found at /usr/local/bin/Wings"
+  if [ ! -f "/usr/local/bin/wings" ]; then
+    error "Wings not found at /usr/local/bin/wings"
     exit $EXIT_ERROR
   fi
 

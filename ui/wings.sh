@@ -46,7 +46,7 @@ SSL_KEY_PATH=""
 SSL_EMAIL=""
 BEHIND_PROXY=false
 FQDN=""
-Wings_INSTALL_DIR="/etc/Wings"
+WINGS_INSTALL_DIR="/etc/Wings"
 
 # ------------------ Repository Configuration ----------------- #
 
@@ -370,7 +370,7 @@ export_variables() {
   export SSL_KEY_PATH
   export BEHIND_PROXY
   export FQDN
-  export Wings_INSTALL_DIR
+  export WINGS_INSTALL_DIR
 
   # Set ASSUME_SSL=true when SSL is configured (matches panel.sh/both.sh behavior)
   if [ "$CONFIGURE_LETSENCRYPT" == true ] || { [ -n "$SSL_CERT_PATH" ] && [ -n "$SSL_KEY_PATH" ]; }; then

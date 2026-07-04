@@ -91,7 +91,7 @@ main() {
   # Check for health check failure logs
   local has_health_check_failures=false
   
-  if [ -f "/etc/Hydrodactyl/update-health-check-failure.log" ]; then
+  if [ -f "/etc/hydrodactyl/update-health-check-failure.log" ]; then
     has_health_check_failures=true
   fi
   
@@ -110,10 +110,10 @@ main() {
     
     if [ "$view_health" == "y" ]; then
       echo ""
-      if [ -f "/etc/Hydrodactyl/update-health-check-failure.log" ]; then
+      if [ -f "/etc/hydrodactyl/update-health-check-failure.log" ]; then
         output "Panel Health Check Failure Log:"
         echo "---"
-        cat "/etc/Hydrodactyl/update-health-check-failure.log" 2>/dev/null || echo "Could not read file"
+        cat "/etc/hydrodactyl/update-health-check-failure.log" 2>/dev/null || echo "Could not read file"
         echo "---"
         echo ""
       fi

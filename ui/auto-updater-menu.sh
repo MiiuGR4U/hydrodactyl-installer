@@ -434,10 +434,10 @@ trigger_Wings_update() {
   local current_version="unknown"
   local latest_version="unknown"
   
-  if [ -f "/etc/Hydrodactyl/Wings-version" ]; then
-    current_version=$(cat "/etc/Hydrodactyl/Wings-version" 2>/dev/null || echo "unknown")
-  elif [ -x "/usr/local/bin/Wings" ]; then
-    current_version=$(/usr/local/bin/Wings --version 2>/dev/null || echo "unknown")
+  if [ -f "/etc/hydrodactyl/Wings-version" ]; then
+    current_version=$(cat "/etc/hydrodactyl/Wings-version" 2>/dev/null || echo "unknown")
+  elif [ -x "/usr/local/bin/wings" ]; then
+    current_version=$(/usr/local/bin/wings --version 2>/dev/null || echo "unknown")
   fi
   
   # Get latest version from GitHub

@@ -196,9 +196,9 @@ parse_arguments "$@"
 # ------------------ Variables ----------------- #
 
 # Installation paths
-# Use Wings_INSTALL_DIR to avoid collision with lib.sh's INSTALL_DIR (which is /var/www/Hydrodactyl for the panel)
-Wings_INSTALL_DIR="/etc/Wings"
-PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/Hydrodactyl}"
+# Use WINGS_INSTALL_DIR to avoid collision with lib.sh's INSTALL_DIR (which is /var/www/Hydrodactyl for the panel)
+WINGS_INSTALL_DIR="/etc/Wings"
+PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/hydrodactyl}"
 WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
 
 # Panel connection
@@ -293,7 +293,7 @@ install_Wings() {
 
   # Create directories with proper permissions
   output "Creating Wings directories..."
-  mkdir -p "$Wings_INSTALL_DIR" || { error "Failed to create $Wings_INSTALL_DIR"; return 1; }
+  mkdir -p "$WINGS_INSTALL_DIR" || { error "Failed to create $WINGS_INSTALL_DIR"; return 1; }
   mkdir -p "$PANEL_CONFIG_DIR" || { error "Failed to create $PANEL_CONFIG_DIR"; return 1; }
   mkdir -p /var/lib/Wings/volumes || { error "Failed to create /var/lib/Wings/volumes"; return 1; }
   mkdir -p /var/lib/Wings/archives || { error "Failed to create /var/lib/Wings/archives"; return 1; }
@@ -324,7 +324,7 @@ install_Wings() {
   arch=$(uname -m)
   [[ $arch == x86_64 ]] && arch=amd64 || arch=arm64
 
-  local asset_name="Wings_linux_${arch}"
+  local asset_name="wings_linux_${arch}"
 
   # Determine which release to fetch
   local target_release="$Wings_RELEASE_VERSION"
@@ -347,24 +347,24 @@ install_Wings() {
 
   # Download binary
   output "Downloading Wings binary..."
-  if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/Wings" "$GITHUB_TOKEN" "$target_release"; then
+  if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/wings" "$GITHUB_TOKEN" "$target_release"; then
     error "Failed to download Wings binary"
     exit 1
   fi
 
-  chmod +x /usr/local/bin/Wings
+  chmod +x /usr/local/bin/wings
 
   # Save version from GitHub release tag for auto-updater tracking
-  mkdir -p /etc/Hydrodactyl
-  echo "$target_release" > /etc/Hydrodactyl/Wings-version
-  chmod 644 /etc/Hydrodactyl/Wings-version
+  mkdir -p /etc/hydrodactyl
+  echo "$target_release" > /etc/hydrodactyl/Wings-version
+  chmod 644 /etc/hydrodactyl/Wings-version
 
   # Verify Wings binary works
-  if /usr/local/bin/Wings --version >/dev/null 2>&1; then
-    info "Wings binary verified: $(/usr/local/bin/Wings --version 2>/dev/null || echo 'unknown')"
+  if /usr/local/bin/wings --version >/dev/null 2>&1; then
+    info "Wings binary verified: $(/usr/local/bin/wings --version 2>/dev/null || echo 'unknown')"
   fi
 
-  success "Wings installed to /usr/local/bin/Wings"
+  success "Wings installed to /usr/local/bin/wings"
 }
 
 # Ask user if they want to skip auto-configuration
@@ -571,10 +571,10 @@ configure_Wings() {
   print_flame "Configuring Wings"
 
   # Create Wings config directory with verification
-  output "Creating Wings config directory at ${Wings_INSTALL_DIR}..."
-  mkdir -p "${Wings_INSTALL_DIR}"
-  if [ ! -d "${Wings_INSTALL_DIR}" ]; then
-    error "Failed to create Wings config directory at ${Wings_INSTALL_DIR}"
+  output "Creating Wings config directory at ${WINGS_INSTALL_DIR}..."
+  mkdir -p "${WINGS_INSTALL_DIR}"
+  if [ ! -d "${WINGS_INSTALL_DIR}" ]; then
+    error "Failed to create Wings config directory at ${WINGS_INSTALL_DIR}"
     return 1
   fi
 
@@ -591,35 +591,35 @@ configure_Wings() {
     node_fqdn=""
   fi
 
-  output "Configuring Wings using 'Wings configure' command..."
+  output "Configuring Wings using 'wings configure' command..."
   output "Panel URL: ${panel_url}"
   output "Node ID: ${node_id}"
 
   # Configure Wings using the official configure command
   # Note: Uses Panel API key, not node daemon token
   # Run in a subshell to avoid changing the working directory of the caller
-  if ! (cd "${Wings_INSTALL_DIR}" && Wings configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then
+  if ! (cd "${WINGS_INSTALL_DIR}" && wings configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then
     error "Failed to configure Wings"
     error ""
     error "To manually configure later, run:"
-    error "  cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+    error "  cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
     error "    --panel-url '${panel_url}' \\"
     error "    --token '<your-api-key>' \\"
     error "    --node '${node_id}'"
     return 1
   fi
 
-  output "Wings configured successfully"
+  output "wings configured successfully"
 
   # Disable permission checking to prevent Wings from resetting permissions
   output "Disabling permission checks in Wings config..."
-  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${Wings_INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/check_permissions_on_boot: true/check_permissions_on_boot: false/' "${WINGS_INSTALL_DIR}/config.yml" 2>/dev/null || true
 
   # Update container limits for better game server compatibility
   output "Updating container limits in Wings config..."
-  sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${Wings_INSTALL_DIR}/config.yml" 2>/dev/null || true
-  sed -i 's/memory: 1024/memory: 2048/' "${Wings_INSTALL_DIR}/config.yml" 2>/dev/null || true
-  sed -i 's/cpu: 100/cpu: 200/' "${Wings_INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/container_pid_limit: 512/container_pid_limit: 2048/' "${WINGS_INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/memory: 1024/memory: 2048/' "${WINGS_INSTALL_DIR}/config.yml" 2>/dev/null || true
+  sed -i 's/cpu: 100/cpu: 200/' "${WINGS_INSTALL_DIR}/config.yml" 2>/dev/null || true
 
   # Configure SSL for Wings
   # This mirrors the panel.sh/both.sh SSL approach:
@@ -658,9 +658,9 @@ configure_Wings() {
 
   if [ -n "$ssl_cert_path" ] && [ -n "$ssl_key_path" ]; then
     # Enable SSL and set certificate paths in Wings config
-    sed -i 's/enabled: false/enabled: true/' "${Wings_INSTALL_DIR}/config.yml"
-    sed -i "s|certificate: .*|certificate: ${ssl_cert_path}|" "${Wings_INSTALL_DIR}/config.yml"
-    sed -i "s|key: .*|key: ${ssl_key_path}|" "${Wings_INSTALL_DIR}/config.yml"
+    sed -i 's/enabled: false/enabled: true/' "${WINGS_INSTALL_DIR}/config.yml"
+    sed -i "s|certificate: .*|certificate: ${ssl_cert_path}|" "${WINGS_INSTALL_DIR}/config.yml"
+    sed -i "s|key: .*|key: ${ssl_key_path}|" "${WINGS_INSTALL_DIR}/config.yml"
     success "SSL configured for Wings"
   else
     if [ -z "$node_fqdn" ]; then
@@ -672,7 +672,7 @@ configure_Wings() {
     output "To set up SSL later, you can:"
     output "  1. Obtain a Let's Encrypt certificate:"
     output "     ${COLOR_BLUE_THEME}certbot certonly --standalone -d ${node_fqdn:-'<fqdn>'}${COLOR_NC}"
-    output "  2. Or provide custom certificate paths in ${Wings_INSTALL_DIR}/config.yml"
+    output "  2. Or provide custom certificate paths in ${WINGS_INSTALL_DIR}/config.yml"
   fi
 
   # Also set ASSUME_SSL if SSL is configured (for URL construction elsewhere)
@@ -680,26 +680,26 @@ configure_Wings() {
     ASSUME_SSL="true"
   fi
 
-  # Create allocations (after Wings configure)
+  # Create allocations (after wings configure)
   output ""
   output "Creating allocations..."
   create_node_allocations "$api_key" "$panel_url" "$node_id" "${GAME_PORT_START:-25565}" "${GAME_PORT_END:-25665}" || true
 
-  success "Wings configured"
+  success "wings configured"
 }
 
 setup_systemd_service() {
   print_flame "Setting up Systemd Service"
 
-  output "Setting up Wings.service..."
+  output "Setting up wings.service..."
 
   # Get service file (downloads or copies from local)
-  if ! get_config "Wings.service" "/etc/systemd/system/Wings.service"; then
+  if ! get_config "wings.service" "/etc/systemd/system/wings.service"; then
     exit 1
   fi
 
   systemctl daemon-reload
-  systemctl enable Wings
+  systemctl enable wings
 
   success "Wings service created"
 }
@@ -708,16 +708,16 @@ start_Wings() {
   print_flame "Starting Wings"
 
   output "Starting Wings service..."
-  systemctl restart Wings
+  systemctl restart wings
 
   # Wait for service to start
   sleep 3
 
-  if systemctl is-active --quiet Wings; then
+  if systemctl is-active --quiet wings; then
     success "Wings is running"
   else
     warning "Wings service may not have started properly"
-    warning "Check status with: systemctl status Wings"
+    warning "Check status with: systemctl status wings"
   fi
 }
 
@@ -728,9 +728,9 @@ verify_connection() {
   sleep 5
 
   # Check if service is running
-  if ! systemctl is-active --quiet Wings; then
+  if ! systemctl is-active --quiet wings; then
     warning "Wings service is not running"
-    warning "Check logs with: journalctl -u Wings -f"
+    warning "Check logs with: journalctl -u wings -f"
     return 1
   fi
 
@@ -815,7 +815,7 @@ main() {
       output "Skipping auto-configuration."
       output ""
       output "You chose to manually configure Wings. To configure later, run:"
-      output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+      output "  ${COLOR_BLUE_THEME}cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -832,7 +832,7 @@ main() {
         error "Auto-configuration failed."
         error ""
         error "You can manually configure Wings later by running:"
-        error "  cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+        error "  cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
         error "    --panel-url '${PANEL_URL}' \\"
         error "    --token '<your-api-key>' \\"
         error "    --node '<node-id>'"
@@ -883,7 +883,7 @@ main() {
       output "Skipping configuration. Wings is installed but not configured."
       output ""
       output "To configure later, run:"
-      output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+      output "  ${COLOR_BLUE_THEME}cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
       output "    --panel-url 'https://your-panel.com' \\"
       output "    --token 'your-api-key' \\"
       output "    --node 'your-node-id'${COLOR_NC}"
@@ -892,7 +892,7 @@ main() {
 
   # ---- Post-configuration phase ----
   # Only run config-dependent steps if Wings is configured
-  if [ -f "${Wings_INSTALL_DIR}/config.yml" ]; then
+  if [ -f "${WINGS_INSTALL_DIR}/config.yml" ]; then
     install_rustic
     setup_systemd_service
     start_Wings
@@ -917,7 +917,7 @@ main() {
   output "Wings has been installed successfully!"
   echo ""
 
-  if [ -f "${Wings_INSTALL_DIR}/config.yml" ]; then
+  if [ -f "${WINGS_INSTALL_DIR}/config.yml" ]; then
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "  Connection Details"
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
@@ -928,7 +928,7 @@ main() {
     else
       output "Setup Method: ${COLOR_BLUE_THEME}Manual${COLOR_NC}"
     fi
-    output "Configuration: ${COLOR_BLUE_THEME}${Wings_INSTALL_DIR}/config.yml${COLOR_NC}"
+    output "Configuration: ${COLOR_BLUE_THEME}${WINGS_INSTALL_DIR}/config.yml${COLOR_NC}"
     output "Node FQDN: ${COLOR_BLUE_THEME}${FQDN:-Not configured}${COLOR_NC}"
     if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
       output "SSL: ${COLOR_BLUE_THEME}Let's Encrypt${COLOR_NC}"
@@ -954,9 +954,9 @@ main() {
     fi
 
     output "Service Commands:"
-    output "  ${COLOR_BLUE_THEME}systemctl status Wings${COLOR_NC}    - Check service status"
-    output "  ${COLOR_BLUE_THEME}systemctl restart Wings${COLOR_NC}   - Restart service"
-    output "  ${COLOR_BLUE_THEME}journalctl -u Wings -f${COLOR_NC}   - View logs"
+    output "  ${COLOR_BLUE_THEME}systemctl status wings${COLOR_NC}    - Check service status"
+    output "  ${COLOR_BLUE_THEME}systemctl restart wings${COLOR_NC}   - Restart service"
+    output "  ${COLOR_BLUE_THEME}journalctl -u wings -f${COLOR_NC}   - View logs"
     echo ""
 
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
@@ -964,7 +964,7 @@ main() {
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "If you need to reconfigure Wings manually, run:"
     output ""
-    output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+    output "  ${COLOR_BLUE_THEME}cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
     output "    --panel-url '${PANEL_URL}' \\"
     output "    --token '<your-api-key>' \\"
     output "    --node '${NODE_ID}'${COLOR_NC}"
@@ -978,16 +978,16 @@ main() {
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"
     output "Wings is installed but NOT configured."
     output ""
-    output "The config directory has been created at ${Wings_INSTALL_DIR}."
+    output "The config directory has been created at ${WINGS_INSTALL_DIR}."
     output "To complete setup, run:"
     output ""
-    output "  ${COLOR_BLUE_THEME}cd ${Wings_INSTALL_DIR} && sudo Wings configure \\"
+    output "  ${COLOR_BLUE_THEME}cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
     output "    --panel-url 'https://your-panel.com' \\"
     output "    --token 'your-api-key' \\"
     output "    --node 'your-node-id'${COLOR_NC}"
     output ""
     output "Then enable the service:"
-    output "  ${COLOR_BLUE_THEME}systemctl enable --now Wings${COLOR_NC}"
+    output "  ${COLOR_BLUE_THEME}systemctl enable --now wings${COLOR_NC}"
     echo ""
   fi
 
@@ -1010,7 +1010,7 @@ main() {
   show_Wings_completion "install"
 
   # Run health check only if configured
-  if [ -f "${Wings_INSTALL_DIR}/config.yml" ]; then
+  if [ -f "${WINGS_INSTALL_DIR}/config.yml" ]; then
     echo ""
     output "Running post-installation health check..."
     check_Wings_health

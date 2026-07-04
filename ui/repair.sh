@@ -74,8 +74,8 @@ detect_panel_location() {
 }
 
 detect_Wings_binary() {
-  if [ -f "/usr/local/bin/Wings" ]; then
-    echo "/usr/local/bin/Wings"
+  if [ -f "/usr/local/bin/wings" ]; then
+    echo "/usr/local/bin/wings"
     return 0
   fi
   
@@ -146,7 +146,7 @@ fix_Wings_permissions() {
   local Wings_dir
   
   Wings_binary=$(detect_Wings_binary) || {
-    error "Wings binary not found at /usr/local/bin/Wings or /usr/bin/Wings"
+    error "Wings binary not found at /usr/local/bin/wings or /usr/bin/Wings"
     return 1
   }
   
@@ -245,7 +245,7 @@ restart_services() {
   Wings_binary=$(detect_Wings_binary 2>/dev/null)
   if [ -n "$Wings_binary" ]; then
     output "Restarting Wings..."
-    systemctl restart Wings 2>/dev/null || warning "Failed to restart Wings (may not be installed)"
+    systemctl restart wings 2>/dev/null || warning "Failed to restart Wings (may not be installed)"
   fi
 
   success "Services restarted"
