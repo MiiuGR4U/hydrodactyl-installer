@@ -224,7 +224,7 @@ INSTALL_AUTO_UPDATER="${INSTALL_AUTO_UPDATER:-false}"
 # GitHub
 WINGS_REPO_PRIVATE="${WINGS_REPO_PRIVATE:-false}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
-Wings_RELEASE_VERSION="${Wings_RELEASE_VERSION:-latest}"
+WINGS_RELEASE_VERSION="${WINGS_RELEASE_VERSION:-latest}"
 
 # Node configuration
 NODE_NAME="${NODE_NAME:-}"
@@ -327,18 +327,18 @@ install_Wings() {
   local asset_name="wings_linux_${arch}"
 
   # Determine which release to fetch
-  local target_release="$Wings_RELEASE_VERSION"
+  local target_release="$WINGS_RELEASE_VERSION"
   if [ "$target_release" == "latest" ]; then
     output "Fetching latest Wings release..."
     target_release=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
   else
-    output "Fetching Wings release ${Wings_RELEASE_VERSION}..."
+    output "Fetching Wings release ${WINGS_RELEASE_VERSION}..."
   fi
 
   if [ -z "$target_release" ] || [ "$target_release" == "null" ]; then
     error "Could not fetch release from $WINGS_REPO"
-    if [ "$Wings_RELEASE_VERSION" != "latest" ]; then
-      error "Release ${Wings_RELEASE_VERSION} may not exist."
+    if [ "$WINGS_RELEASE_VERSION" != "latest" ]; then
+      error "Release ${WINGS_RELEASE_VERSION} may not exist."
     fi
     exit 1
   fi
@@ -1044,7 +1044,7 @@ main() {
   if [ -f "${WINGS_INSTALL_DIR}/config.yml" ]; then
     echo ""
     output "Running post-installation health check..."
-    check_Wings_health
+    check_wings_health
   fi
 }
 

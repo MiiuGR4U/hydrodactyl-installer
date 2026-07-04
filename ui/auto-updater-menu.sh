@@ -150,7 +150,7 @@ configure_panel_auto_updater() {
 
 # ------------------ Wings Auto-Updater ----------------- #
 
-configure_Wings_auto_updater() {
+configure_wings_auto_updater() {
   print_header
   print_flame "Wings Auto-Updater Configuration"
 
@@ -241,7 +241,7 @@ configure_both_auto_updaters() {
   output "Now configuring Wings auto-updater..."
   echo ""
 
-  configure_Wings_auto_updater
+  configure_wings_auto_updater
 
   success "Both auto-updaters installed successfully!"
 }
@@ -416,7 +416,7 @@ trigger_panel_update() {
   fi
 }
 
-trigger_Wings_update() {
+trigger_wings_update() {
   print_header
   print_flame "Trigger Wings Update"
 
@@ -538,7 +538,7 @@ show_main_menu() {
         read -r
         ;;
       1)
-        configure_Wings_auto_updater
+        configure_wings_auto_updater
         Wings_updater_installed=true
         echo ""
         output "Press Enter to continue..."
@@ -556,7 +556,7 @@ show_main_menu() {
         trigger_panel_update
         ;;
       4)
-        trigger_Wings_update
+        trigger_wings_update
         ;;
       5)
         show_remove_menu

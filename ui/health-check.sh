@@ -141,7 +141,7 @@ detect_panel_location() {
   return 1
 }
 
-detect_Wings_binary() {
+detect_wings_binary() {
   if [ -f "/usr/local/bin/wings" ]; then
     echo "/usr/local/bin/wings"
     return 0
@@ -193,27 +193,27 @@ show_health_menu() {
         continue
         ;;
       1)
-        local Wings_binary
-        Wings_binary=$(detect_Wings_binary) || {
+        local wings_binary
+        wings_binary=$(detect_wings_binary) || {
           error "Wings installation not found"
           sleep 2
           continue
         }
-        check_Wings_health
+        check_wings_health
         output "Press Enter to return to the menu..."
         read -r
         continue
         ;;
       2)
         local panel_dir
-        local Wings_binary
+        local wings_binary
         local has_panel=false
-        local has_Wings=false
+        local has_wings=false
 
         panel_dir=$(detect_panel_location) && has_panel=true
-        Wings_binary=$(detect_Wings_binary) && has_Wings=true
+        wings_binary=$(detect_wings_binary) && has_wings=true
 
-        if [ "$has_panel" == false ] && [ "$has_Wings" == false ]; then
+        if [ "$has_panel" == false ] && [ "$has_wings" == false ]; then
           error "Neither Panel nor Wings installation found"
           sleep 2
           continue
@@ -223,8 +223,8 @@ show_health_menu() {
           check_panel_health "$panel_dir"
         fi
 
-        if [ "$has_Wings" == true ]; then
-          check_Wings_health
+        if [ "$has_wings" == true ]; then
+          check_wings_health
         fi
 
         output "Press Enter to return to the menu..."

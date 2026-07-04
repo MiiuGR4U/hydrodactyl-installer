@@ -40,7 +40,7 @@ main() {
   print_flame "Installation Information"
 
   local has_panel_info=false
-  local has_Wings_info=false
+  local has_wings_info=false
 
   # Check what information is available
   if panel_install_info_exists; then
@@ -48,16 +48,16 @@ main() {
   fi
 
   if wings_install_info_exists; then
-    has_Wings_info=true
+    has_wings_info=true
   fi
 
   # Show summary
   echo ""
-  if [ "$has_panel_info" == true ] && [ "$has_Wings_info" == true ]; then
+  if [ "$has_panel_info" == true ] && [ "$has_wings_info" == true ]; then
     output "Both Panel and Wings installation information found."
   elif [ "$has_panel_info" == true ]; then
     output "Panel installation information found."
-  elif [ "$has_Wings_info" == true ]; then
+  elif [ "$has_wings_info" == true ]; then
     output "Wings installation information found."
   else
     warning "No installation information found."
@@ -83,8 +83,8 @@ main() {
   fi
 
   # Display Wings info if available
-  if [ "$has_Wings_info" == true ]; then
-    display_Wings_install_info
+  if [ "$has_wings_info" == true ]; then
+    display_wings_install_info
     echo ""
   fi
 
@@ -147,7 +147,7 @@ main() {
       echo ""
     fi
 
-    if [ "$has_Wings_info" == true ]; then
+    if [ "$has_wings_info" == true ]; then
       output "Wings Info File: $INSTALL_INFO_DIR/Wings-info"
       echo "---"
       cat "$INSTALL_INFO_DIR/Wings-info" 2>/dev/null || echo "Could not read file"

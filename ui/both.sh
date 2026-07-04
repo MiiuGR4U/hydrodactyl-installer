@@ -60,7 +60,7 @@ DB_PASSWORD=""
 WINGS_REPO=""
 WINGS_REPO_PRIVATE=false
 GITHUB_TOKEN_WINGS=""
-Wings_RELEASE_VERSION="${Wings_RELEASE_VERSION:-latest}"
+WINGS_RELEASE_VERSION="${WINGS_RELEASE_VERSION:-latest}"
 NODE_NAME="local"
 NODE_DESCRIPTION="Local Node"
 BEHIND_PROXY=false
@@ -280,7 +280,7 @@ configure_panel_settings() {
 
 # ------------------ Wings Configuration ----------------- #
 
-configure_Wings_settings() {
+configure_wings_settings() {
   print_header
   print_flame "Wings Repository Configuration"
 
@@ -352,8 +352,8 @@ configure_Wings_settings() {
 
   # Select Wings release version (skip interactive if already set via env)
   local selected_version
-  if [ "$Wings_RELEASE_VERSION" != "latest" ]; then
-    selected_version="$Wings_RELEASE_VERSION"
+  if [ "$WINGS_RELEASE_VERSION" != "latest" ]; then
+    selected_version="$WINGS_RELEASE_VERSION"
     info "Using Wings release version from environment: $selected_version"
   else
     echo ""
@@ -363,11 +363,11 @@ configure_Wings_settings() {
       exit 1
     fi
   fi
-  Wings_RELEASE_VERSION="$selected_version"
-  if [ "$Wings_RELEASE_VERSION" == "latest" ]; then
+  WINGS_RELEASE_VERSION="$selected_version"
+  if [ "$WINGS_RELEASE_VERSION" == "latest" ]; then
     success "Will install latest Wings release: ${latest_release}"
   else
-    success "Will install Wings release: ${Wings_RELEASE_VERSION}"
+    success "Will install Wings release: ${WINGS_RELEASE_VERSION}"
   fi
 
   echo ""
@@ -427,9 +427,9 @@ configure_auto_updaters() {
     INSTALL_AUTO_UPDATER_PANEL=true
   fi
 
-  local install_Wings_au=""
-  bool_input install_Wings_au "Install auto-updater for Wings?" "n" || true
-  if [ "$install_Wings_au" == "y" ]; then
+  local install_wings_au=""
+  bool_input install_wings_au "Install auto-updater for Wings?" "n" || true
+  if [ "$install_wings_au" == "y" ]; then
     INSTALL_AUTO_UPDATER_Wings=true
   fi
 }
@@ -466,7 +466,7 @@ show_summary() {
   output "  Wings Configuration"
   output "──────────────────────────────────────────────────────────────────────"
   echo -e "  ${COLOR_BLUE_THEME}Repository:${COLOR_NC}        ${WINGS_REPO} $([ "$WINGS_REPO_PRIVATE" == "true" ] && echo '(private)' || echo '(public)')"
-  echo -e "  ${COLOR_BLUE_THEME}Release Version:${COLOR_NC}   ${Wings_RELEASE_VERSION}"
+  echo -e "  ${COLOR_BLUE_THEME}Release Version:${COLOR_NC}   ${WINGS_RELEASE_VERSION}"
   echo -e "  ${COLOR_BLUE_THEME}Panel URL:${COLOR_NC}         https://${PANEL_FQDN} (auto-configured)"
   echo -e "  ${COLOR_BLUE_THEME}Node Name:${COLOR_NC}         ${NODE_NAME}"
   echo -e "  ${COLOR_BLUE_THEME}Node Description:${COLOR_NC}  ${NODE_DESCRIPTION}"
@@ -536,7 +536,7 @@ export_variables() {
   export WINGS_REPO
   export WINGS_REPO_PRIVATE
   export GITHUB_TOKEN_WINGS
-  export Wings_RELEASE_VERSION
+  export WINGS_RELEASE_VERSION
   export NODE_NAME
   export NODE_DESCRIPTION
   export BEHIND_PROXY
@@ -555,7 +555,7 @@ main() {
 
   configure_panel_repository
   configure_panel_settings
-  configure_Wings_settings
+  configure_wings_settings
   configure_auto_updaters
   configure_minecraft_server
   configure_firewall_settings

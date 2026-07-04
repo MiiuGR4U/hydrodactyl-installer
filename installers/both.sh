@@ -679,7 +679,7 @@ create_node_in_panel() {
 
 # ---------------- Wings Installation ---------------- #
 
-install_Wings_daemon() {
+install_wings_daemon() {
   print_flame "Installing Wings Daemon"
 
   # Install Docker using shared function from lib.sh
@@ -976,7 +976,7 @@ main() {
   setup_database_host "$PANEL_FQDN"
 
   # Wings installation
-  install_Wings_daemon
+  install_wings_daemon
 
   # Create Minecraft server if requested and API key is available
   if [ "$CREATE_MINECRAFT_SERVER" == "true" ] && [ -n "$PANEL_API_KEY" ]; then

@@ -496,7 +496,7 @@ perform_update() {
   info "Running post-update health check..."
   if ! post_update_health_check; then
     warning "Health check detected issues, attempting auto-fix..."
-    auto_fix_Wings_issues
+    auto_fix_wings_issues
 
     # Run second health check after auto-fix
     info "Running second health check after auto-fix..."
@@ -620,7 +620,7 @@ post_update_health_check() {
   return 0
 }
 
-auto_fix_Wings_issues() {
+auto_fix_wings_issues() {
   info "Attempting to auto-fix issues..."
 
   # Fix binary permissions

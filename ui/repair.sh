@@ -73,7 +73,7 @@ detect_panel_location() {
   return 1
 }
 
-detect_Wings_binary() {
+detect_wings_binary() {
   if [ -f "/usr/local/bin/wings" ]; then
     echo "/usr/local/bin/wings"
     return 0
@@ -87,7 +87,7 @@ detect_Wings_binary() {
   return 1
 }
 
-detect_Wings_config_dir() {
+detect_wings_config_dir() {
   if [ -d "/etc/Wings" ] && [ -f "/etc/Wings/config.yml" ]; then
     echo "/etc/Wings"
     return 0
@@ -139,24 +139,24 @@ fix_panel_permissions() {
   return 0
 }
 
-fix_Wings_permissions() {
+fix_wings_permissions() {
   print_flame "Fixing Wings Permissions"
 
-  local Wings_binary
-  local Wings_dir
+  local wings_binary
+  local wings_dir
   
-  Wings_binary=$(detect_Wings_binary) || {
+  wings_binary=$(detect_wings_binary) || {
     error "Wings binary not found at /usr/local/bin/wings or /usr/bin/Wings"
     return 1
   }
   
-  Wings_dir=$(detect_Wings_config_dir)
+  wings_dir=$(detect_wings_config_dir)
 
-  output "Found Wings binary at: $Wings_binary"
-  output "Found Wings config at: $Wings_dir"
+  output "Found Wings binary at: $wings_binary"
+  output "Found Wings config at: $wings_dir"
   
   output "Setting binary permissions..."
-  chmod +x "$Wings_binary"
+  chmod +x "$wings_binary"
 
   output "Creating Wings data directories if needed..."
   mkdir -p /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups
@@ -165,7 +165,7 @@ fix_Wings_permissions() {
   chown -R 999:999 /var/lib/pterodactyl/volumes 2>/dev/null || true
   chown -R 999:999 /var/lib/pterodactyl/archives 2>/dev/null || true
   chown -R 999:999 /var/lib/pterodactyl/backups 2>/dev/null || true
-  chown -R 999:999 "$Wings_dir" 2>/dev/null || true
+  chown -R 999:999 "$wings_dir" 2>/dev/null || true
 
   output "Setting permissions on Wings data directories..."
   # Note: Pterodactyl daemon runs containers as 999:999 by default.
@@ -185,12 +185,12 @@ fix_Wings_permissions() {
     setfacl -R -b /var/lib/pterodactyl/archives 2>/dev/null || true
     setfacl -R -b /var/lib/pterodactyl/backups 2>/dev/null || true
   fi
-  chmod -R 755 "$Wings_dir" 2>/dev/null || true
+  chmod -R 755 "$wings_dir" 2>/dev/null || true
   
   # Enable check_permissions_on_boot so Wings properly chowns volumes for containers
-  if [ -f "$Wings_dir/config.yml" ]; then
+  if [ -f "$wings_dir/config.yml" ]; then
     output "Enabling permission checks in Wings config..."
-    sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' "$Wings_dir/config.yml" 2>/dev/null || true
+    sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' "$wings_dir/config.yml" 2>/dev/null || true
   fi
 
   success "Wings permissions fixed"
@@ -248,9 +248,9 @@ restart_services() {
   systemctl restart redis 2>/dev/null || \
   warning "Failed to restart redis (may not be installed)"
 
-  local Wings_binary
-  Wings_binary=$(detect_Wings_binary 2>/dev/null)
-  if [ -n "$Wings_binary" ]; then
+  local wings_binary
+  wings_binary=$(detect_wings_binary 2>/dev/null)
+  if [ -n "$wings_binary" ]; then
     output "Restarting Wings..."
     systemctl restart wings 2>/dev/null || warning "Failed to restart Wings (may not be installed)"
   fi
@@ -457,7 +457,7 @@ run_all_fixes() {
   fix_panel_permissions || has_errors=true
   echo ""
 
-  fix_Wings_permissions || has_errors=true
+  fix_wings_permissions || has_errors=true
   echo ""
 
   clear_caches || has_errors=true
@@ -525,7 +525,7 @@ show_repair_menu() {
         continue
         ;;
       1)
-        fix_Wings_permissions
+        fix_wings_permissions
         output "Press Enter to return to the menu..."
         read -r
         continue

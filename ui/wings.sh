@@ -34,7 +34,7 @@ fi
 WINGS_REPO=""
 WINGS_REPO_PRIVATE=false
 GITHUB_TOKEN=""
-Wings_RELEASE_VERSION="${Wings_RELEASE_VERSION:-latest}"
+WINGS_RELEASE_VERSION="${WINGS_RELEASE_VERSION:-latest}"
 PANEL_URL=""
 NODE_TOKEN=""
 NODE_ID=""
@@ -132,14 +132,14 @@ configure_release_version() {
     exit 1
   fi
 
-  Wings_RELEASE_VERSION="$selected_version"
+  WINGS_RELEASE_VERSION="$selected_version"
 
-  if [ "$Wings_RELEASE_VERSION" == "latest" ]; then
+  if [ "$WINGS_RELEASE_VERSION" == "latest" ]; then
     local latest
     latest=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
     success "Will install latest release: ${latest}"
   else
-    success "Will install release: ${Wings_RELEASE_VERSION}"
+    success "Will install release: ${WINGS_RELEASE_VERSION}"
   fi
 }
 
@@ -356,7 +356,7 @@ export_variables() {
   export WINGS_REPO
   export WINGS_REPO_PRIVATE
   export GITHUB_TOKEN
-  export Wings_RELEASE_VERSION
+  export WINGS_RELEASE_VERSION
   export PANEL_URL
   export PANEL_API_KEY
   export NODE_NAME
