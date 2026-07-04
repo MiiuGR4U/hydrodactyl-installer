@@ -159,25 +159,32 @@ fix_Wings_permissions() {
   chmod +x "$Wings_binary"
 
   output "Creating Wings data directories if needed..."
-  mkdir -p /var/lib/Wings/volumes /var/lib/Wings/archives /var/lib/Wings/backups
+  mkdir -p /var/lib/pterodactyl/volumes /var/lib/pterodactyl/archives /var/lib/pterodactyl/backups
   
   output "Setting ownership on Wings data directories..."
-  chown -R 8888:8888 /var/lib/Wings/volumes 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/Wings/archives 2>/dev/null || true
-  chown -R 8888:8888 /var/lib/Wings/backups 2>/dev/null || true
-  chown -R 8888:8888 "$Wings_dir" 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/volumes 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/archives 2>/dev/null || true
+  chown -R 999:999 /var/lib/pterodactyl/backups 2>/dev/null || true
+  chown -R 999:999 "$Wings_dir" 2>/dev/null || true
 
   output "Setting permissions on Wings data directories..."
-  # Note: 777 is required for containerized game servers to access these directories
-  # Ensure parent /var/lib/Wings is accessible
-  chmod 755 /var/lib/Wings 2>/dev/null || true
-  # Ensure the volumes directory itself and all contents have 777
-  chmod 777 /var/lib/Wings/volumes 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/volumes/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/archives 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/archives/* 2>/dev/null || true
-  chmod 777 /var/lib/Wings/backups 2>/dev/null || true
-  chmod -R 777 /var/lib/Wings/backups/* 2>/dev/null || true
+  # Note: Pterodactyl daemon runs containers as 999:999 by default.
+  # We should use standard permissions and let Wings handle volume ownership.
+  # Ensure parent /var/lib/pterodactyl is accessible
+  chmod 755 /var/lib/pterodactyl 2>/dev/null || true
+  
+  # Ensure the volumes directory has standard permissions
+  chmod 755 /var/lib/pterodactyl/volumes 2>/dev/null || true
+  chmod 755 /var/lib/pterodactyl/archives 2>/dev/null || true
+  chmod 755 /var/lib/pterodactyl/backups 2>/dev/null || true
+
+  # Remove any broken ACLs set by previous versions of the script
+  if command -v setfacl >/dev/null 2>&1; then
+    output "Cleaning up ACL permissions..."
+    setfacl -R -b /var/lib/pterodactyl/volumes 2>/dev/null || true
+    setfacl -R -b /var/lib/pterodactyl/archives 2>/dev/null || true
+    setfacl -R -b /var/lib/pterodactyl/backups 2>/dev/null || true
+  fi
   chmod -R 755 "$Wings_dir" 2>/dev/null || true
   
   # Disable check_permissions_on_boot to prevent Wings from resetting permissions
