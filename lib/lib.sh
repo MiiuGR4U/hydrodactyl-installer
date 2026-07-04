@@ -3754,10 +3754,10 @@ check_wings_health() {
   fi
 
   # Check config directory
-  if [ -d "/etc/wings" ]; then
+  if [ -d "/etc/pterodactyl" ]; then
     output "✓ Wings config directory exists"
 
-    if [ -f "/etc/wings/config.yml" ]; then
+    if [ -f "/etc/pterodactyl/config.yml" ]; then
       output "✓ Wings config file exists"
     else
       warning "Wings config file not found"
