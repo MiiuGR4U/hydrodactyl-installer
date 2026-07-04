@@ -54,7 +54,7 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-panel}"
-DB_USER="${DB_USER:-Hydrodactyl}"
+DB_USER="${DB_USER:-hydrodactyl}"
 # Load existing credentials or generate new ones
 if saved_pass=$(load_existing_db_credentials); then
   MYSQL_ROOT_PASSWORD="${saved_pass}"

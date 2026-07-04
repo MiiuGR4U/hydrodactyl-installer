@@ -344,6 +344,37 @@ setup_swap_menu() {
   read -r
 }
 
+
+reinstall_composer_dependencies() {
+  print_flame "Reinstalling Composer Dependencies"
+  local panel_dir
+  panel_dir=$(detect_panel_location) || {
+    error "Panel installation not found"
+    return 1
+  }
+  output "Found panel at: $panel_dir"
+  cd "$panel_dir"
+  output "Running composer install..."
+  COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader 2>/dev/null || warning "Composer install encountered errors"
+  success "Composer dependencies reinstalled"
+  return 0
+}
+
+run_database_migrations() {
+  print_flame "Running Database Migrations"
+  local panel_dir
+  panel_dir=$(detect_panel_location) || {
+    error "Panel installation not found"
+    return 1
+  }
+  output "Found panel at: $panel_dir"
+  cd "$panel_dir"
+  output "Running artisan migrate..."
+  php artisan migrate --seed --force 2>/dev/null || warning "Database migrations encountered errors"
+  success "Database migrations completed"
+  return 0
+}
+
 fix_database_permissions() {
   print_flame "Fixing Database Permissions"
 
@@ -367,9 +398,18 @@ fix_database_permissions() {
     return 1
   fi
 
-  # Extract and validate Hydrodactyl password
-  local hydro_pass
-  hydro_pass=$(grep '^Hydrodactyl:' /root/.config/Hydrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  # Extract and validate hydrodactyl password
+  local hydro_pass=""
+  local panel_dir
+  panel_dir=$(detect_panel_location 2>/dev/null || echo "")
+  
+  if [ -n "$panel_dir" ] && [ -f "$panel_dir/.env" ]; then
+    hydro_pass=$(grep '^DB_PASSWORD=' "$panel_dir/.env" | cut -d'=' -f2 | sed -e 's/^"//' -e 's/"$//')
+  fi
+  
+  if [ -z "$hydro_pass" ]; then
+    hydro_pass=$(grep -i '^hydrodactyl:' /root/.config/Hydrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  fi
 
   if [ -z "$hydro_pass" ]; then
     error "Hydrodactyl user password not found in credentials file"
@@ -381,14 +421,14 @@ fix_database_permissions() {
 
   output "Ensuring Hydrodactyl database user exists..."
   mysql -u root -p"${db_root_pass}" -e "
-    GRANT ALL PRIVILEGES ON panel.* TO 'Hydrodactyl'@'127.0.0.1' IDENTIFIED BY '${hydro_pass_escaped}' WITH GRANT OPTION;
+    GRANT ALL PRIVILEGES ON panel.* TO 'hydrodactyl'@'127.0.0.1' IDENTIFIED BY '${hydro_pass_escaped}' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
   " 2>/dev/null || warning "Failed to update Hydrodactyl user permissions"
 
   output "Testing database connectivity..."
   local db_pass
-  db_pass=$(grep '^Hydrodactyl:' /root/.config/Hydrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
-  if mysql -u Hydrodactyl -p"${db_pass}" -h 127.0.0.1 -e "SELECT 1" panel >/dev/null 2>&1; then
+  db_pass=$(grep '^hydrodactyl:' /root/.config/Hydrodactyl/db-credentials 2>/dev/null | cut -d':' -f2)
+  if mysql -u hydrodactyl -p"${db_pass}" -h 127.0.0.1 -e "SELECT 1" panel >/dev/null 2>&1; then
     success "Database connection successful"
   else
     warning "Database connection test failed"
@@ -417,6 +457,12 @@ run_all_fixes() {
   echo ""
 
   restart_services || has_errors=true
+  echo ""
+
+  run_database_migrations || has_errors=true
+  echo ""
+
+  reinstall_composer_dependencies || has_errors=true
   echo ""
 
   if [ "$has_errors" == true ]; then
@@ -453,13 +499,15 @@ show_repair_menu() {
     output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Clear Laravel Caches"
     output "[${COLOR_BLUE_THEME}3${COLOR_NC}] Restart All Services"
     output "[${COLOR_BLUE_THEME}4${COLOR_NC}] Fix Database Permissions"
-    output "[${COLOR_BLUE_THEME}5${COLOR_NC}] Run All Fixes (Recommended)"
-    output "[${COLOR_BLUE_THEME}6${COLOR_NC}] Setup Swap File${swap_status}"
+    output "[${COLOR_BLUE_THEME}5${COLOR_NC}] Run Database Migrations"
+    output "[${COLOR_BLUE_THEME}6${COLOR_NC}] Reinstall Composer Dependencies"
+    output "[${COLOR_BLUE_THEME}7${COLOR_NC}] Run All Fixes (Recommended)"
+    output "[${COLOR_BLUE_THEME}8${COLOR_NC}] Setup Swap File${swap_status}"
     echo ""
-    output "[${COLOR_BLUE_THEME}7${COLOR_NC}] Back to Main Menu"
+    output "[${COLOR_BLUE_THEME}9${COLOR_NC}] Back to Main Menu"
     echo ""
 
-    echo -n "* Select an option [0-7]: "
+    echo -n "* Select an option [0-9]: "
     read -r choice
 
     case "$choice" in
@@ -494,18 +542,30 @@ show_repair_menu() {
         continue
         ;;
       5)
-        run_all_fixes
+        run_database_migrations
+        output "Press Enter to return to the menu..."
+        read -r
         continue
         ;;
       6)
-        setup_swap_menu
+        reinstall_composer_dependencies
+        output "Press Enter to return to the menu..."
+        read -r
         continue
         ;;
       7)
+        run_all_fixes
+        continue
+        ;;
+      8)
+        setup_swap_menu
+        continue
+        ;;
+      9)
         return 0
         ;;
       *)
-        error "Invalid option. Please select 0-7."
+        error "Invalid option. Please select 0-9."
         sleep 1
         ;;
     esac
