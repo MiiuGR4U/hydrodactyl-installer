@@ -47,7 +47,7 @@ main() {
     has_panel_info=true
   fi
 
-  if Wings_install_info_exists; then
+  if wings_install_info_exists; then
     has_Wings_info=true
   fi
 
