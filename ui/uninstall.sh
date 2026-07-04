@@ -14,11 +14,11 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # Try temp file first (when run through install.sh)
-  if [ -f /tmp/Hydrodactyl-lib.sh ]; then
+  if [ -f /tmp/hydrodactyl-lib.sh ]; then
     # shellcheck source=/dev/null
-    if ! source /tmp/Hydrodactyl-lib.sh 2>/dev/null; then
+    if ! source /tmp/hydrodactyl-lib.sh 2>/dev/null; then
       # Temp file exists but failed to load (corrupt/invalid) - remove it
-      rm -f /tmp/Hydrodactyl-lib.sh
+      rm -f /tmp/hydrodactyl-lib.sh
     fi
   fi
   # Fall back to downloading if temp file didn't load or doesn't exist
@@ -43,7 +43,7 @@ check_root
 # ------------------ Configuration Variables ----------------- #
 
 REMOVE_PANEL=false
-REMOVE_Wings=false
+REMOVE_WINGS=false
 REMOVE_AUTO_UPDATERS=false
 REMOVE_DATABASE=false
 REMOVE_DATA=false
@@ -131,7 +131,7 @@ show_main_menu() {
           error "Wings is not installed"
           continue
         fi
-        REMOVE_Wings=true
+        REMOVE_WINGS=true
         confirm_uninstall "Wings"
         return
         ;;
@@ -141,7 +141,7 @@ show_main_menu() {
           continue
         fi
         REMOVE_PANEL=true
-        REMOVE_Wings=true
+        REMOVE_WINGS=true
         confirm_uninstall "both Panel and Wings"
         return
         ;;
@@ -160,7 +160,7 @@ show_main_menu() {
           continue
         fi
         REMOVE_PANEL=true
-        REMOVE_Wings=true
+        REMOVE_WINGS=true
         REMOVE_AUTO_UPDATERS=true
         confirm_uninstall "everything"
         return
@@ -204,7 +204,7 @@ confirm_uninstall() {
     [ "$remove_data" == "y" ] && REMOVE_DATA=true
   fi
 
-  if [ "$REMOVE_Wings" == true ]; then
+  if [ "$REMOVE_WINGS" == true ]; then
     echo ""
     output "Wings removal includes:"
     output "  - Wings binary (/usr/local/bin/wings)"
@@ -239,7 +239,7 @@ confirm_uninstall() {
 
 export_variables() {
   export REMOVE_PANEL
-  export REMOVE_Wings
+  export REMOVE_WINGS
   export REMOVE_AUTO_UPDATERS
   export REMOVE_DATABASE
   export REMOVE_DATA

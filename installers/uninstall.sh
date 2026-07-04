@@ -3,12 +3,23 @@
 set -e
 
 # shellcheck source=lib/lib.sh
-source /tmp/Hydrodactyl-lib.sh
+fn_exists() { declare -F "$1" >/dev/null; }
+if ! fn_exists lib_loaded; then
+  if [ -f /tmp/hydrodactyl-lib.sh ]; then
+    if ! source /tmp/hydrodactyl-lib.sh 2>/dev/null; then
+      rm -f /tmp/hydrodactyl-lib.sh
+    fi
+  fi
+  if ! fn_exists lib_loaded; then
+    source <(curl -sSL "${GITHUB_BASE_URL:-https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer}/${GITHUB_SOURCE:-main}/lib/lib.sh?v=$RANDOM")
+  fi
+  ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
+fi
 
 # Configuration
 PANEL_DIR="/var/www/hydrodactyl"
-Wings_DIR="/etc/Wings"
-PANEL_DATA_DIR="/var/lib/Hydrodactyl"
+WINGS_DIR="/etc/wings"
+PANEL_DATA_DIR="/var/lib/pterodactyl"
 
 remove_panel() {
     print_flame "Removing Hydrodactyl Panel"
@@ -50,7 +61,7 @@ remove_panel() {
     success "Panel removed"
 }
 
-remove_Wings() {
+remove_wings() {
     print_flame "Removing Wings"
 
     # Stop and remove service
@@ -63,9 +74,9 @@ remove_Wings() {
     rm -f /usr/local/bin/wings
 
     # Remove configuration
-    if [ -d "$Wings_DIR" ]; then
+    if [ -d "$WINGS_DIR" ]; then
         output "Removing Wings configuration..."
-        rm -rf "$Wings_DIR"
+        rm -rf "$WINGS_DIR"
     fi
 
     # Stop and remove all game servers (Docker containers)
@@ -78,9 +89,9 @@ remove_Wings() {
     systemctl daemon-reload
 
     # Remove Wings data directory
-    if [ -d "/var/lib/Wings" ]; then
+    if [ -d "/var/lib/pterodactyl" ]; then
         output "Removing Wings data directory..."
-        rm -rf /var/lib/Wings
+        rm -rf /var/lib/pterodactyl
     fi
 
     # Remove Wings version file
@@ -263,8 +274,8 @@ main() {
         remove_phpmyadmin
     fi
 
-    if [ "$REMOVE_Wings" == "true" ]; then
-        remove_Wings
+    if [ "$REMOVE_WINGS" == "true" ]; then
+        remove_wings
     fi
 
     if [ "$REMOVE_DATABASE" == "true" ]; then
@@ -276,7 +287,7 @@ main() {
     fi
 
     # Ask about package cleanup only if removing everything
-    if [ "$REMOVE_PANEL" == "true" ] && [ "$REMOVE_Wings" == "true" ]; then
+    if [ "$REMOVE_PANEL" == "true" ] && [ "$REMOVE_WINGS" == "true" ]; then
         cleanup_packages
     fi
 
