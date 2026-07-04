@@ -93,8 +93,8 @@ detect_wings_config_dir() {
     return 0
   fi
   
-  if [ -n "$Wings_DIR" ] && [ -d "$Wings_DIR" ] && [ -f "$Wings_DIR/config.yml" ]; then
-    echo "$Wings_DIR"
+  if [ -n "$WINGS_DIR" ] && [ -d "$WINGS_DIR" ] && [ -f "$WINGS_DIR/config.yml" ]; then
+    echo "$WINGS_DIR"
     return 0
   fi
   

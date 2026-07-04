@@ -285,7 +285,7 @@ check_existing() {
   fi
 }
 
-install_Wings() {
+install_wings() {
   print_flame "Installing Wings Daemon"
 
   # Install Docker using shared function from lib.sh
@@ -451,7 +451,7 @@ auto_configure_wings() {
 # Install Let's Encrypt certificate for Wings (standalone mode)
 # Unlike the panel which uses certbot --nginx, Wings doesn't use nginx,
 # so we use certbot certonly --standalone to obtain the certificate.
-install_letsencrypt_Wings() {
+install_letsencrypt_wings() {
   local fqdn="$1"
   local email="$2"
 
@@ -630,7 +630,7 @@ configure_wings() {
   if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
     if [ -n "$node_fqdn" ]; then
       output "Obtaining Let's Encrypt certificate for ${node_fqdn}..."
-      install_letsencrypt_Wings "$node_fqdn" "${SSL_EMAIL:-}"
+      install_letsencrypt_wings "$node_fqdn" "${SSL_EMAIL:-}"
     else
       warning "Cannot obtain Let's Encrypt certificate - node FQDN not configured"
       warning "Set FQDN via --fqdn flag or FQDN environment variable"
@@ -703,7 +703,7 @@ setup_systemd_service() {
   success "Wings service created"
 }
 
-start_Wings() {
+start_wings() {
   print_flame "Starting Wings"
 
   output "Starting Wings service..."
@@ -803,7 +803,7 @@ main() {
   print_flame "Starting Wings Installation"
 
   check_existing
-  install_Wings
+  install_wings
 
   # ---- Configuration phase ----
   # Three paths: auto-configure with API key, manual credentials, or skip entirely
@@ -926,7 +926,7 @@ main() {
   if [ -f "${WINGS_INSTALL_DIR}/config.yml" ]; then
     install_rustic
     setup_systemd_service
-    start_Wings
+    start_wings
 
     # Run auto-fix to ensure proper permissions, ACL defaults, and service restart
     # This handles: ownership, chmod, config permissions, ACL inheritance,

@@ -226,7 +226,7 @@ configure_wings_auto_updater() {
   export WINGS_REPO_PRIVATE
   export GITHUB_TOKEN="$GITHUB_TOKEN_WINGS"
 
-  install_auto_updater_Wings
+  install_auto_updater_wings
 }
 
 # ------------------ Both Auto-Updaters ----------------- #
@@ -254,17 +254,17 @@ show_remove_menu() {
 
   # Check what's installed
   local panel_updater_installed=false
-  local Wings_updater_installed=false
+  local wings_updater_installed=false
 
   if systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
     panel_updater_installed=true
   fi
 
   if systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
-    Wings_updater_installed=true
+    wings_updater_installed=true
   fi
 
-  if [ "$panel_updater_installed" == false ] && [ "$Wings_updater_installed" == false ]; then
+  if [ "$panel_updater_installed" == false ] && [ "$wings_updater_installed" == false ]; then
     warning "No auto-updaters are currently installed."
     echo ""
     output "Press Enter to return to main menu..."
@@ -279,11 +279,11 @@ show_remove_menu() {
     output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Panel auto-updater only"
   fi
 
-  if [ "$Wings_updater_installed" == true ]; then
+  if [ "$wings_updater_installed" == true ]; then
     output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Wings auto-updater only"
   fi
 
-  if [ "$panel_updater_installed" == true ] && [ "$Wings_updater_installed" == true ]; then
+  if [ "$panel_updater_installed" == true ] && [ "$wings_updater_installed" == true ]; then
     output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Both auto-updaters"
   fi
 
@@ -311,12 +311,12 @@ show_remove_menu() {
         fi
         ;;
       1)
-        if [ "$Wings_updater_installed" == true ]; then
+        if [ "$wings_updater_installed" == true ]; then
           warning "This will remove the Wings auto-updater"
           local confirm=""
           bool_input confirm "Are you sure?" "n"
           if [ "$confirm" == "y" ]; then
-            remove_auto_updater_Wings
+            remove_auto_updater_wings
             success "Wings auto-updater removed"
           fi
           break
@@ -325,13 +325,13 @@ show_remove_menu() {
         fi
         ;;
       2)
-        if [ "$panel_updater_installed" == true ] && [ "$Wings_updater_installed" == true ]; then
+        if [ "$panel_updater_installed" == true ] && [ "$wings_updater_installed" == true ]; then
           warning "This will remove both auto-updaters"
           local confirm=""
           bool_input confirm "Are you sure?" "n"
           if [ "$confirm" == "y" ]; then
             remove_auto_updater_panel
-            remove_auto_updater_Wings
+            remove_auto_updater_wings
             success "All auto-updaters removed"
           fi
           break
@@ -441,13 +441,13 @@ trigger_wings_update() {
   fi
   
   # Get latest version from GitHub
-  local Wings_repo="${WINGS_REPO:-pterodactyl/wings}"
+  local wings_repo="${WINGS_REPO:-pterodactyl/wings}"
   local github_token="${GITHUB_TOKEN_WINGS:-$GITHUB_TOKEN}"
   local curl_args=(-sL --max-time 10)
   if [ -n "$github_token" ]; then
     curl_args+=(-H "Authorization: Bearer $github_token")
   fi
-  latest_version=$(curl "${curl_args[@]}" "https://api.github.com/repos/$Wings_repo/releases/latest" 2>/dev/null | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -1)
+  latest_version=$(curl "${curl_args[@]}" "https://api.github.com/repos/$wings_repo/releases/latest" 2>/dev/null | sed -nE 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/p' | head -1)
   [ -z "$latest_version" ] && latest_version="unknown"
   
   output "Current version: ${COLOR_BLUE_THEME}${current_version}${COLOR_NC}"
@@ -486,14 +486,14 @@ trigger_wings_update() {
 show_main_menu() {
   # Check what's installed for menu display
   local panel_updater_installed=false
-  local Wings_updater_installed=false
+  local wings_updater_installed=false
 
   if systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
     panel_updater_installed=true
   fi
 
   if systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
-    Wings_updater_installed=true
+    wings_updater_installed=true
   fi
 
   while true; do
@@ -513,7 +513,7 @@ show_main_menu() {
       output "[${COLOR_GRAY}3${COLOR_NC}] Trigger Panel update check now (not installed)"
     fi
 
-    if [ "$Wings_updater_installed" == true ]; then
+    if [ "$wings_updater_installed" == true ]; then
       output "[${COLOR_BLUE_THEME}4${COLOR_NC}] Trigger Wings update check now"
     else
       output "[${COLOR_GRAY}4${COLOR_NC}] Trigger Wings update check now (not installed)"
@@ -539,7 +539,7 @@ show_main_menu() {
         ;;
       1)
         configure_wings_auto_updater
-        Wings_updater_installed=true
+        wings_updater_installed=true
         echo ""
         output "Press Enter to continue..."
         read -r
@@ -547,7 +547,7 @@ show_main_menu() {
       2)
         configure_both_auto_updaters
         panel_updater_installed=true
-        Wings_updater_installed=true
+        wings_updater_installed=true
         echo ""
         output "Press Enter to continue..."
         read -r
@@ -565,7 +565,7 @@ show_main_menu() {
           panel_updater_installed=false
         fi
         if ! systemctl is-enabled --quiet hydrodactyl-wings-auto-update.timer 2>/dev/null; then
-          Wings_updater_installed=false
+          wings_updater_installed=false
         fi
         ;;
       6)

@@ -47,7 +47,7 @@ PANEL_ADMIN_PASSWORD=""
 CONFIGURE_LETSENCRYPT=false
 CONFIGURE_FIREWALL=false
 INSTALL_AUTO_UPDATER_PANEL=false
-INSTALL_AUTO_UPDATER_Wings=false
+INSTALL_AUTO_UPDATER_WINGS=false
 SSL_CERT_PATH=""
 SSL_KEY_PATH=""
 DB_HOST="127.0.0.1"
@@ -430,7 +430,7 @@ configure_auto_updaters() {
   local install_wings_au=""
   bool_input install_wings_au "Install auto-updater for Wings?" "n" || true
   if [ "$install_wings_au" == "y" ]; then
-    INSTALL_AUTO_UPDATER_Wings=true
+    INSTALL_AUTO_UPDATER_WINGS=true
   fi
 }
 
@@ -471,7 +471,7 @@ show_summary() {
   echo -e "  ${COLOR_BLUE_THEME}Node Name:${COLOR_NC}         ${NODE_NAME}"
   echo -e "  ${COLOR_BLUE_THEME}Node Description:${COLOR_NC}  ${NODE_DESCRIPTION}"
   echo -e "  ${COLOR_BLUE_THEME}Behind Proxy:${COLOR_NC}      $([ "$BEHIND_PROXY" == "true" ] && echo 'Yes' || echo 'No')"
-  echo -e "  ${COLOR_BLUE_THEME}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_Wings" == "true" ] && echo 'Yes' || echo 'No')"
+  echo -e "  ${COLOR_BLUE_THEME}Auto-Updater:${COLOR_NC}      $([ "$INSTALL_AUTO_UPDATER_WINGS" == "true" ] && echo 'Yes' || echo 'No')"
   echo ""
 
   output "──────────────────────────────────────────────────────────────────────"
@@ -523,7 +523,7 @@ export_variables() {
   export CONFIGURE_FIREWALL
   export INSTALL_AUTO_UPDATER="$INSTALL_AUTO_UPDATER_PANEL"
   export INSTALL_AUTO_UPDATER_PANEL
-  export INSTALL_AUTO_UPDATER_Wings
+  export INSTALL_AUTO_UPDATER_WINGS
   export SSL_CERT_PATH
   export SSL_KEY_PATH
   export DB_HOST

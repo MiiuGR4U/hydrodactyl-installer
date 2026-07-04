@@ -114,7 +114,7 @@ remove_auto_updaters() {
     remove_auto_updater_panel
 
     # Remove Wings auto-updater
-    remove_auto_updater_Wings
+    remove_auto_updater_wings
 
     # Remove backup directories
     rm -rf /var/backups/Hydrodactyl

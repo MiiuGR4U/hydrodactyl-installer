@@ -73,7 +73,7 @@ CONFIGURE_FIREWALL="${CONFIGURE_FIREWALL:-false}"
 GAME_PORT_START="${GAME_PORT_START:-27015}"
 GAME_PORT_END="${GAME_PORT_END:-28025}"
 INSTALL_AUTO_UPDATER_PANEL="${INSTALL_AUTO_UPDATER_PANEL:-false}"
-INSTALL_AUTO_UPDATER_Wings="${INSTALL_AUTO_UPDATER_Wings:-false}"
+INSTALL_AUTO_UPDATER_WINGS="${INSTALL_AUTO_UPDATER_WINGS:-false}"
 
 # GitHub
 PANEL_REPO_PRIVATE="${PANEL_REPO_PRIVATE:-false}"
@@ -917,7 +917,7 @@ install_auto_updaters() {
     install_auto_updater_panel
   fi
 
-  if [ "$INSTALL_AUTO_UPDATER_Wings" == true ]; then
+  if [ "$INSTALL_AUTO_UPDATER_WINGS" == true ]; then
     print_flame "Installing Wings Auto-Updater"
     export WINGS_REPO
     export WINGS_REPO_PRIVATE
@@ -1073,7 +1073,7 @@ main() {
   output "Both components are configured to work together on this machine!"
   echo ""
 
-  if [ "$INSTALL_AUTO_UPDATER_PANEL" == true ] || [ "$INSTALL_AUTO_UPDATER_Wings" == true ]; then
+  if [ "$INSTALL_AUTO_UPDATER_PANEL" == true ] || [ "$INSTALL_AUTO_UPDATER_WINGS" == true ]; then
     output "Ã¢Å“â€¦ Auto-updaters are enabled and will check for updates hourly."
     echo ""
   fi

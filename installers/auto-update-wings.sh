@@ -290,7 +290,7 @@ cleanup_old_backups() {
 
 # ------------------ Service Functions ----------------- #
 
-stop_Wings() {
+stop_wings() {
   info "Stopping Wings service..."
   if systemctl is-active --quiet wings 2>/dev/null; then
     systemctl stop Wings
@@ -301,7 +301,7 @@ stop_Wings() {
   fi
 }
 
-start_Wings() {
+start_wings() {
   info "Starting Wings service..."
   systemctl start wings
   sleep 3
@@ -315,7 +315,7 @@ start_Wings() {
   fi
 }
 
-restart_Wings() {
+restart_wings() {
   info "Restarting Wings service..."
   systemctl restart wings
   sleep 3
@@ -439,7 +439,7 @@ perform_update() {
   fi
 
   # Stop service
-  stop_Wings
+  stop_wings
 
   # Download new binary
   local temp_file
@@ -449,7 +449,7 @@ perform_update() {
   if ! download_binary "$new_version" "$temp_file"; then
     error "Download failed"
     rm -f "$temp_file"
-    start_Wings || true
+    start_wings || true
     return $EXIT_DOWNLOAD_FAILED
   fi
 
@@ -458,7 +458,7 @@ perform_update() {
   if ! verify_binary "$temp_file"; then
     error "Binary verification failed"
     rm -f "$temp_file"
-    start_Wings || true
+    start_wings || true
     return $EXIT_DOWNLOAD_FAILED
   fi
 
@@ -467,14 +467,14 @@ perform_update() {
   if ! mv "$temp_file" "/usr/local/bin/wings"; then
     error "Failed to install binary"
     rm -f "$temp_file"
-    start_Wings || true
+    start_wings || true
     return $EXIT_UPDATE_FAILED
   fi
 
   chmod +x /usr/local/bin/wings
 
   # Start service
-  if ! start_Wings; then
+  if ! start_wings; then
     error "Failed to start Wings after update"
     error "Attempting rollback..."
 
@@ -486,7 +486,7 @@ perform_update() {
       info "Restoring from backup: $latest_backup"
       cp "$latest_backup" "/usr/local/bin/wings"
       chmod +x "/usr/local/bin/wings"
-      restart_Wings || true
+      restart_wings || true
     fi
 
     return $EXIT_UPDATE_FAILED
@@ -553,7 +553,7 @@ EOF
         info "Restoring from backup: $latest_backup"
         cp "$latest_backup" "/usr/local/bin/wings"
         chmod +x "/usr/local/bin/wings"
-        restart_Wings || true
+        restart_wings || true
       fi
       
       return $EXIT_UPDATE_FAILED
