@@ -6,7 +6,7 @@ set -e
 #                                                                                    #
 # Hydrodactyl Installer Library                                                       #
 #                                                                                    #
-# Copyright (C) 2025, MiiuGR4U                                             #
+# Copyright (C) 2026, MiiuGR4U                                             #
 #                                                                                    #
 # https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
@@ -140,14 +140,14 @@ print_header() {
   # Flame gradient header - smooth color transition from top to bottom
   echo -e "${GRADIENT_1}    ╔══════════════════════════════════════════════════════════════════════════════════════╗"
   echo -e "${GRADIENT_2}    ║                                                                                      ║"
-  echo -e "${GRADIENT_3}    ║  ███╗   ███╗██╗   ██╗███████╗██████╗ ███████╗██╗     ██╗  ██╗███████╗██╗███╗   ███╗  ║"
-  echo -e "${GRADIENT_4}    ║  ████╗ ████║██║   ██║██╔════╝██╔══██╗██╔════╝██║     ██║  ██║██╔════╝██║████╗ ████║  ║"
-  echo -e "${GRADIENT_5}    ║  ██╔████╔██║██║   ██║███████╗██████╔╝█████╗  ██║     ███████║█████╗  ██║██╔████╔██║  ║"
-  echo -e "${GRADIENT_6}    ║  ██║╚██╔╝██║██║   ██║╚════██║██╔═══╝ ██╔══╝  ██║     ██╔══██║██╔══╝  ██║██║╚██╔╝██║  ║"
-  echo -e "${GRADIENT_7}    ║  ██║ ╚═╝ ██║╚██████╔╝███████║██║     ███████╗███████╗██║  ██║███████╗██║██║ ╚═╝ ██║  ║"
-  echo -e "${GRADIENT_8}    ║  ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝╚═╝     ╚═╝  ║"
+  echo -e "${GRADIENT_3}    ║             ███╗   ███╗██╗██╗██╗   ██╗ ██████╗ ██████╗ ██╗  ██╗██╗   ██╗             ║"
+  echo -e "${GRADIENT_4}    ║             ████╗ ████║██║██║██║   ██║██╔════╝ ██╔══██╗██║  ██║██║   ██║             ║"
+  echo -e "${GRADIENT_5}    ║             ██╔████╔██║██║██║██║   ██║██║  ███╗██████╔╝███████║██║   ██║             ║"
+  echo -e "${GRADIENT_6}    ║             ██║╚██╔╝██║██║██║██║   ██║██║   ██║██╔══██╗╚════██║██║   ██║             ║"
+  echo -e "${GRADIENT_7}    ║             ██║ ╚═╝ ██║██║██║╚██████╔╝╚██████╔╝██║  ██║     ██║╚██████╔╝             ║"
+  echo -e "${GRADIENT_8}    ║             ╚═╝     ╚═╝╚═╝╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝     ╚═╝ ╚═════╝              ║"
   echo -e "${GRADIENT_9}    ║                                                                                      ║"
-  echo -e "${GRADIENT_10}    ║                            Hydrodactyl Installation Manager                           ║"
+  echo -e "${GRADIENT_10}    ║                           Hydrodactyl Installation Manager                           ║"
   echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
   echo -e "    ${COLOR_BLUE_THEME}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_BLUE_THEME}|${COLOR_NC}  ${COLOR_BLUE_THEME}By:${COLOR_NC} MiiuGR4U"
