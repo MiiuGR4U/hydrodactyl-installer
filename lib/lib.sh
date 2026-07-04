@@ -2124,10 +2124,10 @@ verify_certbot_renewal() {
   output "✓ Certbot is installed"
 
   # Check for renewal hooks
-  if [ -f "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh" ]; then
+  if [ -f "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh?v=$RANDOM" ]; then
     output "✓ Hydrodactyl renewal hook script exists"
 
-    if [ -x "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh" ]; then
+    if [ -x "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh?v=$RANDOM" ]; then
       output "✓ Renewal hook script is executable"
     else
       warning "Renewal hook script is not executable"
@@ -2365,7 +2365,7 @@ install_auto_updater_panel() {
   mkdir -p /etc/hydrodactyl
 
   # Get auto-update script
-  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/hydrodactyl-auto-update-panel.sh"; then
+  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/hydrodactyl-auto-update-panel.sh?v=$RANDOM"; then
     error "Failed to get auto-update script"
     exit 1
   fi
@@ -2408,7 +2408,7 @@ install_auto_updater_wings() {
   mkdir -p /etc/hydrodactyl
 
   # Get auto-update script
-  if ! get_script "installers" "auto-update-wings" "/usr/local/bin/hydrodactyl-auto-update-wings.sh"; then
+  if ! get_script "installers" "auto-update-wings" "/usr/local/bin/hydrodactyl-auto-update-wings.sh?v=$RANDOM"; then
     error "Failed to get auto-update script"
     exit 1
   fi
@@ -2515,7 +2515,7 @@ get_script() {
 
   # Download from GitHub
   if [ -n "$output_path" ]; then
-    if ! curl -fsSL -o "$output_path" "$GITHUB_URL/$script_type/$script_name.sh" 2>/dev/null; then
+    if ! curl -fsSL -o "$output_path" "$GITHUB_URL/$script_type/$script_name.sh?v=$RANDOM" 2>/dev/null; then
       error "Failed to download script: $script_name"
       return 1
     fi
@@ -2523,7 +2523,7 @@ get_script() {
     return 0
   else
     # Execute directly
-    bash <(curl -sSL "$GITHUB_URL/$script_type/$script_name.sh")
+    bash <(curl -sSL "$GITHUB_URL/$script_type/$script_name.sh?v=$RANDOM")
     return $?
   fi
 }
@@ -2535,7 +2535,7 @@ source_lib() {
   # Download and source
   local temp_lib
   temp_lib=$(mktemp)
-  if ! curl -fsSL -o "$temp_lib" "$GITHUB_URL/lib/$lib_name.sh" 2>/dev/null; then
+  if ! curl -fsSL -o "$temp_lib" "$GITHUB_URL/lib/$lib_name.sh?v=$RANDOM" 2>/dev/null; then
     error "Failed to download library: $lib_name"
     rm -f "$temp_lib"
     return 1
