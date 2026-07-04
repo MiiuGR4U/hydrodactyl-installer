@@ -1407,6 +1407,8 @@ create_db() {
 # ------------------ Firewall Functions ----------------- #
 
 ask_firewall() {
+  fix_oracle_iptables
+  
   local __resultvar=$1
   local confirm=""
 
@@ -3930,4 +3932,50 @@ pre_flight_checks_wings() {
   
   output "Pre-flight checks passed!"
   echo ""
+}
+
+# ------------------ Oracle Cloud Fix ----------------- #
+
+fix_oracle_iptables() {
+  local APPLY_FIX=""
+  bool_input APPLY_FIX "Are you running on Oracle Cloud? (Applies iptables fix for blocked ports)" "n"
+  if [ "$APPLY_FIX" == "y" ]; then
+    print_flame "Applying Oracle Cloud iptables fix"
+    iptables -P INPUT ACCEPT 2>/dev/null || true
+    iptables -P OUTPUT ACCEPT 2>/dev/null || true
+    iptables -P FORWARD ACCEPT 2>/dev/null || true
+    iptables -F 2>/dev/null || true
+    mkdir -p /etc/iptables
+    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    success "Oracle Cloud iptables flushed and saved"
+    
+    if cmd_exists docker && systemctl is-active --quiet docker; then
+      output "Restarting Docker to restore network rules..."
+      systemctl restart docker 2>/dev/null || true
+    fi
+  fi
+}
+
+# ------------------ Panel Repair ----------------- #
+
+repair_panel_permissions() {
+  print_flame "Repairing Panel Cache & Permissions"
+  
+  if [ ! -d "/var/www/hydrodactyl" ]; then
+    error "Panel is not installed at /var/www/hydrodactyl"
+    return 1
+  fi
+  
+  cd /var/www/hydrodactyl
+  output "Clearing Panel cache and views..."
+  php artisan view:clear 2>/dev/null || true
+  php artisan cache:clear 2>/dev/null || true
+  php artisan route:clear 2>/dev/null || true
+  php artisan config:clear 2>/dev/null || true
+  
+  output "Setting correct permissions..."
+  chmod -R 755 storage/* bootstrap/cache/ 2>/dev/null || true
+  chown -R www-data:www-data * 2>/dev/null || true
+  
+  success "Panel repaired successfully!"
 }
