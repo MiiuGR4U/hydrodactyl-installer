@@ -875,12 +875,19 @@ main() {
       read -rp "* Enter Node ID: " NODE_ID
       echo ""
 
-      # Ask for node FQDN if not already set
+      # Ask if they want SSL and then FQDN
       if [ -z "$FQDN" ]; then
         output ""
-        output "Enter the FQDN for this node (e.g., node.example.com)"
-        output "This is used to locate SSL certificates for secure connections."
-        read -rp "* Node FQDN: " FQDN
+        local want_ssl=""
+        bool_input want_ssl "Will this node use SSL (HTTPS)?" "y"
+        if [ "$want_ssl" == "y" ]; then
+          output "Enter the FQDN for this node (e.g., node.example.com)"
+          output "This is used to locate SSL certificates for secure connections."
+          read -rp "* Node FQDN: " FQDN
+        else
+          output "Skipping SSL configuration."
+          FQDN=""
+        fi
       fi
       echo ""
 
