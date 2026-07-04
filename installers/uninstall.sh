@@ -24,6 +24,11 @@ PANEL_DATA_DIR="/var/lib/pterodactyl"
 remove_panel() {
     print_flame "Removing Hydrodactyl Panel"
 
+    # Remove Panel auto-updater
+    output "Removing Panel Auto-Updater..."
+    remove_auto_updater_panel 2>/dev/null || true
+    rm -rf /var/backups/Hydrodactyl
+
     # Stop services
     output "Stopping panel services..."
     systemctl stop pteroq 2>/dev/null || true
@@ -95,6 +100,11 @@ remove_wings() {
             warning "Missing API credentials in wings-info file, skipping Node removal from Panel."
         fi
     fi
+
+    # Remove Wings auto-updater
+    output "Removing Wings Auto-Updater..."
+    remove_auto_updater_wings 2>/dev/null || true
+    rm -rf /var/backups/Wings
 
     # Stop and remove service
     output "Stopping Wings service..."
