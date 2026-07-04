@@ -766,6 +766,11 @@ install_Wings_daemon() {
 
   # Configure Wings using the official configure command
   output "Configuring Wings using 'wings configure' command..."
+  # Wings configure from Pterodactyl is hardcoded to /etc/pterodactyl
+  if [ "${WINGS_DIR}" != "/etc/pterodactyl" ]; then
+    rm -rf /etc/pterodactyl 2>/dev/null || true
+    ln -s "${WINGS_DIR}" /etc/pterodactyl 2>/dev/null || true
+  fi
   cd "${WINGS_DIR}" && wings configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
 
   if [ $? -ne 0 ]; then

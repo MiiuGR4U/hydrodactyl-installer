@@ -592,6 +592,11 @@ configure_Wings() {
   fi
 
   output "Configuring Wings using 'wings configure' command..."
+  # Wings configure from Pterodactyl is hardcoded to /etc/pterodactyl
+  if [ "${WINGS_INSTALL_DIR}" != "/etc/pterodactyl" ]; then
+    rm -rf /etc/pterodactyl 2>/dev/null || true
+    ln -s "${WINGS_INSTALL_DIR}" /etc/pterodactyl 2>/dev/null || true
+  fi
   output "Panel URL: ${panel_url}"
   output "Node ID: ${node_id}"
 
