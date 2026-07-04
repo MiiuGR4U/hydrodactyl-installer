@@ -668,6 +668,8 @@ configure_wings() {
     sed -i "s|key: .*|key: ${ssl_key_path}|" "${WINGS_INSTALL_DIR}/config.yml"
     success "SSL configured for Wings"
   else
+    # Force disable SSL in config if we don't have certificates to prevent Wings from crashing
+    sed -i 's/enabled: true/enabled: false/' "${WINGS_INSTALL_DIR}/config.yml"
     if [ -z "$node_fqdn" ]; then
       warning "Skipping SSL - node FQDN not configured"
     else

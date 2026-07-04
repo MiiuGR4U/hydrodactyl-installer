@@ -801,6 +801,8 @@ install_Wings_daemon() {
     success "SSL configured for Wings using Let's Encrypt certificates"
   else
     warning "Let's Encrypt certificates not found, SSL may need manual configuration"
+    # Force disable SSL in config if we don't have certificates to prevent Wings from crashing
+    sed -i 's/enabled: true/enabled: false/' "${WINGS_DIR}/config.yml"
   fi
 
   # Step 4: Create allocations via API (after wings configure)
