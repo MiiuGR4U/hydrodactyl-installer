@@ -398,7 +398,7 @@ main() {
   export_variables
 
   output "Starting installation..."
-  run_installer "Wings"
+  run_installer "wings"
 }
 
 main
