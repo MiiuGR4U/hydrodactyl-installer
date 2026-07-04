@@ -687,7 +687,22 @@ get_latest_release() {
     return 1
   fi
 
-  echo "$release_json" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+  local version
+  version=$(echo "$release_json" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+  
+  if [ -z "$version" ]; then
+    if echo "$release_json" | grep -qi 'rate limit'; then
+      if echo "$repo" | grep -qi 'wings'; then
+        echo "v1.13.1"
+      else
+        echo "v1.11.7"
+      fi
+      return 0
+    fi
+    return 1
+  fi
+  
+  echo "$version"
 }
 
 check_releases_exist() {
@@ -703,6 +718,10 @@ check_releases_exist() {
   release_json=$(curl "${curl_opts[@]}" "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)
 
   if [ -z "$release_json" ] || echo "$release_json" | grep -q '"message"'; then
+    if echo "$release_json" | grep -qi 'rate limit'; then
+      warning "GitHub API rate limit exceeded. Using fallback versions."
+      return 0
+    fi
     return 1
   fi
 
