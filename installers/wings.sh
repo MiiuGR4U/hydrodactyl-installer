@@ -388,11 +388,11 @@ ask_skip_auto_config() {
 }
 
 # Auto-configure Wings using API key
-auto_configure_Wings() {
+auto_configure_wings() {
   print_flame "Auto-Configuring Wings via API"
 
   local api_key="$1"
-  local panel_url="$2"
+  local panel_url="${2%/}"
   local node_name="${3:-}"
   [ -z "$node_name" ] && node_name="Wings-Node-$(hostname -s)"
 
@@ -448,7 +448,7 @@ auto_configure_Wings() {
   # Step 3: Configure Wings
   output ""
   output "Step 3: Configuring Wings..."
-  configure_Wings "${panel_url}" "${api_key}" "${NODE_ID}"
+  configure_wings "${panel_url}" "${api_key}" "${NODE_ID}"
 
   success "Wings auto-configuration complete!"
   return 0
@@ -543,7 +543,7 @@ install_letsencrypt_Wings() {
   setup_certbot_renewal
 }
 
-configure_Wings() {
+configure_wings() {
   local panel_url="${1:-$PANEL_URL}"
   local api_key="${2:-$PANEL_API_KEY}"
   local node_id="${3:-$NODE_ID}"
@@ -551,20 +551,20 @@ configure_Wings() {
   # Validate required parameters
   if [ -z "$panel_url" ]; then
     error "Panel URL is required. Provide it as first argument or set PANEL_URL environment variable."
-    error "Usage: configure_Wings <panel_url> <api_key> <node_id>"
-    error "Example: configure_Wings 'https://panel.example.com' 'hydro_xxxxx' '1'"
+    error "Usage: configure_wings <panel_url> <api_key> <node_id>"
+    error "Example: configure_wings 'https://panel.example.com' 'hydro_xxxxx' '1'"
     return 1
   fi
 
   if [ -z "$api_key" ]; then
     error "API key is required. Provide it as second argument or set PANEL_API_KEY environment variable."
-    error "Usage: configure_Wings <panel_url> <api_key> <node_id>"
+    error "Usage: configure_wings <panel_url> <api_key> <node_id>"
     return 1
   fi
 
   if [ -z "$node_id" ]; then
     error "Node ID is required. Provide it as third argument or set NODE_ID environment variable."
-    error "Usage: configure_Wings <panel_url> <api_key> <node_id>"
+    error "Usage: configure_wings <panel_url> <api_key> <node_id>"
     return 1
   fi
 
@@ -796,7 +796,7 @@ install_auto_updater_if_requested() {
     export WINGS_REPO_PRIVATE
     export GITHUB_TOKEN
 
-    install_auto_updater_Wings
+    install_auto_updater_wings
 
     success "Auto-updater installed"
   fi
@@ -831,7 +831,7 @@ main() {
       # User wants auto-configuration
       local _node_name="${NODE_NAME:-}"
       [ -z "$_node_name" ] && _node_name="Wings-Node-$(hostname -s)"
-      if auto_configure_Wings "$PANEL_API_KEY" "$PANEL_URL" "$_node_name"; then
+      if auto_configure_wings "$PANEL_API_KEY" "$PANEL_URL" "$_node_name"; then
         success "Wings auto-configured via API"
       else
         error "Auto-configuration failed."
@@ -843,14 +843,14 @@ main() {
         error "    --node '<node-id>'"
         error ""
         error "Or use the installer function:"
-        error "  configure_Wings '${PANEL_URL}' '<api-key>' '<node-id>'"
+        error "  configure_wings '${PANEL_URL}' '<api-key>' '<node-id>'"
         exit 1
       fi
     fi
   elif [ -n "$PANEL_URL" ] && [ -n "$PANEL_API_KEY" ] && [ -n "$NODE_ID" ]; then
     # Manual configuration credentials provided via environment/args
     output "Manual configuration credentials detected."
-    configure_Wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
+    configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
   else
     # No credentials - ask if user wants to configure now or skip
     output ""
@@ -882,7 +882,7 @@ main() {
       fi
       echo ""
 
-      configure_Wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
+      configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
     else
       output ""
       output "Skipping configuration. Wings is installed but not configured."
@@ -907,7 +907,7 @@ main() {
     # check_permissions_on_boot disable, and Wings service restart+verify
     # (matches both.sh behavior)
     output "Running Wings permission fix..."
-    auto_fix_Wings_issues || true
+    auto_fix_wings_issues || true
 
     configure_firewall
     install_auto_updater_if_requested
@@ -975,7 +975,7 @@ main() {
     output "    --node '${NODE_ID}'${COLOR_NC}"
     output ""
     output "Or use the installer function with parameters:"
-    output "  ${COLOR_BLUE_THEME}configure_Wings '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
+    output "  ${COLOR_BLUE_THEME}configure_wings '${PANEL_URL}' '<api-key>' '${NODE_ID}'${COLOR_NC}"
     echo ""
   else
     output "Ã¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€ÂÃ¢â€Â"

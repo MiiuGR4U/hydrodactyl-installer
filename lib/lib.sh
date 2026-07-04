@@ -2951,7 +2951,7 @@ get_server_country_code() {
 # Get or create location via API
 get_or_create_location() {
   local api_key="$1"
-  local panel_url="$2"
+  local panel_url="${2%/}"
   local country_code="$3"
 
   # Output to stderr so it doesn't pollute the return value
@@ -3052,7 +3052,7 @@ get_or_create_location() {
 # Create node via API
 create_node_via_api() {
   local api_key="$1"
-  local panel_url="$2"
+  local panel_url="${2%/}"
   local location_id="$3"
   local node_name="$4"
   local memory_mb="$5"
@@ -3185,7 +3185,7 @@ create_node_via_api() {
 # Create allocations for node
 create_node_allocations() {
   local api_key="$1"
-  local panel_url="$2"
+  local panel_url="${2%/}"
   local node_id="$3"
   local game_port_start="${4:-28015}"
   local game_port_end="${5:-28100}"
@@ -3237,7 +3237,7 @@ create_node_allocations() {
 # Get node configuration token via API
 get_node_configuration() {
   local api_key="$1"
-  local panel_url="$2"
+  local panel_url="${2%/}"
   local node_id="$3"
 
   output "Retrieving node configuration..." >&2
