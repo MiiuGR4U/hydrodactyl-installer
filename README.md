@@ -25,7 +25,7 @@
 
 **Hydrodactyl Installer** is a robust, enterprise-grade automated script designed to deploy the [Hydrodactyl Panel](https://github.com/blueprintframework/hydrodactyl) and its daemon (**Wings**) seamlessly. 
 
-Built and heavily optimized by the **Blueprint Framework** team, this installer takes care of the deep waters: downloading the panel, setting up Nginx, configuring PHP-FPM, initializing MariaDB, bypassing SELinux roadblocks, and configuring background workers—all while you sit back and relax.
+Built and heavily optimized by the **MiiuGR4U** team, this installer takes care of the deep waters: downloading the panel, setting up Nginx, configuring PHP-FPM, initializing MariaDB, bypassing SELinux roadblocks, and configuring background workers—all while you sit back and relax.
 
 ## 🚀 Quick Installation
 
@@ -95,9 +95,9 @@ We support a wide ocean of enterprise and community Linux distributions. **A fre
 
 ---
 
-## ⚓ Support & Blueprint Framework
+## ⚓ Support & MiiuGR4U
 
-This installer is proudly maintained as part of the **Blueprint Framework** ecosystem.
+This installer is proudly maintained as part of the **MiiuGR4U** ecosystem.
 
 - **Bugs/Issues:** If you encounter issues with this installer script, please open an issue in this repository.
 - **Panel Support:** For general support regarding Hydrodactyl, visit our official community or read the documentation.
@@ -105,5 +105,5 @@ This installer is proudly maintained as part of the **Blueprint Framework** ecos
 <br>
 
 <div align="center">
-  <i>Made with 💙 and 🌊 by Blueprint.</i>
+  <i>Made with 💙 and 🌊 by MiiuGR4U.</i>
 </div>

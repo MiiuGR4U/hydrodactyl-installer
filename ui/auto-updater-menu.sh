@@ -6,7 +6,8 @@ set -e
 #                                                                                    #
 # Hydrodactyl Auto-Updater Management UI                                              #
 #                                                                                    #
-# Copyright (C) 2025, Blueprint                                             #
+# Copyright (C) 2026, MiiuGR4U
+# Based on pyrodactyl-installer by Muspelheim-Hosting                                             #
 #                                                                                    #
 ######################################################################################
 

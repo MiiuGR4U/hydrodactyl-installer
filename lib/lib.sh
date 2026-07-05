@@ -6,7 +6,8 @@ set -e
 #                                                                                    #
 # Hydrodactyl Installer Library                                                       #
 #                                                                                    #
-# Copyright (C) 2026, MiiuGR4U                                             #
+# Copyright (C) 2026, MiiuGR4U
+# Based on pyrodactyl-installer by Muspelheim-Hosting                                             #
 #                                                                                    #
 # https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #

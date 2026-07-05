@@ -8,7 +8,8 @@ set -e
 #                                                                                    #
 # Displays saved installation information for Panel and/or Wings                    #
 #                                                                                    #
-# Copyright (C) 2025, Blueprint                                             #
+# Copyright (C) 2026, MiiuGR4U
+# Based on pyrodactyl-installer by Muspelheim-Hosting                                             #
 #                                                                                    #
 # https://github.com/MiiuGR4U/hydrodactyl-installer                         #
 #                                                                                    #
