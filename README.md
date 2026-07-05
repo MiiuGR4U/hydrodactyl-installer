@@ -6,7 +6,7 @@
   <p><b>The official, zero-touch, one-line installation script for Hydrodactyl Panel and Wings.</b></p>
   
   <p>
-    <img src="https://img.shields.io/badge/Version-1.0.0-00b4d8?style=for-the-badge&logo=github" alt="Version">
+    <img src="https://img.shields.io/badge/Version-2.0.1-00b4d8?style=for-the-badge&logo=github" alt="Version">
     <img src="https://img.shields.io/badge/Bash-Script-03045e?style=for-the-badge&logo=gnu-bash" alt="Bash">
     <img src="https://img.shields.io/badge/License-MIT-0077b6?style=for-the-badge" alt="License">
     <img src="https://img.shields.io/badge/Blueprint-Framework-90e0ef?style=for-the-badge" alt="Blueprint">
