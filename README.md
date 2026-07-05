@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/blueprintframework/hydrodactyl/main/public/favicons/apple-touch-icon.png" width="180" alt="Hydrodactyl Logo">
+  <img src="https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl/main/public/favicons/apple-touch-icon.png" width="180" alt="Hydrodactyl Logo">
   
   <h1>💧 Hydrodactyl Installer 💧</h1>
   
