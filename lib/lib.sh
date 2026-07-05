@@ -2032,10 +2032,17 @@ install_letsencrypt() {
       ;;
   esac
 
-  certbot --nginx -d "$fqdn" --non-interactive --agree-tos --email "$email" || {
-    warning "Certbot failed to obtain certificate"
-    return 1
-  }
+  if [ -n "$email" ]; then
+    certbot --nginx -d "$fqdn" --non-interactive --agree-tos --email "$email" || {
+      warning "Certbot failed to obtain certificate"
+      return 1
+    }
+  else
+    certbot --nginx -d "$fqdn" --non-interactive --agree-tos --register-unsafely-without-email || {
+      warning "Certbot failed to obtain certificate"
+      return 1
+    }
+  fi
 
   success "SSL certificate installed"
 
@@ -2124,10 +2131,10 @@ verify_certbot_renewal() {
   output "✓ Certbot is installed"
 
   # Check for renewal hooks
-  if [ -f "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh?v=$RANDOM" ]; then
+  if [ -f "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh" ]; then
     output "✓ Hydrodactyl renewal hook script exists"
 
-    if [ -x "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh?v=$RANDOM" ]; then
+    if [ -x "/etc/letsencrypt/renewal-hooks/deploy/hydrodactyl-services.sh" ]; then
       output "✓ Renewal hook script is executable"
     else
       warning "Renewal hook script is not executable"
@@ -2365,7 +2372,7 @@ install_auto_updater_panel() {
   mkdir -p /etc/hydrodactyl
 
   # Get auto-update script
-  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/hydrodactyl-auto-update-panel.sh?v=$RANDOM"; then
+  if ! get_script "installers" "auto-update-panel" "/usr/local/bin/hydrodactyl-auto-update-panel.sh"; then
     error "Failed to get auto-update script"
     exit 1
   fi
@@ -2408,7 +2415,7 @@ install_auto_updater_wings() {
   mkdir -p /etc/hydrodactyl
 
   # Get auto-update script
-  if ! get_script "installers" "auto-update-wings" "/usr/local/bin/hydrodactyl-auto-update-wings.sh?v=$RANDOM"; then
+  if ! get_script "installers" "auto-update-wings" "/usr/local/bin/hydrodactyl-auto-update-wings.sh"; then
     error "Failed to get auto-update script"
     exit 1
   fi
