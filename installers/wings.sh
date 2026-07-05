@@ -503,16 +503,21 @@ install_letsencrypt_wings() {
     fi
   fi
 
-  # Build the certbot command
-  local certbot_args="certonly --standalone -d $fqdn --non-interactive --agree-tos"
+  # Build the certbot command using an array to safely handle quoted strings
+  local certbot_args=(certonly --standalone -d "$fqdn" --non-interactive --agree-tos)
+  
+  # Add pre/post hooks to ensure port 80 is free during future renewals
+  certbot_args+=(--pre-hook "systemctl stop nginx apache2 httpd caddy 2>/dev/null || true")
+  certbot_args+=(--post-hook "systemctl start nginx apache2 httpd caddy 2>/dev/null || true")
+
   if [ -n "$email" ]; then
-    certbot_args="$certbot_args --email $email"
+    certbot_args+=(--email "$email")
   else
-    certbot_args="$certbot_args --register-unsafely-without-email"
+    certbot_args+=(--register-unsafely-without-email)
   fi
 
   # Obtain the certificate
-  if ! certbot $certbot_args; then
+  if ! certbot "${certbot_args[@]}"; then
     warning "Certbot failed to obtain certificate for ${fqdn}"
     # Restart any service we stopped
     if [ -n "$stopped_service" ]; then
