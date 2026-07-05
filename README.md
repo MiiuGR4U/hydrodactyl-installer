@@ -95,6 +95,12 @@ We support a wide ocean of enterprise and community Linux distributions. **A fre
 
 ---
 
+## 🙏 Acknowledgements
+
+This installer is a heavily modified fork and continuation of the excellent [pyrodactyl-installer](https://github.com/Muspelheim-Hosting/pyrodactyl-installer) originally created by **Muspelheim-Hosting**. We are deeply grateful for their foundational work and have retained their original MIT License out of respect for their open-source contributions.
+
+---
+
 ## ⚓ Support & MiiuGR4U
 
 This installer is proudly maintained as part of the **MiiuGR4U** ecosystem.
