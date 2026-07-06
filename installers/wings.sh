@@ -834,16 +834,13 @@ main() {
         success "Wings auto-configured via API"
       else
         error "Auto-configuration failed."
-        error ""
-        error "You can manually configure Wings later by running:"
-        error "  cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
-        error "    --panel-url '${PANEL_URL}' \\"
-        error "    --token '<your-api-key>' \\"
-        error "    --node '<node-id>'"
-        error ""
-        error "Or use the installer function:"
-        error "  configure_wings '${PANEL_URL}' '<api-key>' '<node-id>'"
-        exit 1
+        warning "Falling back to manual configuration."
+        read -rp "* Enter Node ID (create it in the panel first): " NODE_ID
+        read -rp "* Enter Panel API Key (or press enter to use the existing one): " fallback_key
+        if [ -n "$fallback_key" ]; then
+          PANEL_API_KEY="$fallback_key"
+        fi
+        configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
       fi
     fi
   elif [ -n "$PANEL_URL" ] && [ -n "$PANEL_API_KEY" ] && [ -n "$NODE_ID" ]; then
@@ -910,6 +907,13 @@ main() {
           configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
         else
           error "Auto-configuration failed."
+          warning "Falling back to manual configuration."
+          read -rp "* Enter Node ID (create it in the panel first): " NODE_ID
+          read -rp "* Enter Panel API Key (or press enter to use the existing one): " fallback_key
+          if [ -n "$fallback_key" ]; then
+            PANEL_API_KEY="$fallback_key"
+          fi
+          configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
         fi
       else
         configure_wings "${PANEL_URL}" "${PANEL_API_KEY}" "${NODE_ID}"
