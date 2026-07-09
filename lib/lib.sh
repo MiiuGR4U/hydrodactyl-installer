@@ -318,7 +318,7 @@ detect_os() {
   esac
 
   if [ "$SUPPORTED" != true ]; then
-    error "Operating system $OS $OS_VER is not officially supported."
+    error "Operating system $OS $OS_VER is not supported by this script."
     warning "The installer may still work, but proceed at your own risk."
     echo ""
     local continue_anyway=""

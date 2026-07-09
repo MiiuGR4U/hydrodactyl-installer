@@ -3,7 +3,7 @@
   
   <h1>💧 Hydrodactyl Installer 💧</h1>
   
-  <p><b>The **unofficial**, zero-touch, one-line installation script for Hydrodactyl Panel and Wings.</b></p>
+  <p><b>The unofficial, zero-touch, one-line installation script for Hydrodactyl Panel and Wings. Made by Antigravity and you!</b></p>
   
   <p>
     <img src="https://img.shields.io/badge/Version-2.0.1-00b4d8?style=for-the-badge&logo=github" alt="Version">
@@ -106,7 +106,7 @@ This installer is a heavily modified fork and continuation of the excellent [pyr
 This installer is proudly maintained as part of the **MiiuGR4U** ecosystem.
 
 - **Bugs/Issues:** If you encounter issues with this installer script, please open an issue in this repository.
-- **Panel Support:** For general support regarding Hydrodactyl, visit our official community or read the documentation.
+- **Panel Support:** For general support regarding Hydrodactyl, visit the Hydrodactyl community or read the documentation.
 
 <br>
 

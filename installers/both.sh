@@ -769,7 +769,7 @@ install_wings_daemon() {
   output "DEBUG: PANEL_FQDN=${PANEL_FQDN}"
   output "DEBUG: WINGS_DIR=${WINGS_DIR}"
 
-  # Configure Wings using the official configure command
+  # Configure Wings using the configure command
   output "Configuring Wings using 'wings configure' command..."
   # Wings configure from Pterodactyl is hardcoded to /etc/pterodactyl
   if [ "${WINGS_DIR}" != "/etc/pterodactyl" ]; then

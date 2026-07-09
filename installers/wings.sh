@@ -597,7 +597,7 @@ configure_wings() {
   output "Panel URL: ${panel_url}"
   output "Node ID: ${node_id}"
 
-  # Configure Wings using the official configure command
+  # Configure Wings using the configure command
   # Note: Uses Panel API key, not node daemon token
   # Run in a subshell to avoid changing the working directory of the caller
   if ! (cd "${WINGS_INSTALL_DIR}" && wings configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then

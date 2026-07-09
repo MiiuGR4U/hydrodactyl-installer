@@ -90,7 +90,7 @@ dnf install -y curl wget nano htop tar gzip # Rocky/AlmaLinux
 
 ### Ubuntu/Debian
 
-**Option 1: Using the official Docker repository (Recommended)**
+**Option 1: Using the Docker repository (Recommended)**
 
 ```bash
 # Remove any old versions
@@ -99,7 +99,7 @@ apt remove docker docker-engine docker.io containerd runc 2>/dev/null || true
 # Install prerequisites
 apt install -y ca-certificates curl gnupg lsb-release
 
-# Add Docker's official GPG key
+# Add Docker's GPG key
 mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
