@@ -272,10 +272,21 @@ check_installations() {
   WINGS_UPDATER_INSTALLED=false
 
   # Check for Hydrodactyl
-  if [ -d "/var/www/hydrodactyl" ]; then
+  if [ -d "/var/www/hydrodactyl" ] || [ -d "/opt/hydrodactyl" ]; then
     PANEL_INSTALLED=true
     if [ -f "/var/www/hydrodactyl/config/app.php" ]; then
       PANEL_VERSION=$(grep "'version'" "/var/www/hydrodactyl/config/app.php" 2>/dev/null | head -1 | cut -d"'" -f4 || echo "")
+    fi
+    if [ -f "/etc/hydrodactyl/install-info/panel-info" ]; then
+      local method
+      method=$(grep "^PANEL_INSTALL_METHOD=" "/etc/hydrodactyl/install-info/panel-info" 2>/dev/null | cut -d'"' -f2)
+      if [ -n "$method" ]; then
+        PANEL_INSTALL_METHOD_DISPLAY="$method"
+      else
+        PANEL_INSTALL_METHOD_DISPLAY="native"
+      fi
+    else
+      PANEL_INSTALL_METHOD_DISPLAY="native"
     fi
   fi
 
@@ -314,13 +325,13 @@ show_welcome() {
   check_installations
 
   if [ "$PANEL_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${PANEL_VERSION:+ ($PANEL_VERSION)}"
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Panel installed${PANEL_VERSION:+ ($PANEL_VERSION)} [${COLOR_CYAN}${PANEL_INSTALL_METHOD_DISPLAY}${COLOR_NC}]"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Panel not installed"
   fi
 
   if [ "$WINGS_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings installed${WINGS_VERSION:+ ($WINGS_VERSION)}"
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings installed${WINGS_VERSION:+ ($WINGS_VERSION)} [${COLOR_CYAN}native${COLOR_NC}]"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Wings not installed"
   fi

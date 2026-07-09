@@ -584,104 +584,6 @@ setup_panel_services() {
 
 # ---------------- Node Creation ---------------- #
 
-create_node_in_panel() {
-  print_flame "Creating Node in Panel via API"
-
-  # Check if we have API key for API-based creation
-  if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_FQDN" ]; then
-    local panel_url="http://${PANEL_FQDN}"
-    [ "$ASSUME_SSL" == true ] && panel_url="https://${PANEL_FQDN}"
-    [ "$CONFIGURE_LETSENCRYPT" == true ] && panel_url="https://${PANEL_FQDN}"
-
-    # Step 1: Detect country and get/create location
-    output "Detecting server location..."
-    local country_code
-    country_code=$(get_server_country_code)
-    info "Detected country code: ${COLOR_BLUE_THEME}${country_code}${COLOR_NC}"
-
-    local location_id
-    if ! location_id=$(get_or_create_location "$PANEL_API_KEY" "$panel_url" "$country_code"); then
-      error "Failed to set up location via API, falling back to manual method"
-      # Fall through to manual method below
-    else
-      # Step 2: Create node via API
-      output "Creating node via API: ${COLOR_BLUE_THEME}${NODE_NAME}${COLOR_NC}" >&2
-      local memory_mb
-      local disk_mb
-      memory_mb=$(get_system_memory)
-      disk_mb=$(df -m / | awk 'NR==2 {print $2}')
-
-      local node_scheme="https"
-      if [ "$ASSUME_SSL" == "false" ] && [ "$CONFIGURE_LETSENCRYPT" != "true" ]; then
-        node_scheme="http"
-      fi
-
-      if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY" "$PANEL_FQDN" "$node_scheme"); then
-        error "Failed to create node via API, falling back to manual method"
-        # Fall through to manual method below
-      else
-        output "DEBUG: Node created via API with NODE_ID=${NODE_ID}"
-        success "Node created successfully via API"
-        info "Node ID: ${NODE_ID}"
-        return 0
-      fi
-    fi
-  fi
-
-  # Fallback: Manual creation using artisan/MySQL
-  output "Using manual node creation method..."
-  cd "$INSTALL_DIR"
-
-  # Detect system specs
-  output "Detecting system specifications..."
-  local system_memory
-  local system_disk
-  system_memory=$(get_system_memory)
-  system_disk=$(df -m / | awk 'NR==2 {print $2}')
-
-  # Use detected values or defaults if detection failed
-  local max_memory="${system_memory:-8192}"
-  local max_disk="${system_disk:-32768}"
-
-  info "Detected Memory: ${max_memory} MB"
-  info "Detected Disk: ${max_disk} MB"
-
-  # Create location first
-  output "Creating location..."
-  php artisan p:location:make -n --short=local --long="Local Location" 2>/dev/null || true
-
-  # Get location ID
-  local location_id
-  location_id=$(mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -D panel -N -B -e "SELECT id FROM locations WHERE short='local' LIMIT 1;" 2>/dev/null || echo "1")
-
-  # Create node with actual system specs
-  output "Creating node: $NODE_NAME..."
-  php artisan p:node:make -n \
-    --name="$NODE_NAME" \
-    --description="$NODE_DESCRIPTION" \
-    --locationId="$location_id" \
-    --fqdn="$PANEL_FQDN" \
-    --public=1 \
-    --scheme=https \
-    --proxy=$([ "$BEHIND_PROXY" == "true" ] && echo "yes" || echo "no") \
-    --maxMemory="$max_memory" \
-    --overallocateMemory=0 \
-    --maxDisk="$max_disk" \
-    --overallocateDisk=0 \
-    --uploadSize=100 </dev/null 2>/dev/null || true
-
-  # Get the node ID
-  NODE_ID=$(mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -D panel -N -B -e "SELECT id FROM nodes WHERE name='${NODE_NAME}' LIMIT 1;" 2>/dev/null || echo "1")
-
-  if [ -z "$NODE_ID" ] || [ "$NODE_ID" == "NULL" ]; then
-    NODE_ID="1"
-  fi
-
-  output "Node ID: $NODE_ID"
-
-  success "Node created in panel (ID: ${NODE_ID})"
-}
-
 # ---------------- Wings Installation ---------------- #
 
 install_wings_daemon() {
@@ -943,42 +845,50 @@ main() {
 
   check_existing
 
-  # Panel installation
-  install_panel_dependencies
-  configure_mariadb
-
-  if [ "$PANEL_INSTALL_METHOD" == "release" ]; then
-    install_panel_release
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    print_flame "Starting Panel Installation (Docker)"
+    setup_docker_environment
+    start_docker_panel
   else
-    install_panel_clone
+    print_flame "Starting Panel Installation (Native)"
+    # Panel installation
+    install_panel_dependencies
+    configure_mariadb
+
+    if [ "$PANEL_INSTALL_METHOD" == "release" ]; then
+      install_panel_release
+    else
+      install_panel_clone
+    fi
+
+    configure_panel_environment
+    setup_panel_services
+    install_phpmyadmin
+
+    # Generate API key for automated operations
+    output "Generating Application API Key..."
+    PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" 2>/dev/null || echo "")
+    if [ -n "$PANEL_API_KEY" ]; then
+      success "API Key generated successfully"
+      # Save API key to credentials file for later use
+      mkdir -p /root/.config/Hydrodactyl
+      echo "api_key:${PANEL_API_KEY}" >> /root/.config/Hydrodactyl/db-credentials
+      chmod 600 /root/.config/Hydrodactyl/db-credentials
+    else
+      warning "Failed to generate API key - automated server creation will be skipped"
+    fi
+
+    # Create node in panel (uses API key if available)
+    create_node_in_panel
+
+    # Setup database host for the panel
+    setup_database_host "$PANEL_FQDN"
   fi
 
-
-  configure_panel_environment
-  setup_panel_services
-  install_phpmyadmin
-
-  # Generate API key for automated operations
-  output "Generating Application API Key..."
-  PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" || echo "")
-  if [ -n "$PANEL_API_KEY" ]; then
-    success "API Key generated successfully"
-    # Save API key to credentials file for later use
-    mkdir -p /root/.config/Hydrodactyl
-    echo "api_key:${PANEL_API_KEY}" >> /root/.config/Hydrodactyl/db-credentials
-    chmod 600 /root/.config/Hydrodactyl/db-credentials
-  else
-    warning "Failed to generate API key - automated server creation will be skipped"
+  # Configure MariaDB for TCP connections (Wings needs this to communicate with panel DB)
+  if [ "$PANEL_INSTALL_METHOD" != "docker" ]; then
+    configure_mariadb_tcp
   fi
-
-  # Create node in panel (uses API key if available)
-  create_node_in_panel
-
-  # Configure MariaDB for TCP connections
-  configure_mariadb_tcp
-
-  # Setup database host for the panel
-  setup_database_host "$PANEL_FQDN"
 
   # Wings installation
   install_wings_daemon

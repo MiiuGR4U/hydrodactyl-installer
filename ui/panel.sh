@@ -161,13 +161,14 @@ configure_installation_method() {
 
   output "How would you like to install the panel?"
   echo ""
-  output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Download latest release tarball (recommended)"
-  output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Clone from Git repository (development)"
+  output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Native: Download latest release tarball (recommended)"
+  output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Native: Clone from Git repository (development)"
+  output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Docker: Use docker-compose for installation"
   echo ""
 
   local method_choice=""
-  while [[ "$method_choice" != "0" && "$method_choice" != "1" ]]; do
-    echo -n "* Select [0-1]: "
+  while [[ "$method_choice" != "0" && "$method_choice" != "1" && "$method_choice" != "2" ]]; do
+    echo -n "* Select [0-2]: "
     read -r method_choice
   done
 
@@ -176,9 +177,13 @@ configure_installation_method() {
     output "Will download release tarball"
     # Configure which release version to use
     configure_release_version
-  else
+  elif [ "$method_choice" == "1" ]; then
     PANEL_INSTALL_METHOD="clone"
     output "Will clone from Git repository"
+  elif [ "$method_choice" == "2" ]; then
+    PANEL_INSTALL_METHOD="docker"
+    output "Will install via Docker"
+    # For Docker, we'll generally pull 'latest' image, but user can change it later if needed
   fi
 }
 
@@ -433,7 +438,11 @@ main() {
   export_variables
 
   output "Starting installation..."
-  run_installer "panel"
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    run_installer "panel_docker"
+  else
+    run_installer "panel"
+  fi
 }
 
 main

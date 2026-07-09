@@ -148,13 +148,14 @@ configure_panel_settings() {
 
   output "How would you like to install the panel?"
   echo ""
-  output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Download latest release tarball (recommended)"
-  output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Clone from Git repository (development)"
+  output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Native: Download latest release tarball (recommended)"
+  output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Native: Clone from Git repository (development)"
+  output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Docker: Use docker-compose for installation"
   echo ""
 
   local method_choice=""
-  while [[ "$method_choice" != "0" && "$method_choice" != "1" ]]; do
-    echo -n "* Select [0-1]: "
+  while [[ "$method_choice" != "0" && "$method_choice" != "1" && "$method_choice" != "2" ]]; do
+    echo -n "* Select [0-2]: "
     read -r method_choice
   done
 
@@ -182,8 +183,11 @@ configure_panel_settings() {
       success "Will install release: ${PANEL_RELEASE_VERSION}"
     fi
     echo ""
-  else
+  elif [ "$method_choice" == "1" ]; then
     PANEL_INSTALL_METHOD="clone"
+  elif [ "$method_choice" == "2" ]; then
+    PANEL_INSTALL_METHOD="docker"
+    output "Will install via Docker"
   fi
 
   echo ""

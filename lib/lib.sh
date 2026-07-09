@@ -1897,7 +1897,16 @@ setup_database_host() {
 
   # Create database user if it doesn't exist
   output "Creating database host user..."
-  mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -e "
+  
+  local mysql_cmd="mysql -u root -p${MYSQL_ROOT_PASSWORD}"
+  local php_cmd="php artisan"
+  
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    mysql_cmd="docker compose exec -T database mysql -u root -p${MYSQL_ROOT_PASSWORD}"
+    php_cmd="docker compose exec -T panel php artisan"
+  fi
+
+  $mysql_cmd -e "
     CREATE USER IF NOT EXISTS '${db_host_user}'@'127.0.0.1' IDENTIFIED BY '${db_host_pass}';
     CREATE USER IF NOT EXISTS '${db_host_user}'@'%' IDENTIFIED BY '${db_host_pass}';
     GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'127.0.0.1' WITH GRANT OPTION;
@@ -1911,7 +1920,7 @@ setup_database_host() {
   cd "$INSTALL_DIR" || return 1
 
   local tinker_output
-  tinker_output=$(php artisan tinker --execute="
+  tinker_output=$($php_cmd tinker --execute="
 use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
 try {
     app(HostCreationService::class)->handle([
@@ -2847,10 +2856,15 @@ generate_api_key() {
 
   cd "$install_dir" || return 1
 
+  local php_cmd="php artisan"
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    php_cmd="docker compose exec -T panel php artisan"
+  fi
+
   # Use a heredoc for cleaner PHP code without escaping hell
   # Capture only stdout (the key), stderr goes to terminal for debugging
   local api_key_result
-  api_key_result=$(php artisan tinker --execute='
+  api_key_result=$($php_cmd tinker --execute='
     use Pterodactyl\Models\ApiKey;
     use Pterodactyl\Models\User;
     use Pterodactyl\Services\Api\KeyCreationService;
@@ -3321,6 +3335,7 @@ save_panel_install_info() {
     echo ""
     echo "INSTALL_DATE=\"$(date)\""
     echo "INSTALL_TYPE=\"$install_type\""
+    [ -n "$PANEL_INSTALL_METHOD" ] && echo "PANEL_INSTALL_METHOD=\"$PANEL_INSTALL_METHOD\""
     [ -n "$PANEL_VERSION" ] && echo "PANEL_VERSION=\"$PANEL_VERSION\""
     [ -n "$FQDN" ] && echo "FQDN=\"$FQDN\""
     [ -n "$MYSQL_DB" ] && echo "MYSQL_DB=\"$MYSQL_DB\""
@@ -3866,6 +3881,7 @@ auto_fix_wings_issues() {
   # Enable check_permissions_on_boot so Wings properly chowns volumes for containers
   if [ -f "/etc/pterodactyl/config.yml" ]; then
     info "Enabling permission checks in Wings config..."
+    sed -i 's/check_permissions_on_boot: false/check_permissions_on_boot: true/' "/etc/pterodactyl/config.yml" 2>/dev/null || true
   fi
 
   # Wings config directory - create if needed and set more restrictive permissions
@@ -3987,4 +4003,304 @@ repair_panel_permissions() {
   chown -R www-data:www-data * 2>/dev/null || true
   
   success "Panel repaired successfully!"
+}
+
+# ---------------- Node Creation ---------------- #
+
+create_node_in_panel() {
+  print_flame "Creating Node in Panel via API"
+
+  # Check if we have API key for API-based creation
+  if [ -n "$PANEL_API_KEY" ] && [ -n "$PANEL_FQDN" ]; then
+    local panel_url="http://${PANEL_FQDN}"
+    [ "$ASSUME_SSL" == true ] && panel_url="https://${PANEL_FQDN}"
+    [ "$CONFIGURE_LETSENCRYPT" == true ] && panel_url="https://${PANEL_FQDN}"
+
+    # Step 1: Detect country and get/create location
+    output "Detecting server location..."
+    local country_code
+    country_code=$(get_server_country_code)
+    info "Detected country code: ${COLOR_BLUE_THEME}${country_code}${COLOR_NC}"
+
+    local location_id
+    if ! location_id=$(get_or_create_location "$PANEL_API_KEY" "$panel_url" "$country_code"); then
+      error "Failed to set up location via API, falling back to manual method"
+      # Fall through to manual method below
+    else
+      # Step 2: Create node via API
+      output "Creating node via API: ${COLOR_BLUE_THEME}${NODE_NAME}${COLOR_NC}" >&2
+      local memory_mb
+      local disk_mb
+      memory_mb=$(get_system_memory)
+      disk_mb=$(df -m / | awk 'NR==2 {print $2}')
+
+      local node_scheme="https"
+      if [ "$ASSUME_SSL" == "false" ] && [ "$CONFIGURE_LETSENCRYPT" != "true" ]; then
+        node_scheme="http"
+      fi
+
+      if ! NODE_ID=$(create_node_via_api "$PANEL_API_KEY" "$panel_url" "$location_id" "$NODE_NAME" "$memory_mb" "$disk_mb" "$BEHIND_PROXY" "$PANEL_FQDN" "$node_scheme"); then
+        error "Failed to create node via API, falling back to manual method"
+        # Fall through to manual method below
+      else
+        output "DEBUG: Node created via API with NODE_ID=${NODE_ID}"
+        success "Node created successfully via API"
+        info "Node ID: ${NODE_ID}"
+        return 0
+      fi
+    fi
+  fi
+
+  # Fallback: Manual creation using artisan/MySQL
+  output "Using manual node creation method..."
+  cd "$INSTALL_DIR" || return 1
+
+  local php_cmd="php artisan"
+  local mysql_cmd="mysql -u root -p${MYSQL_ROOT_PASSWORD}"
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    php_cmd="docker compose exec -T panel php artisan"
+    mysql_cmd="docker compose exec -T database mysql -u root -p${MYSQL_ROOT_PASSWORD}"
+  fi
+
+  # Detect system specs
+  output "Detecting system specifications..."
+  local system_memory
+  local system_disk
+  system_memory=$(get_system_memory)
+  system_disk=$(df -m / | awk 'NR==2 {print $2}')
+
+  # Use detected values or defaults if detection failed
+  local max_memory="${system_memory:-8192}"
+  local max_disk="${system_disk:-32768}"
+
+  info "Detected Memory: ${max_memory} MB"
+  info "Detected Disk: ${max_disk} MB"
+
+  # Create location first
+  output "Creating location..."
+  $php_cmd p:location:make -n --short=local --long="Local Location" 2>/dev/null || true
+
+  # Get location ID
+  local location_id
+  location_id=$($mysql_cmd -D panel -N -B -e "SELECT id FROM locations WHERE short='local' LIMIT 1;" 2>/dev/null || echo "1")
+
+  # Create node with actual system specs
+  output "Creating node: $NODE_NAME..."
+  $php_cmd p:node:make -n \
+    --name="$NODE_NAME" \
+    --description="$NODE_DESCRIPTION" \
+    --locationId="$location_id" \
+    --fqdn="$PANEL_FQDN" \
+    --public=1 \
+    --scheme=https \
+    --proxy=$([ "$BEHIND_PROXY" == "true" ] && echo "yes" || echo "no") \
+    --maxMemory="$max_memory" \
+    --overallocateMemory=0 \
+    --maxDisk="$max_disk" \
+    --overallocateDisk=0 \
+    --uploadSize=100 </dev/null 2>/dev/null || true
+
+  # Get the node ID
+  NODE_ID=$($mysql_cmd -D panel -N -B -e "SELECT id FROM nodes WHERE name='${NODE_NAME}' LIMIT 1;" 2>/dev/null || echo "1")
+
+  if [ -z "$NODE_ID" ] || [ "$NODE_ID" == "NULL" ]; then
+    NODE_ID="1"
+  fi
+
+  output "Node ID: $NODE_ID"
+
+  success "Node created in panel (ID: ${NODE_ID})"
+}
+
+# ---------------- Docker Panel Installation ---------------- #
+
+setup_docker_environment() {
+  print_flame "Setting up Docker Environment"
+  
+  install_docker
+
+  output "Creating installation directory at $INSTALL_DIR..."
+  mkdir -p "$INSTALL_DIR"
+  cd "$INSTALL_DIR" || return 1
+
+  output "Downloading docker-compose.example.yml..."
+  if ! curl -fsSL -o docker-compose.yml "https://raw.githubusercontent.com/blueprintframework/hydrodactyl/main/docker-compose.example.yml"; then
+    error "Failed to download docker-compose.yml"
+    exit 1
+  fi
+
+  output "Configuring docker-compose.yml..."
+  local app_url="http://$PANEL_FQDN"
+  [ "$CONFIGURE_LETSENCRYPT" == true ] && app_url="https://$PANEL_FQDN"
+
+  sed -i "s|MYSQL_PASSWORD: \"CHANGE_ME\"|MYSQL_PASSWORD: \"${DB_PASSWORD}\"|g" docker-compose.yml
+  sed -i "s|MYSQL_ROOT_PASSWORD: \"CHANGE_ME\"|MYSQL_ROOT_PASSWORD: \"${MYSQL_ROOT_PASSWORD}\"|g" docker-compose.yml
+  sed -i "s|APP_URL: \"CHANGE_ME\"|APP_URL: \"${app_url}\"|g" docker-compose.yml
+  sed -i "s|APP_TIMEZONE: \"UTC\"|APP_TIMEZONE: \"${PANEL_TIMEZONE}\"|g" docker-compose.yml
+  sed -i "s|APP_SERVICE_AUTHOR: \"CHANGE_ME\"|APP_SERVICE_AUTHOR: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
+
+  if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
+    sed -i "s|# LE_EMAIL: \"\"|LE_EMAIL: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
+  fi
+
+  success "Docker environment configured"
+}
+
+start_docker_panel() {
+  print_flame "Starting Panel via Docker"
+  cd "$INSTALL_DIR" || return 1
+
+  output "Pulling Docker images..."
+  docker compose pull
+
+  output "Starting containers..."
+  docker compose up -d
+
+  output "Waiting for database to be ready..."
+  # Wait for mysql to be ready
+  local max_attempts=30
+  local attempt=1
+  while [ $attempt -le $max_attempts ]; do
+    if docker compose exec -T database mysqladmin ping -h localhost --silent; then
+      break
+    fi
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+
+  output "Waiting for panel to initialize..."
+  sleep 10 # Give the panel entrypoint some time to migrate/setup
+
+  # Create admin user
+  output "Creating admin user..."
+  docker compose exec -T panel php artisan p:user:make -n \
+    --email="$PANEL_ADMIN_EMAIL" \
+    --username="$PANEL_ADMIN_USERNAME" \
+    --name-first="$PANEL_ADMIN_FIRSTNAME" \
+    --name-last="$PANEL_ADMIN_LASTNAME" \
+    --password="$PANEL_ADMIN_PASSWORD" \
+    --admin || true
+
+  # Setup database host for the panel
+  setup_database_host "$PANEL_FQDN"
+
+  # Generate API key for Wings setup
+  output "Generating Application API Key for node automation..."
+  PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" 2>/dev/null || echo "")
+  if [ -n "$PANEL_API_KEY" ]; then
+    success "API Key generated successfully"
+    # Save API key to credentials file for later use
+    mkdir -p /root/.config/Hydrodactyl
+    echo "api_key:${PANEL_API_KEY}" >> /root/.config/Hydrodactyl/db-credentials
+    chmod 600 /root/.config/Hydrodactyl/db-credentials
+  else
+    warning "Failed to generate API key - you will need to create one manually for Wings setup"
+  fi
+
+  # Create node in panel (uses API key if available)
+  create_node_in_panel
+
+  success "Panel started via Docker"
+}
+
+# ---------------- Docker Panel Installation ---------------- #
+
+setup_docker_environment() {
+  print_flame "Setting up Docker Environment"
+  
+  install_docker
+
+  output "Creating installation directory at $INSTALL_DIR..."
+  mkdir -p "$INSTALL_DIR"
+  cd "$INSTALL_DIR" || return 1
+
+  output "Downloading docker-compose.example.yml..."
+  if ! curl -fsSL -o docker-compose.yml "https://raw.githubusercontent.com/blueprintframework/hydrodactyl/main/docker-compose.example.yml"; then
+    error "Failed to download docker-compose.yml"
+    exit 1
+  fi
+
+  output "Configuring docker-compose.yml..."
+  local app_url="http://$PANEL_FQDN"
+  [ "$CONFIGURE_LETSENCRYPT" == true ] && app_url="https://$PANEL_FQDN"
+
+  # Expose database port to host so Wings can access it
+  sed -i '/image: mariadb:10.5/a\        ports:\n            - "3306:3306"' docker-compose.yml
+
+  sed -i "s|MYSQL_PASSWORD: \"CHANGE_ME\"|MYSQL_PASSWORD: \"${DB_PASSWORD}\"|g" docker-compose.yml
+  sed -i "s|MYSQL_ROOT_PASSWORD: \"CHANGE_ME\"|MYSQL_ROOT_PASSWORD: \"${MYSQL_ROOT_PASSWORD}\"|g" docker-compose.yml
+  sed -i "s|APP_URL: \"CHANGE_ME\"|APP_URL: \"${app_url}\"|g" docker-compose.yml
+  sed -i "s|APP_TIMEZONE: \"UTC\"|APP_TIMEZONE: \"${PANEL_TIMEZONE}\"|g" docker-compose.yml
+  sed -i "s|APP_SERVICE_AUTHOR: \"CHANGE_ME\"|APP_SERVICE_AUTHOR: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
+
+  if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
+    sed -i "s|# LE_EMAIL: \"\"|LE_EMAIL: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
+  fi
+
+  success "Docker environment configured"
+}
+
+start_docker_panel() {
+  print_flame "Starting Panel via Docker"
+  cd "$INSTALL_DIR" || return 1
+
+  output "Pulling Docker images..."
+  docker compose pull
+
+  output "Starting containers..."
+  docker compose up -d
+
+  output "Waiting for database to be ready..."
+  # Wait for mysql to be ready
+  local max_attempts=30
+  local attempt=1
+  while [ $attempt -le $max_attempts ]; do
+    if docker compose exec -T database mysqladmin ping -h localhost --silent; then
+      break
+    fi
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+
+  output "Waiting for panel to initialize..."
+  local panel_init_attempts=0
+  while ! docker compose logs panel | grep -q "Starting supervisord"; do
+    sleep 5
+    panel_init_attempts=$((panel_init_attempts + 1))
+    if [ $panel_init_attempts -ge 24 ]; then
+      warning "Panel initialization taking too long, proceeding anyway..."
+      break
+    fi
+  done
+
+  # Create admin user
+  output "Creating admin user..."
+  docker compose exec -T panel php artisan p:user:make -n \
+    --email="$PANEL_ADMIN_EMAIL" \
+    --username="$PANEL_ADMIN_USERNAME" \
+    --name-first="$PANEL_ADMIN_FIRSTNAME" \
+    --name-last="$PANEL_ADMIN_LASTNAME" \
+    --password="$PANEL_ADMIN_PASSWORD" \
+    --admin || true
+
+  # Setup database host for the panel
+  setup_database_host "$PANEL_FQDN"
+
+  # Generate API key for Wings setup
+  output "Generating Application API Key for node automation..."
+  PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" 2>/dev/null || echo "")
+  if [ -n "$PANEL_API_KEY" ]; then
+    success "API Key generated successfully"
+    # Save API key to credentials file for later use
+    mkdir -p /root/.config/Hydrodactyl
+    echo "api_key:${PANEL_API_KEY}" >> /root/.config/Hydrodactyl/db-credentials
+    chmod 600 /root/.config/Hydrodactyl/db-credentials
+  else
+    warning "Failed to generate API key - you will need to create one manually for Wings setup"
+  fi
+
+  # Create node in panel (uses API key if available)
+  create_node_in_panel
+
+  success "Panel started via Docker"
 }
