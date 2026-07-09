@@ -3,7 +3,7 @@
   
   <h1>💧 Hydrodactyl Installer 💧</h1>
   
-  <p><b>The official, zero-touch, one-line installation script for Hydrodactyl Panel and Wings.</b></p>
+  <p><b>The **unofficial**, zero-touch, one-line installation script for Hydrodactyl Panel and Wings.</b></p>
   
   <p>
     <img src="https://img.shields.io/badge/Version-2.0.1-00b4d8?style=for-the-badge&logo=github" alt="Version">
