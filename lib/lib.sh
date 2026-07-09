@@ -1906,6 +1906,8 @@ setup_database_host() {
     php_cmd="docker compose exec -T panel php artisan"
   fi
 
+  cd "$INSTALL_DIR" || return 1
+
   $mysql_cmd -e "
     CREATE USER IF NOT EXISTS '${db_host_user}'@'127.0.0.1' IDENTIFIED BY '${db_host_pass}';
     CREATE USER IF NOT EXISTS '${db_host_user}'@'%' IDENTIFIED BY '${db_host_pass}';
@@ -1916,8 +1918,6 @@ setup_database_host() {
 
   # Use Laravel's HostCreationService to create the database host
   output "Creating database host in panel..."
-
-  cd "$INSTALL_DIR" || return 1
 
   local tinker_output
   tinker_output=$($php_cmd tinker --execute="
@@ -3380,6 +3380,7 @@ save_wings_install_info() {
     echo ""
     echo "INSTALL_DATE=\"$(date)\""
     echo "INSTALL_TYPE=\"$install_type\""
+    [ -n "$WINGS_INSTALL_METHOD" ] && echo "WINGS_INSTALL_METHOD=\"$WINGS_INSTALL_METHOD\""
     [ -n "$WINGS_VERSION" ] && echo "WINGS_VERSION=\"$WINGS_VERSION\""
     [ -n "$WINGS_REPO" ] && echo "WINGS_REPO=\"$WINGS_REPO\""
     [ -n "$GITHUB_TOKEN" ] && echo "GITHUB_TOKEN=\"$GITHUB_TOKEN\""

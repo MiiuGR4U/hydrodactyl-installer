@@ -296,6 +296,17 @@ check_installations() {
     if [ -f "/etc/hydrodactyl/wings-version" ]; then
       WINGS_VERSION=$(cat "/etc/hydrodactyl/wings-version" 2>/dev/null || echo "")
     fi
+    if [ -f "/etc/hydrodactyl/install-info/wings-info" ]; then
+      local wings_method
+      wings_method=$(grep "^WINGS_INSTALL_METHOD=" "/etc/hydrodactyl/install-info/wings-info" 2>/dev/null | cut -d'"' -f2)
+      if [ -n "$wings_method" ]; then
+        WINGS_INSTALL_METHOD_DISPLAY="$wings_method"
+      else
+        WINGS_INSTALL_METHOD_DISPLAY="native"
+      fi
+    else
+      WINGS_INSTALL_METHOD_DISPLAY="native"
+    fi
   fi
 
   if systemctl is-enabled --quiet hydrodactyl-panel-auto-update.timer 2>/dev/null; then
@@ -331,7 +342,7 @@ show_welcome() {
   fi
 
   if [ "$WINGS_INSTALLED" == true ]; then
-    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings installed${WINGS_VERSION:+ ($WINGS_VERSION)} [${COLOR_CYAN}native${COLOR_NC}]"
+    echo -e "  ${COLOR_GREEN}✓${COLOR_NC} Wings installed${WINGS_VERSION:+ ($WINGS_VERSION)} [${COLOR_CYAN}${WINGS_INSTALL_METHOD_DISPLAY}${COLOR_NC}]"
   else
     echo -e "  ${COLOR_RED}✗${COLOR_NC} Wings not installed"
   fi

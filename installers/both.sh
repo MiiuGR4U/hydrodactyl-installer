@@ -156,7 +156,9 @@ check_existing() {
 
   if [ "$has_existing" == true ]; then
     echo ""
-    if ! bool_input "Continue with installation? This may overwrite existing files" "n"; then
+    local CONTINUE=""
+    bool_input CONTINUE "Continue with installation? This may overwrite existing files" "n"
+    if [ "$CONTINUE" != "y" ]; then
       error "Installation aborted."
       exit 1
     fi
