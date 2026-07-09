@@ -200,6 +200,7 @@ parse_arguments "$@"
 WINGS_INSTALL_DIR="/etc/pterodactyl"
 PANEL_CONFIG_DIR="${PANEL_CONFIG_DIR:-/etc/hydrodactyl}"
 WINGS_REPO="${WINGS_REPO:-pterodactyl/wings}"
+WINGS_RS="${WINGS_RS:-false}"
 
 # Panel connection
 PANEL_URL="${PANEL_URL:-}"
@@ -319,12 +320,29 @@ install_wings() {
     usermod -aG docker Hydrodactyl 2>/dev/null || true
   fi
 
-  # Determine architecture
-  local arch
-  arch=$(uname -m)
-  [[ $arch == x86_64 ]] && arch=amd64 || arch=arm64
-
-  local asset_name="wings_linux_${arch}"
+  # Determine correct asset name based on repo/variant
+  # Official pterodactyl/wings → wings_linux_amd64 / wings_linux_arm64
+  # calagopus/wings (Wings-RS) → wings-rs-x86_64-linux / wings-rs-aarch64-linux
+  local asset_name
+  if [ "$WINGS_RS" == "true" ] || [ "$WINGS_REPO" == "calagopus/wings" ]; then
+    # Wings-RS uses uname -m style arch names
+    local raw_arch
+    raw_arch=$(uname -m)
+    case "$raw_arch" in
+      x86_64)  asset_name="wings-rs-x86_64-linux" ;;
+      aarch64) asset_name="wings-rs-aarch64-linux" ;;
+      riscv64) asset_name="wings-rs-riscv64-linux" ;;
+      ppc64le) asset_name="wings-rs-ppc64le-linux" ;;
+      *) asset_name="wings-rs-x86_64-linux" ;;  # fallback
+    esac
+    output "Wings-RS variant detected — using asset: ${COLOR_BLUE_THEME}${asset_name}${COLOR_NC}"
+  else
+    # Official Wings uses Go-style names
+    local arch
+    arch=$(uname -m)
+    [[ $arch == x86_64 ]] && arch=amd64 || arch=arm64
+    asset_name="wings_linux_${arch}"
+  fi
 
   # Determine which release to fetch
   local target_release="$WINGS_RELEASE_VERSION"
@@ -792,6 +810,7 @@ install_auto_updater_if_requested() {
     print_flame "Installing Auto-Updater"
 
     export WINGS_REPO
+    export WINGS_RS
     export WINGS_REPO_PRIVATE
     export GITHUB_TOKEN
 

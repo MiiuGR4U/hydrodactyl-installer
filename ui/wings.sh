@@ -34,6 +34,7 @@ fi
 
 WINGS_REPO=""
 WINGS_REPO_PRIVATE=false
+WINGS_RS=false
 GITHUB_TOKEN=""
 WINGS_RELEASE_VERSION="${WINGS_RELEASE_VERSION:-latest}"
 PANEL_URL=""
@@ -53,59 +54,85 @@ WINGS_INSTALL_DIR="/etc/pterodactyl"
 
 configure_github_repository() {
   print_header
-  print_flame "GitHub Repository Configuration"
-
-  output "The default Wings repository is:"
-  output "  ${COLOR_BLUE_THEME}${DEFAULT_WINGS_REPO}${COLOR_NC}"
-  echo ""
-
-  local use_default=""
-  bool_input use_default "Use default repository?" "y"
-
-  if [ "$use_default" == "y" ]; then
-    WINGS_REPO="$DEFAULT_WINGS_REPO"
-  else
-    required_input WINGS_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
-
-    if [[ ! "$WINGS_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
-      error "Invalid repository format. Must be 'owner/repo'"
-      exit 1
-    fi
-  fi
+  print_flame "Wings Variant Selection"
 
   echo ""
-  output "Repository: ${COLOR_BLUE_THEME}${WINGS_REPO}${COLOR_NC}"
+  output "Choose which Wings daemon to install:"
+  echo ""
+  output "  [1] ${COLOR_BLUE_THEME}Wings (Official - Go)${COLOR_NC}"
+  output "      Repository: pterodactyl/wings"
+  output "      Stable, battle-tested, used by thousands of hosts worldwide."
+  echo ""
+  output "  [2] ${COLOR_BLUE_THEME}Wings-RS (Rust Fork)${COLOR_NC}"
+  output "      Repository: calagopus/wings"
+  output "      100% API-compatible Rust rewrite. Lower RAM usage, extra config options."
+  echo ""
+  output "  [3] ${COLOR_BLUE_THEME}Custom Repository${COLOR_NC}"
+  output "      Specify any GitHub fork (owner/repo)."
+  echo ""
 
-  # Only ask about private repo if not using default (default is public)
-  if [ "$use_default" == "n" ]; then
-    local is_private=""
-    bool_input is_private "Is this a private repository?" "n"
-    WINGS_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+  local variant_choice=""
+  while [[ "$variant_choice" != "1" && "$variant_choice" != "2" && "$variant_choice" != "3" ]]; do
+    read -rp "* Enter choice [1/2/3]: " variant_choice
+  done
 
-    if [ "$WINGS_REPO_PRIVATE" == "true" ]; then
+  case "$variant_choice" in
+    1)
+      WINGS_REPO="$DEFAULT_WINGS_REPO"
+      WINGS_RS=false
+      WINGS_REPO_PRIVATE="false"
       echo ""
-      output "A GitHub Personal Access Token is required for private repositories."
-      output "Create one at: $(hyperlink "https://github.com/settings/tokens")"
-      output "Required scopes: ${COLOR_BLUE_THEME}repo${COLOR_NC}"
+      success "Using official Wings (Go): ${WINGS_REPO}"
+      ;;
+    2)
+      WINGS_REPO="calagopus/wings"
+      WINGS_RS=true
+      WINGS_REPO_PRIVATE="false"
       echo ""
+      success "Using Wings-RS (Rust): ${WINGS_REPO}"
+      echo ""
+      info "Wings-RS uses the same /etc/pterodactyl/config.yml as official Wings."
+      info "It is a drop-in replacement. No extra config is required."
+      ;;
+    3)
+      echo ""
+      required_input WINGS_REPO "Enter the GitHub repository (format: owner/repo): " "Repository cannot be empty"
 
-      local token_valid=false
-      while [ "$token_valid" == false ]; do
-        password_input GITHUB_TOKEN "Enter your GitHub token: " "Token cannot be empty"
+      if [[ ! "$WINGS_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+        error "Invalid repository format. Must be 'owner/repo'"
+        exit 1
+      fi
 
-        output "Validating token..."
-        if validate_github_token "$GITHUB_TOKEN" "$WINGS_REPO"; then
-          success "Token validated successfully"
-          token_valid=true
-        else
-          warning "Token validation failed. Please check your token and try again."
-        fi
-      done
-    fi
-  else
-    WINGS_REPO_PRIVATE="false"
-  fi
+      WINGS_RS=false
 
+      local is_private=""
+      bool_input is_private "Is this a private repository?" "n"
+      WINGS_REPO_PRIVATE=$([ "$is_private" == "y" ] && echo "true" || echo "false")
+
+      if [ "$WINGS_REPO_PRIVATE" == "true" ]; then
+        echo ""
+        output "A GitHub Personal Access Token is required for private repositories."
+        output "Create one at: $(hyperlink "https://github.com/settings/tokens")"
+        output "Required scopes: ${COLOR_BLUE_THEME}repo${COLOR_NC}"
+        echo ""
+
+        local token_valid=false
+        while [ "$token_valid" == false ]; do
+          password_input GITHUB_TOKEN "Enter your GitHub token: " "Token cannot be empty"
+
+          output "Validating token..."
+          if validate_github_token "$GITHUB_TOKEN" "$WINGS_REPO"; then
+            success "Token validated successfully"
+            token_valid=true
+          else
+            warning "Token validation failed. Please check your token and try again."
+          fi
+        done
+      fi
+      ;;
+  esac
+
+  echo ""
   output "Checking for releases in repository..."
   if ! check_releases_exist "$WINGS_REPO" "$GITHUB_TOKEN"; then
     echo ""
@@ -356,6 +383,7 @@ show_summary() {
 export_variables() {
   export WINGS_REPO
   export WINGS_REPO_PRIVATE
+  export WINGS_RS
   export GITHUB_TOKEN
   export WINGS_RELEASE_VERSION
   export PANEL_URL
