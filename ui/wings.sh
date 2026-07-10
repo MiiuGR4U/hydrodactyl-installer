@@ -152,24 +152,6 @@ configure_release_version() {
   print_header
   print_flame "Release Version Selection"
 
-  local selected_version
-  selected_version=$(select_release_version "$WINGS_REPO" "Wings" "$GITHUB_TOKEN")
-
-  if [ -z "$selected_version" ]; then
-    error "Failed to select release version"
-    exit 1
-  fi
-
-  WINGS_RELEASE_VERSION="$selected_version"
-
-  if [ "$WINGS_RELEASE_VERSION" == "latest" ]; then
-    local latest
-    latest=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
-    success "Will install latest release: ${latest}"
-  else
-    success "Will install release: ${WINGS_RELEASE_VERSION}"
-  fi
-  
   echo ""
   output "How would you like to install Wings?"
   echo ""
@@ -185,8 +167,28 @@ configure_release_version() {
 
   if [ "$wings_method_choice" == "0" ]; then
     WINGS_INSTALL_METHOD="native"
+    
+    local selected_version
+    selected_version=$(select_release_version "$WINGS_REPO" "Wings" "$GITHUB_TOKEN")
+
+    if [ -z "$selected_version" ]; then
+      error "Failed to select release version"
+      exit 1
+    fi
+
+    WINGS_RELEASE_VERSION="$selected_version"
+
+    if [ "$WINGS_RELEASE_VERSION" == "latest" ]; then
+      local latest
+      latest=$(get_latest_release "$WINGS_REPO" "$GITHUB_TOKEN")
+      success "Will install latest release: ${latest}"
+    else
+      success "Will install release: ${WINGS_RELEASE_VERSION}"
+    fi
+
   elif [ "$wings_method_choice" == "1" ]; then
     WINGS_INSTALL_METHOD="docker"
+    WINGS_RELEASE_VERSION="latest"
     output "Will install Wings via Docker"
   fi
 }

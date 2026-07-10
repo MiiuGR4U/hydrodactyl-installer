@@ -16,7 +16,7 @@ set -e
 # ------------------ Version Configuration ----------------- #
 
 export GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
-export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v2.0.1}"
+export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v3.0.0}"
 export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer}"
 export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
@@ -152,7 +152,7 @@ print_header() {
   echo -e "${GRADIENT_7}    ║             ██║ ╚═╝ ██║██║██║╚██████╔╝╚██████╔╝██║  ██║     ██║╚██████╔╝             ║"
   echo -e "${GRADIENT_8}    ║             ╚═╝     ╚═╝╚═╝╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝     ╚═╝ ╚═════╝              ║"
   echo -e "${GRADIENT_9}    ║                                                                                      ║"
-  echo -e "${GRADIENT_10}    ║                           Hydrodactyl Installation Manager                           ║"
+  echo -e "${GRADIENT_10}    ║                             Panel Installation Manager                               ║"
   echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
   echo -e "    ${COLOR_BLUE_THEME}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_BLUE_THEME}|${COLOR_NC}  ${COLOR_BLUE_THEME}By:${COLOR_NC} MiiuGR4U"

@@ -1124,6 +1124,7 @@ run_calagopus_combined_installation() {
 
   if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
     print_flame "Starting Calagopus Combined Installation (Docker)"
+    setup_docker_environment
     mkdir -p "$INSTALL_DIR"
     cd "$INSTALL_DIR"
     

@@ -46,7 +46,7 @@ done
 ######################################################################################
 
 export GITHUB_SOURCE="${GITHUB_SOURCE:-main}"
-export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v2.0.1}"
+export SCRIPT_RELEASE="${SCRIPT_RELEASE:-v3.0.0}"
 export GITHUB_BASE_URL="${GITHUB_BASE_URL:-https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer}"
 
 LOG_PATH="/var/log/hydrodactyl-installer.log"

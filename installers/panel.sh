@@ -704,6 +704,7 @@ run_calagopus_panel_installation() {
 
   if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
     print_flame "Starting Calagopus Panel Installation (Docker)"
+    setup_docker_environment
     mkdir -p "$INSTALL_DIR"
     cd "$INSTALL_DIR"
     
