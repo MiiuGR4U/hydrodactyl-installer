@@ -621,12 +621,29 @@ install_wings_daemon() {
     usermod -aG docker Hydrodactyl 2>/dev/null || true
   fi
 
-  # Determine architecture
-  local arch
-  arch=$(uname -m)
-  [[ $arch == x86_64 ]] && arch=amd64 || arch=arm64
-
-  local asset_name="wings_linux_${arch}"
+  # Determine correct asset name based on repo/variant
+  # Official pterodactyl/wings → wings_linux_amd64 / wings_linux_arm64
+  # calagopus/wings (Wings-RS) → wings-rs-x86_64-linux / wings-rs-aarch64-linux
+  local asset_name
+  if [ "$WINGS_REPO" == "calagopus/wings" ]; then
+    # Wings-RS uses uname -m style arch names
+    local raw_arch
+    raw_arch=$(uname -m)
+    case "$raw_arch" in
+      x86_64)  asset_name="wings-rs-x86_64-linux" ;;
+      aarch64) asset_name="wings-rs-aarch64-linux" ;;
+      riscv64) asset_name="wings-rs-riscv64-linux" ;;
+      ppc64le) asset_name="wings-rs-ppc64le-linux" ;;
+      *) asset_name="wings-rs-x86_64-linux" ;;  # fallback
+    esac
+    info "Wings-RS variant detected — using asset: ${asset_name}"
+  else
+    # Official Wings uses Go-style names
+    local arch
+    arch=$(uname -m)
+    [[ $arch == x86_64 ]] && arch=amd64 || arch=arm64
+    asset_name="wings_linux_${arch}"
+  fi
 
   # Get latest release
   output "Fetching latest Wings release..."

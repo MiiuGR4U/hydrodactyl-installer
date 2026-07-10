@@ -1,0 +1,87 @@
+#!/usr/bin/expect -f
+set timeout -1
+
+spawn bash -c "sudo su -c \"curl -sSL https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer/dev/install.sh -o /home/ubuntu/install.sh && GITHUB_SOURCE=dev GITHUB_BASE_URL=https://raw.githubusercontent.com/MiiuGR4U/hydrodactyl-installer bash /home/ubuntu/install.sh\""
+
+expect "Continue anyway? \\\[y/N\\\]:"
+send "y\r"
+
+expect "Select an option \\\[0-11\\\]:"
+send "2\r"
+
+expect "Use default repository? \\\[Y/n\\\] (default: y):"
+send "\r"
+
+expect "Select \\\[0-2\\\]:"
+send "2\r"
+
+expect "Enter the domain or IP address for your panel"
+send "172.26.199.98\r"
+
+expect "Would you like to use SSL/HTTPS? \\\[Y/n\\\] (default: y):"
+send "n\r"
+
+expect "Timezone \\\[UTC\\\]:"
+send "America/Sao_Paulo\r"
+
+expect "Admin email:"
+send "admin@hydrodactyl.local\r"
+
+expect "Admin username:"
+send "admin\r"
+
+expect "First name:"
+send "Admin\r"
+
+expect "Last name:"
+send "User\r"
+
+expect "Admin password:"
+send "Admin123!\r"
+
+expect "Confirm password:"
+send "Admin123!\r"
+
+expect "Use default repository? \\\[Y/n\\\] (default: y):"
+send "\r"
+
+expect "Select \\\[0-1\\\]:"
+send "0\r"
+
+expect "Node name \\\[local\\\]:"
+send "\r"
+
+expect "Node description \\\[Local Node\\\]:"
+send "\r"
+
+expect "Is this node behind a proxy"
+send "\r"
+
+expect "Install auto-updater for the panel?"
+send "\r"
+
+expect "Install auto-updater for Wings?"
+send "\r"
+
+expect "Create Minecraft server automatically?"
+send "\r"
+
+expect "Are you running on Oracle Cloud?"
+send "\r"
+
+expect "Automatically configure UFW firewall?"
+send "\r"
+
+expect "Proceed with installation of both Panel and Wings?"
+send "y\r"
+
+expect "Press Enter to view details..."
+send "\r"
+
+expect "Press Enter to return to the menu..."
+send "\r"
+
+expect "Select an option \\\[0-11\\\]:"
+send "11\r"
+
+expect eof

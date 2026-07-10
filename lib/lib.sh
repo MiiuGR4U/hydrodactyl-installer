@@ -1908,19 +1908,82 @@ setup_database_host() {
 
   cd "$INSTALL_DIR" || return 1
 
-  $mysql_cmd -e "
+  # Create the database host user with full privileges
+  local create_user_output
+  create_user_output=$($mysql_cmd -e "
     CREATE USER IF NOT EXISTS '${db_host_user}'@'127.0.0.1' IDENTIFIED BY '${db_host_pass}';
     CREATE USER IF NOT EXISTS '${db_host_user}'@'%' IDENTIFIED BY '${db_host_pass}';
     GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'127.0.0.1' WITH GRANT OPTION;
     GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'%' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
-  " 2>/dev/null || warning "Could not create database host user (may already exist)"
+  " 2>&1)
 
-  # Use Laravel's HostCreationService to create the database host
+  if [ $? -ne 0 ]; then
+    warning "Could not create database host user: $create_user_output"
+  else
+    success "Database host user created"
+  fi
+
+  # Create database host in panel
   output "Creating database host in panel..."
 
-  local tinker_output
-  tinker_output=$($php_cmd tinker --execute="
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    # For Docker installations, insert directly into the database.
+    # The HostCreationService tries to verify connectivity from inside the
+    # panel container to the DB using the external IP, which fails due to
+    # Docker network isolation. Direct insert bypasses this check.
+    # We encrypt the password using Laravel's encryption from inside the container.
+    local encrypted_pass
+    encrypted_pass=$($php_cmd tinker --execute="echo encrypt('${db_host_pass}');" 2>/dev/null | tail -1)
+
+    if [ -n "$encrypted_pass" ]; then
+      local insert_output
+      insert_output=$($mysql_cmd -D panel -e "
+        INSERT INTO database_hosts (name, host, port, username, password, max_databases, node_id, created_at, updated_at)
+        VALUES ('${db_host_name}', '${panel_fqdn}', ${db_host_port}, '${db_host_user}', '${encrypted_pass}', 0, NULL, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE host='${panel_fqdn}', updated_at=NOW();
+      " 2>&1)
+
+      if [ $? -eq 0 ]; then
+        success "Database host '${db_host_name}' configured successfully"
+      else
+        warning "Could not insert database host: $insert_output"
+        warning "You may need to create the database host manually in the panel"
+      fi
+    else
+      warning "Could not encrypt password, falling back to artisan method..."
+      # Fallback: try HostCreationService with 'database' as the connection host
+      local tinker_output
+      tinker_output=$($php_cmd tinker --execute="
+use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
+try {
+    app(HostCreationService::class)->handle([
+        'name' => '${db_host_name}',
+        'host' => 'database',
+        'port' => ${db_host_port},
+        'username' => '${db_host_user}',
+        'password' => '${db_host_pass}',
+    ]);
+    echo 'Database host created successfully';
+} catch (\\Exception \$e) {
+    echo 'Error: ' . \$e->getMessage();
+}
+" 2>&1)
+
+      if echo "$tinker_output" | grep -q "Database host created successfully"; then
+        # Update the host to use the external IP instead of 'database'
+        $mysql_cmd -D panel -e "UPDATE database_hosts SET host='${panel_fqdn}' WHERE host='database';" 2>/dev/null || true
+        success "Database host '${db_host_name}' configured successfully"
+      else
+        error "Could not create database host"
+        output "Error output: $tinker_output"
+        warning "You may need to create the database host manually in the panel"
+      fi
+    fi
+  else
+    # Native installation: use HostCreationService normally
+    local tinker_output
+    tinker_output=$($php_cmd tinker --execute="
 use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
 try {
     app(HostCreationService::class)->handle([
@@ -1936,12 +1999,13 @@ try {
 }
 " 2>&1)
 
-  if echo "$tinker_output" | grep -q "Database host created successfully"; then
-    success "Database host '${db_host_name}' configured successfully"
-  else
-    error "Could not create database host"
-    output "Error output: $tinker_output"
-    warning "You may need to create the database host manually in the panel"
+    if echo "$tinker_output" | grep -q "Database host created successfully"; then
+      success "Database host '${db_host_name}' configured successfully"
+    else
+      error "Could not create database host"
+      output "Error output: $tinker_output"
+      warning "You may need to create the database host manually in the panel"
+    fi
   fi
 }
 
@@ -4111,97 +4175,6 @@ create_node_in_panel() {
   output "Node ID: $NODE_ID"
 
   success "Node created in panel (ID: ${NODE_ID})"
-}
-
-# ---------------- Docker Panel Installation ---------------- #
-
-setup_docker_environment() {
-  print_flame "Setting up Docker Environment"
-  
-  install_docker
-
-  output "Creating installation directory at $INSTALL_DIR..."
-  mkdir -p "$INSTALL_DIR"
-  cd "$INSTALL_DIR" || return 1
-
-  output "Downloading docker-compose.example.yml..."
-  if ! curl -fsSL -o docker-compose.yml "https://raw.githubusercontent.com/blueprintframework/hydrodactyl/main/docker-compose.example.yml"; then
-    error "Failed to download docker-compose.yml"
-    exit 1
-  fi
-
-  output "Configuring docker-compose.yml..."
-  local app_url="http://$PANEL_FQDN"
-  [ "$CONFIGURE_LETSENCRYPT" == true ] && app_url="https://$PANEL_FQDN"
-
-  sed -i "s|MYSQL_PASSWORD: \"CHANGE_ME\"|MYSQL_PASSWORD: \"${DB_PASSWORD}\"|g" docker-compose.yml
-  sed -i "s|MYSQL_ROOT_PASSWORD: \"CHANGE_ME\"|MYSQL_ROOT_PASSWORD: \"${MYSQL_ROOT_PASSWORD}\"|g" docker-compose.yml
-  sed -i "s|APP_URL: \"CHANGE_ME\"|APP_URL: \"${app_url}\"|g" docker-compose.yml
-  sed -i "s|APP_TIMEZONE: \"UTC\"|APP_TIMEZONE: \"${PANEL_TIMEZONE}\"|g" docker-compose.yml
-  sed -i "s|APP_SERVICE_AUTHOR: \"CHANGE_ME\"|APP_SERVICE_AUTHOR: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
-
-  if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
-    sed -i "s|# LE_EMAIL: \"\"|LE_EMAIL: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
-  fi
-
-  success "Docker environment configured"
-}
-
-start_docker_panel() {
-  print_flame "Starting Panel via Docker"
-  cd "$INSTALL_DIR" || return 1
-
-  output "Pulling Docker images..."
-  docker compose pull
-
-  output "Starting containers..."
-  docker compose up -d
-
-  output "Waiting for database to be ready..."
-  # Wait for mysql to be ready
-  local max_attempts=30
-  local attempt=1
-  while [ $attempt -le $max_attempts ]; do
-    if docker compose exec -T database mysqladmin ping -h localhost --silent; then
-      break
-    fi
-    sleep 2
-    attempt=$((attempt + 1))
-  done
-
-  output "Waiting for panel to initialize..."
-  sleep 10 # Give the panel entrypoint some time to migrate/setup
-
-  # Create admin user
-  output "Creating admin user..."
-  docker compose exec -T panel php artisan p:user:make -n \
-    --email="$PANEL_ADMIN_EMAIL" \
-    --username="$PANEL_ADMIN_USERNAME" \
-    --name-first="$PANEL_ADMIN_FIRSTNAME" \
-    --name-last="$PANEL_ADMIN_LASTNAME" \
-    --password="$PANEL_ADMIN_PASSWORD" \
-    --admin || true
-
-  # Setup database host for the panel
-  setup_database_host "$PANEL_FQDN"
-
-  # Generate API key for Wings setup
-  output "Generating Application API Key for node automation..."
-  PANEL_API_KEY=$(generate_api_key "$INSTALL_DIR" 2>/dev/null || echo "")
-  if [ -n "$PANEL_API_KEY" ]; then
-    success "API Key generated successfully"
-    # Save API key to credentials file for later use
-    mkdir -p /root/.config/Hydrodactyl
-    echo "api_key:${PANEL_API_KEY}" >> /root/.config/Hydrodactyl/db-credentials
-    chmod 600 /root/.config/Hydrodactyl/db-credentials
-  else
-    warning "Failed to generate API key - you will need to create one manually for Wings setup"
-  fi
-
-  # Create node in panel (uses API key if available)
-  create_node_in_panel
-
-  success "Panel started via Docker"
 }
 
 # ---------------- Docker Panel Installation ---------------- #
