@@ -1910,15 +1910,13 @@ setup_database_host() {
 
   # Create the database host user with full privileges
   local create_user_output
-  create_user_output=$($mysql_cmd -e "
+  if ! create_user_output=$($mysql_cmd -e "
     CREATE USER IF NOT EXISTS '${db_host_user}'@'127.0.0.1' IDENTIFIED BY '${db_host_pass}';
     CREATE USER IF NOT EXISTS '${db_host_user}'@'%' IDENTIFIED BY '${db_host_pass}';
     GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'127.0.0.1' WITH GRANT OPTION;
     GRANT ALL PRIVILEGES ON *.* TO '${db_host_user}'@'%' WITH GRANT OPTION;
     FLUSH PRIVILEGES;
-  " 2>&1)
-
-  if [ $? -ne 0 ]; then
+  " 2>&1); then
     warning "Could not create database host user: $create_user_output"
   else
     success "Database host user created"
@@ -1934,27 +1932,25 @@ setup_database_host() {
     # Docker network isolation. Direct insert bypasses this check.
     # We encrypt the password using Laravel's encryption from inside the container.
     local encrypted_pass
-    encrypted_pass=$($php_cmd tinker --execute="echo encrypt('${db_host_pass}');" 2>/dev/null | tail -1)
+    encrypted_pass=$($php_cmd tinker --execute="echo encrypt('${db_host_pass}');" 2>/dev/null | tail -1) || true
 
     if [ -n "$encrypted_pass" ]; then
       local insert_output
-      insert_output=$($mysql_cmd -D panel -e "
+      if ! insert_output=$($mysql_cmd -D panel -e "
         INSERT INTO database_hosts (name, host, port, username, password, max_databases, node_id, created_at, updated_at)
         VALUES ('${db_host_name}', '${panel_fqdn}', ${db_host_port}, '${db_host_user}', '${encrypted_pass}', 0, NULL, NOW(), NOW())
         ON DUPLICATE KEY UPDATE host='${panel_fqdn}', updated_at=NOW();
-      " 2>&1)
-
-      if [ $? -eq 0 ]; then
-        success "Database host '${db_host_name}' configured successfully"
-      else
+      " 2>&1); then
         warning "Could not insert database host: $insert_output"
         warning "You may need to create the database host manually in the panel"
+      else
+        success "Database host '${db_host_name}' configured successfully"
       fi
     else
       warning "Could not encrypt password, falling back to artisan method..."
       # Fallback: try HostCreationService with 'database' as the connection host
       local tinker_output
-      tinker_output=$($php_cmd tinker --execute="
+      if ! tinker_output=$($php_cmd tinker --execute="
 use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
 try {
     app(HostCreationService::class)->handle([
@@ -1968,22 +1964,26 @@ try {
 } catch (\\Exception \$e) {
     echo 'Error: ' . \$e->getMessage();
 }
-" 2>&1)
-
-      if echo "$tinker_output" | grep -q "Database host created successfully"; then
-        # Update the host to use the external IP instead of 'database'
-        $mysql_cmd -D panel -e "UPDATE database_hosts SET host='${panel_fqdn}' WHERE host='database';" 2>/dev/null || true
-        success "Database host '${db_host_name}' configured successfully"
-      else
+" 2>&1); then
         error "Could not create database host"
         output "Error output: $tinker_output"
         warning "You may need to create the database host manually in the panel"
+      else
+        if echo "$tinker_output" | grep -q "Database host created successfully"; then
+          # Update the host to use the external IP instead of 'database'
+          $mysql_cmd -D panel -e "UPDATE database_hosts SET host='${panel_fqdn}' WHERE host='database';" 2>/dev/null || true
+          success "Database host '${db_host_name}' configured successfully"
+        else
+          error "Could not create database host"
+          output "Error output: $tinker_output"
+          warning "You may need to create the database host manually in the panel"
+        fi
       fi
     fi
   else
     # Native installation: use HostCreationService normally
     local tinker_output
-    tinker_output=$($php_cmd tinker --execute="
+    if ! tinker_output=$($php_cmd tinker --execute="
 use Pterodactyl\\Services\\Databases\\Hosts\\HostCreationService;
 try {
     app(HostCreationService::class)->handle([
@@ -1997,14 +1997,18 @@ try {
 } catch (\\Exception \$e) {
     echo 'Error: ' . \$e->getMessage();
 }
-" 2>&1)
-
-    if echo "$tinker_output" | grep -q "Database host created successfully"; then
-      success "Database host '${db_host_name}' configured successfully"
-    else
+" 2>&1); then
       error "Could not create database host"
       output "Error output: $tinker_output"
       warning "You may need to create the database host manually in the panel"
+    else
+      if echo "$tinker_output" | grep -q "Database host created successfully"; then
+        success "Database host '${db_host_name}' configured successfully"
+      else
+        error "Could not create database host"
+        output "Error output: $tinker_output"
+        warning "You may need to create the database host manually in the panel"
+      fi
     fi
   fi
 }
