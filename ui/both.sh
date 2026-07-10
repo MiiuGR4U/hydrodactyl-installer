@@ -376,6 +376,26 @@ configure_wings_settings() {
   fi
 
   echo ""
+  output "How would you like to install Wings?"
+  echo ""
+  output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Native: Install directly on the host system (recommended)"
+  output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Docker: Use docker-compose to run Wings in a container"
+  echo ""
+
+  local wings_method_choice=""
+  while [[ "$wings_method_choice" != "0" && "$wings_method_choice" != "1" ]]; do
+    echo -n "* Select [0-1]: "
+    read -r wings_method_choice
+  done
+
+  if [ "$wings_method_choice" == "0" ]; then
+    WINGS_INSTALL_METHOD="native"
+  elif [ "$wings_method_choice" == "1" ]; then
+    WINGS_INSTALL_METHOD="docker"
+    output "Will install Wings via Docker"
+  fi
+
+  echo ""
   print_flame "Wings Node Configuration"
   echo ""
 
@@ -541,6 +561,7 @@ export_variables() {
   export WINGS_REPO
   export WINGS_REPO_PRIVATE
   export GITHUB_TOKEN_WINGS
+  export WINGS_INSTALL_METHOD
   export WINGS_RELEASE_VERSION
   export NODE_NAME
   export NODE_DESCRIPTION

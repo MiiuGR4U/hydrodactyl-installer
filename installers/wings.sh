@@ -363,6 +363,38 @@ install_wings() {
 
   info "Installing release: $target_release"
 
+  # Skip downloading binary if installing via Docker
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    output "Configuring Wings for Docker installation..."
+    
+    local wings_image="ghcr.io/pterodactyl/wings:latest"
+    if [ "$WINGS_RS" == "true" ] || [ "$WINGS_REPO" == "calagopus/wings" ]; then
+      wings_image="ghcr.io/calagopus/wings:latest"
+    fi
+    
+    cat > "${WINGS_INSTALL_DIR}/docker-compose.yml" <<EOF
+services:
+  wings:
+    image: ${wings_image}
+    restart: always
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers/:/var/lib/docker/containers/
+      - ${WINGS_INSTALL_DIR}:/etc/pterodactyl
+      - /var/lib/pterodactyl:/var/lib/pterodactyl
+      - /var/log/pterodactyl:/var/log/pterodactyl
+      - /tmp/pterodactyl:/tmp/pterodactyl
+EOF
+    
+    mkdir -p /etc/hydrodactyl
+    echo "$target_release" > /etc/hydrodactyl/wings-version
+    chmod 644 /etc/hydrodactyl/wings-version
+    
+    success "Wings docker-compose.yml created"
+    return 0
+  fi
+
   # Download binary
   output "Downloading Wings binary..."
   if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/wings" "$GITHUB_TOKEN" "$target_release"; then
@@ -617,16 +649,27 @@ configure_wings() {
 
   # Configure Wings using the configure command
   # Note: Uses Panel API key, not node daemon token
-  # Run in a subshell to avoid changing the working directory of the caller
-  if ! (cd "${WINGS_INSTALL_DIR}" && wings configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then
-    error "Failed to configure Wings"
-    error ""
-    error "To manually configure later, run:"
-    error "  cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
-    error "    --panel-url '${panel_url}' \\"
-    error "    --token '<your-api-key>' \\"
-    error "    --node '${node_id}'"
-    return 1
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    local wings_image="ghcr.io/pterodactyl/wings:latest"
+    if [ "$WINGS_RS" == "true" ] || [ "$WINGS_REPO" == "calagopus/wings" ]; then
+      wings_image="ghcr.io/calagopus/wings:latest"
+    fi
+    if ! docker run --rm -v "${WINGS_INSTALL_DIR}:/etc/pterodactyl" "${wings_image}" configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"; then
+      error "Failed to configure Wings via Docker"
+      return 1
+    fi
+  else
+    # Run in a subshell to avoid changing the working directory of the caller
+    if ! (cd "${WINGS_INSTALL_DIR}" && wings configure --panel-url "${panel_url}" --token "${api_key}" --node "${node_id}"); then
+      error "Failed to configure Wings"
+      error ""
+      error "To manually configure later, run:"
+      error "  cd ${WINGS_INSTALL_DIR} && sudo wings configure \\"
+      error "    --panel-url '${panel_url}' \\"
+      error "    --token '<your-api-key>' \\"
+      error "    --node '${node_id}'"
+      return 1
+    fi
   fi
 
   output "wings configured successfully"
@@ -711,6 +754,11 @@ configure_wings() {
 }
 
 setup_systemd_service() {
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    output "Docker installation method selected - skipping systemd setup."
+    return 0
+  fi
+
   print_flame "Setting up Systemd Service"
 
   output "Setting up wings.service..."
@@ -728,6 +776,22 @@ setup_systemd_service() {
 
 start_wings() {
   print_flame "Starting Wings"
+
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    output "Starting Wings via Docker Compose..."
+    docker compose -f "${WINGS_INSTALL_DIR}/docker-compose.yml" up -d
+    
+    # Wait for container to start
+    sleep 3
+
+    if docker compose -f "${WINGS_INSTALL_DIR}/docker-compose.yml" ps | grep -q "Up"; then
+      success "Wings container is running"
+    else
+      warning "Wings container may not have started properly"
+      warning "Check logs with: docker compose -f ${WINGS_INSTALL_DIR}/docker-compose.yml logs"
+    fi
+    return 0
+  fi
 
   output "Starting Wings service..."
   systemctl restart wings
@@ -750,10 +814,18 @@ verify_connection() {
   sleep 5
 
   # Check if service is running
-  if ! systemctl is-active --quiet wings; then
-    warning "Wings service is not running"
-    warning "Check logs with: journalctl -u wings -f"
-    return 1
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    if ! docker compose -f "${WINGS_INSTALL_DIR}/docker-compose.yml" ps | grep -q "Up"; then
+      warning "Wings container is not running"
+      warning "Check logs with: docker compose -f ${WINGS_INSTALL_DIR}/docker-compose.yml logs"
+      return 1
+    fi
+  else
+    if ! systemctl is-active --quiet wings; then
+      warning "Wings service is not running"
+      warning "Check logs with: journalctl -u wings -f"
+      return 1
+    fi
   fi
 
   output "Checking connection to panel..."

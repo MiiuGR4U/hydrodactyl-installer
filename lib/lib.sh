@@ -3697,6 +3697,31 @@ check_panel_health() {
   fi
   output "✓ Panel directory exists"
 
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    if docker compose -f "$panel_dir/docker-compose.yml" ps | grep -q "Up"; then
+      output "✓ Docker compose stack is running"
+    else
+      warning "Docker compose stack is not running or partially down"
+      has_errors=true
+    fi
+    
+    # Check if artisan works inside container
+    if docker compose -f "$panel_dir/docker-compose.yml" exec -T panel php artisan --version >/dev/null 2>&1; then
+      output "✓ Panel container responding to artisan"
+    else
+      warning "Panel container is not responding to artisan properly"
+      has_errors=true
+    fi
+    
+    echo ""
+    if [ "$has_errors" == true ]; then
+      warning "Health check completed with warnings/errors"
+    else
+      success "Panel health check passed!"
+    fi
+    return 0
+  fi
+
   # Check artisan exists
   if [ ! -f "$panel_dir/artisan" ]; then
     error "artisan command not found"
@@ -3821,6 +3846,30 @@ check_wings_health() {
   echo ""
   output "${COLOR_BLUE_THEME}Wings Health Check${COLOR_NC}"
   echo ""
+
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    if docker compose -f "/etc/pterodactyl/docker-compose.yml" ps | grep -q "Up"; then
+      output "✓ Wings docker container is running"
+    else
+      warning "Wings docker container is not running"
+      has_errors=true
+    fi
+    
+    if [ -f "/etc/pterodactyl/config.yml" ]; then
+      output "✓ Wings config file exists"
+    else
+      warning "Wings config file not found"
+      has_errors=true
+    fi
+    
+    echo ""
+    if [ "$has_errors" == true ]; then
+      warning "Health check completed with warnings/errors"
+    else
+      success "Wings health check passed!"
+    fi
+    return 0
+  fi
 
   # Check binary exists
   if [ -f "/usr/local/bin/wings" ]; then
