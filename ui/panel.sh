@@ -55,7 +55,7 @@ SSL_KEY_PATH=""
 DB_HOST="127.0.0.1"
 DB_PORT="3306"
 DB_NAME="panel"
-DB_USER="hydrodactyl"
+DB_USER="panel"
 DB_PASSWORD=""
 
 # ------------------ Repository Configuration ----------------- #
@@ -64,7 +64,7 @@ configure_github_repository() {
   print_header
   print_flame "GitHub Repository Configuration"
 
-  output "The default Hydrodactyl Panel repository is:"
+  output "The default Panel repository is:"
   output "  ${COLOR_BLUE_THEME}${DEFAULT_PANEL_REPO}${COLOR_NC}"
   echo ""
 
@@ -278,7 +278,7 @@ configure_database() {
   fi
 
   required_input DB_NAME "Database name [panel]: " "" "panel"
-  required_input DB_USER "Database username [hydrodactyl]: " "" "hydrodactyl"
+  required_input DB_USER "Database username [panel]: " "" "panel"
   password_input DB_PASSWORD "Database password: " "Password cannot be empty"
 }
 
@@ -421,7 +421,7 @@ export_variables() {
 # ------------------ Main ----------------- #
 
 main() {
-  print_flame "Welcome to the Hydrodactyl Panel Installer"
+  print_flame "Welcome to the Panel Installer"
 
   configure_github_repository
   configure_installation_method

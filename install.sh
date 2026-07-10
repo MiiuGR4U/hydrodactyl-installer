@@ -152,7 +152,7 @@ print_header() {
   echo -e "${GRADIENT_7}    ║             ██║ ╚═╝ ██║██║██║╚██████╔╝╚██████╔╝██║  ██║     ██║╚██████╔╝             ║"
   echo -e "${GRADIENT_8}    ║             ╚═╝     ╚═╝╚═╝╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝     ╚═╝ ╚═════╝              ║"
   echo -e "${GRADIENT_9}    ║                                                                                      ║"
-  echo -e "${GRADIENT_10}    ║                           Hydrodactyl Installation Manager                           ║"
+  echo -e "${GRADIENT_10}    ║                             Panel Installation Manager                               ║"
   echo -e "${GRADIENT_11}    ╚══════════════════════════════════════════════════════════════════════════════════════╝"
   echo -e "${COLOR_NC}"
   echo -e "    ${COLOR_BLUE_THEME}Version:${COLOR_NC} ${SCRIPT_RELEASE}  ${COLOR_BLUE_THEME}|${COLOR_NC}  ${COLOR_BLUE_THEME}By:${COLOR_NC} MiiuGR4U"
@@ -470,6 +470,36 @@ run_both_updates() {
 
 # Show main menu
 show_menu() {
+  # Prompt for software suite
+  if [ -z "$SOFTWARE_SUITE" ]; then
+    print_header
+    echo ""
+    output "${COLOR_BLUE_THEME}Select Software Suite to Install:${COLOR_NC}"
+    echo ""
+    output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Hydrodactyl (PHP/MariaDB)"
+    output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Calagopus (Rust/PostgreSQL)"
+    echo ""
+    
+    local suite_choice=""
+    while true; do
+      echo -n "* Select an option [1-2]: "
+      read -r suite_choice
+      case "$suite_choice" in
+        1)
+          export SOFTWARE_SUITE="hydrodactyl"
+          break
+          ;;
+        2)
+          export SOFTWARE_SUITE="calagopus"
+          break
+          ;;
+        *)
+          echo -e "* ${COLOR_RED}Invalid option${COLOR_NC}"
+          ;;
+      esac
+    done
+  fi
+
   local choice=""
 
   while true; do
@@ -478,7 +508,7 @@ show_menu() {
     echo ""
     output "${COLOR_BLUE_THEME}What would you like to do?${COLOR_NC}"
     echo ""
-    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Install Hydrodactyl Panel"
+    output "[${COLOR_BLUE_THEME}0${COLOR_NC}] Install Panel"
     output "[${COLOR_BLUE_THEME}1${COLOR_NC}] Install Wings Daemon"
     output "[${COLOR_BLUE_THEME}2${COLOR_NC}] Install both Panel and Wings (same machine)"
     echo ""
@@ -486,9 +516,9 @@ show_menu() {
     # Update options - gray out if not installed
     local COLOR_DARK_GRAY='\033[90m'
     if [ "$PANEL_INSTALLED" == true ]; then
-      output "[${COLOR_BLUE_THEME}3${COLOR_NC}] Update Hydrodactyl Panel"
+      output "[${COLOR_BLUE_THEME}3${COLOR_NC}] Update Panel"
     else
-      echo -e "* [3] ${COLOR_DARK_GRAY}Update Hydrodactyl Panel (not installed)${COLOR_NC}"
+      echo -e "* [3] ${COLOR_DARK_GRAY}Update Panel (not installed)${COLOR_NC}"
     fi
 
     if [ "$WINGS_INSTALLED" == true ]; then
@@ -510,7 +540,7 @@ show_menu() {
     echo ""
     output "[${COLOR_BLUE_THEME}8${COLOR_NC}] Health Check"
     echo ""
-    output "[${COLOR_BLUE_THEME}9${COLOR_NC}] Uninstall Hydrodactyl / Wings"
+    output "[${COLOR_BLUE_THEME}9${COLOR_NC}] Uninstall Panel / Wings"
     echo ""
     output "[${COLOR_BLUE_THEME}10${COLOR_NC}] View Installation Information"
     echo ""

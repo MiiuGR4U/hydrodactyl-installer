@@ -910,7 +910,7 @@ install_auto_updaters() {
 
 # ---------------- Main ---------------- #
 
-main() {
+run_hydrodactyl_combined_installation() {
   print_header
   print_flame "Starting Combined Installation"
   output "This will install Hydrodactyl Panel and Wings on the same machine."
@@ -1116,4 +1116,109 @@ main() {
   check_both_health
 }
 
-main
+run_calagopus_combined_installation() {
+  print_header
+  print_flame "Starting Calagopus Combined (AIO) Installation"
+  
+  validate_configuration
+
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    print_flame "Starting Calagopus Combined Installation (Docker)"
+    mkdir -p "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+    
+    # Generate Calagopus docker-compose.yml with AIO support
+    cat > docker-compose.yml <<EOF
+services:
+  database:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: \${DB_USER}
+      POSTGRES_PASSWORD: \${DB_PASSWORD}
+      POSTGRES_DB: \${DB_NAME}
+    volumes:
+      - /var/lib/calagopus/database:/var/lib/postgresql/data
+  
+  cache:
+    image: valkey/valkey:latest
+    restart: always
+
+  panel:
+    image: ghcr.io/${PANEL_REPO}:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DATABASE_URL=postgres://\${DB_USER}:\${DB_PASSWORD}@database:5432/\${DB_NAME}
+      - REDIS_URL=redis://cache:6379
+      - APP_URL=http://\${PANEL_FQDN}
+    depends_on:
+      - database
+      - cache
+
+  wings:
+    image: ghcr.io/${WINGS_REPO}:latest
+    restart: always
+    ports:
+      - "8080:8080"
+      - "2022:2022"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/pterodactyl:/var/lib/pterodactyl
+      - /etc/pterodactyl:/etc/pterodactyl
+      - /tmp/pterodactyl:/tmp/pterodactyl
+EOF
+
+    output "Pulling Docker images..."
+    docker compose pull
+    output "Starting containers..."
+    docker compose up -d
+    
+    success "Calagopus Combined Docker installation complete!"
+  else
+    # Install Dependencies
+    print_flame "Installing PostgreSQL and Valkey (Dependencies)"
+    update_repos true
+    install_packages postgresql valkey-server nginx curl tar unzip git jq
+
+    output "Starting PostgreSQL and Valkey..."
+    systemctl enable --now postgresql valkey-server || true
+
+    # Download Panel AIO
+    print_flame "Downloading Calagopus AIO Binary"
+    mkdir -p "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+    local arch
+    arch=$(uname -m)
+    local bin_url="https://github.com/${PANEL_REPO}/releases/download/${PANEL_RELEASE_VERSION}/panel-rs-aio-${arch}-linux"
+    if [ "$PANEL_RELEASE_VERSION" == "latest" ]; then
+      bin_url="https://github.com/${PANEL_REPO}/releases/latest/download/panel-rs-aio-${arch}-linux"
+    fi
+    
+    output "Downloading from $bin_url ..."
+    if ! curl -L -o panel "$bin_url"; then
+      error "Failed to download Calagopus AIO binary"
+      exit 1
+    fi
+    chmod +x panel
+
+    output "Calagopus AIO binary downloaded to $INSTALL_DIR/panel"
+    
+    print_brake 70
+    echo ""
+    output "🎉 Calagopus AIO binary has been downloaded!"
+    output "Please follow the official Calagopus documentation to initialize the database and start the systemd service."
+  fi
+}
+
+main() {
+  if [ "$SOFTWARE_SUITE" == "calagopus" ]; then
+    run_calagopus_combined_installation "$@"
+  else
+    run_hydrodactyl_combined_installation "$@"
+  fi
+}
+
+main "$@"

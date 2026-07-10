@@ -24,8 +24,13 @@ export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
 # ------------------ Default Repositories ----------------- #
 
-export DEFAULT_PANEL_REPO="blueprintframework/hydrodactyl"
-export DEFAULT_WINGS_REPO="pterodactyl/wings"
+if [ "$SOFTWARE_SUITE" == "calagopus" ]; then
+  export DEFAULT_PANEL_REPO="calagopus/panel"
+  export DEFAULT_WINGS_REPO="calagopus/wings"
+else
+  export DEFAULT_PANEL_REPO="blueprintframework/hydrodactyl"
+  export DEFAULT_WINGS_REPO="pterodactyl/wings"
+fi
 
 # ------------------ Path Configuration ----------------- #
 

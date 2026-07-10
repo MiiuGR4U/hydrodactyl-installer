@@ -54,7 +54,7 @@ SSL_KEY_PATH=""
 DB_HOST="127.0.0.1"
 DB_PORT="3306"
 DB_NAME="panel"
-DB_USER="hydrodactyl"
+DB_USER="panel"
 DB_PASSWORD=""
 
 # Wings Configuration
@@ -72,7 +72,7 @@ configure_panel_repository() {
   print_header
   print_flame "Panel Repository Configuration"
 
-  output "The default Hydrodactyl Panel repository is:"
+  output "The default Panel repository is:"
   output "  ${COLOR_BLUE_THEME}${DEFAULT_PANEL_REPO}${COLOR_NC}"
   echo ""
 
@@ -577,7 +577,7 @@ export_variables() {
 # ------------------ Main ----------------- #
 
 main() {
-  print_flame "Welcome to the Hydrodactyl + Wings Combined Installer"
+  print_flame "Welcome to the Panel + Wings Combined Installer"
 
   configure_panel_repository
   configure_panel_settings

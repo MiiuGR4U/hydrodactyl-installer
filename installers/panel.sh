@@ -572,7 +572,7 @@ setup_auto_updater() {
 
 # ------------------ Main ----------------- #
 
-main() {
+run_hydrodactyl_panel_installation() {
   print_header
   print_flame "Starting Hydrodactyl Panel Installation"
 
@@ -694,6 +694,99 @@ main() {
   echo ""
   output "Running post-installation health check..."
   check_panel_health "$INSTALL_DIR"
+}
+
+run_calagopus_panel_installation() {
+  print_header
+  print_flame "Starting Calagopus Panel Installation"
+  
+  validate_configuration
+
+  if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
+    print_flame "Starting Calagopus Panel Installation (Docker)"
+    mkdir -p "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+    
+    # Generate Calagopus docker-compose.yml
+    cat > docker-compose.yml <<EOF
+services:
+  database:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: \${DB_USER}
+      POSTGRES_PASSWORD: \${DB_PASSWORD}
+      POSTGRES_DB: \${DB_NAME}
+    volumes:
+      - /var/lib/calagopus/database:/var/lib/postgresql/data
+  
+  cache:
+    image: valkey/valkey:latest
+    restart: always
+
+  panel:
+    image: ghcr.io/${PANEL_REPO}:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DATABASE_URL=postgres://\${DB_USER}:\${DB_PASSWORD}@database:5432/\${DB_NAME}
+      - REDIS_URL=redis://cache:6379
+      - APP_URL=http://\${PANEL_FQDN}
+    depends_on:
+      - database
+      - cache
+EOF
+
+    output "Pulling Docker images..."
+    docker compose pull
+    output "Starting containers..."
+    docker compose up -d
+    
+    success "Calagopus Panel Docker installation complete!"
+  else
+    # Install Dependencies
+    print_flame "Installing PostgreSQL and Valkey (Dependencies)"
+    update_repos true
+    install_packages postgresql valkey-server nginx curl tar unzip git jq
+
+    output "Starting PostgreSQL and Valkey..."
+    systemctl enable --now postgresql valkey-server || true
+
+    # Download Panel
+    print_flame "Downloading Calagopus Panel Binary"
+    mkdir -p "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+    local arch
+    arch=$(uname -m)
+    local bin_url="https://github.com/${PANEL_REPO}/releases/download/${PANEL_RELEASE_VERSION}/panel-rs-${arch}-linux"
+    if [ "$PANEL_RELEASE_VERSION" == "latest" ]; then
+      bin_url="https://github.com/${PANEL_REPO}/releases/latest/download/panel-rs-${arch}-linux"
+    fi
+    
+    output "Downloading from $bin_url ..."
+    if ! curl -L -o panel "$bin_url"; then
+      error "Failed to download Calagopus Panel binary"
+      exit 1
+    fi
+    chmod +x panel
+
+    output "Calagopus Panel binary downloaded to $INSTALL_DIR/panel"
+    
+    print_brake 70
+    echo ""
+    output "🎉 Calagopus Panel binary has been downloaded!"
+    output "Please follow the official Calagopus documentation to initialize the database and start the systemd service."
+  fi
+}
+
+main() {
+  if [ "$SOFTWARE_SUITE" == "calagopus" ]; then
+    run_calagopus_panel_installation "$@"
+  else
+    run_hydrodactyl_panel_installation "$@"
+  fi
 }
 
 main "$@"

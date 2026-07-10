@@ -239,7 +239,7 @@ configure_panel_connection() {
     return 0
   fi
 
-  output "Enter the URL of your Hydrodactyl Panel"
+  output "Enter the URL of your Panel"
   output "Example: ${COLOR_BLUE_THEME}https://panel.example.com${COLOR_NC}"
   echo ""
 
