@@ -657,19 +657,50 @@ install_wings_daemon() {
 
   info "Latest release: $latest_release"
 
-  # Download binary
-  output "Downloading Wings binary..."
-  if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/wings" "$GITHUB_TOKEN"; then
-    error "Failed to download Wings binary"
-    exit 1
+  # Skip downloading binary if installing via Docker
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    output "Configuring Wings for Docker installation..."
+    
+    local wings_image="ghcr.io/pterodactyl/wings:latest"
+    if [ "$WINGS_RS" == "true" ] || [ "$WINGS_REPO" == "calagopus/wings" ]; then
+      wings_image="ghcr.io/calagopus/wings:latest"
+    fi
+    
+    cat > "${WINGS_DIR}/docker-compose.yml" <<EOF
+services:
+  wings:
+    image: ${wings_image}
+    restart: always
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers/:/var/lib/docker/containers/
+      - ${WINGS_DIR}:/etc/pterodactyl
+      - /var/lib/pterodactyl:/var/lib/pterodactyl
+      - /var/log/pterodactyl:/var/log/pterodactyl
+      - /tmp/pterodactyl:/tmp/pterodactyl
+EOF
+    
+    mkdir -p /etc/hydrodactyl
+    echo "$latest_release" > /etc/hydrodactyl/wings-version
+    chmod 644 /etc/hydrodactyl/wings-version
+    
+    success "Wings docker-compose.yml created"
+  else
+    # Download binary
+    output "Downloading Wings binary..."
+    if ! download_release_asset "$WINGS_REPO" "$asset_name" "/usr/local/bin/wings" "$GITHUB_TOKEN"; then
+      error "Failed to download Wings binary"
+      exit 1
+    fi
+
+    chmod +x /usr/local/bin/wings
+
+    # Save version from GitHub release tag for auto-updater tracking
+    mkdir -p /etc/hydrodactyl
+    echo "$latest_release" > /etc/hydrodactyl/wings-version
+    chmod 644 /etc/hydrodactyl/wings-version
   fi
-
-  chmod +x /usr/local/bin/wings
-
-  # Save version from GitHub release tag for auto-updater tracking
-  mkdir -p /etc/hydrodactyl
-  echo "$latest_release" > /etc/hydrodactyl/wings-version
-  chmod 644 /etc/hydrodactyl/wings-version
 
   # Create Wings config directory
   output "Creating Wings config directory at ${WINGS_DIR}..."
@@ -697,11 +728,22 @@ install_wings_daemon() {
     rm -rf /etc/pterodactyl 2>/dev/null || true
     ln -s "${WINGS_DIR}" /etc/pterodactyl 2>/dev/null || true
   fi
-  cd "${WINGS_DIR}" && wings configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    local wings_image="ghcr.io/pterodactyl/wings:latest"
+    if [ "$WINGS_RS" == "true" ] || [ "$WINGS_REPO" == "calagopus/wings" ]; then
+      wings_image="ghcr.io/calagopus/wings:latest"
+    fi
+    if ! docker run --rm -v "${WINGS_DIR}:/etc/pterodactyl" "${wings_image}" configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"; then
+      error "Failed to configure Wings via Docker"
+      exit 1
+    fi
+  else
+    cd "${WINGS_DIR}" && wings configure --panel-url "${panel_url}" --token "${PANEL_API_KEY}" --node "${NODE_ID}"
 
-  if [ $? -ne 0 ]; then
-    error "Failed to configure Wings"
-    exit 1
+    if [ $? -ne 0 ]; then
+      error "Failed to configure Wings"
+      exit 1
+    fi
   fi
 
   output "DEBUG: wings configured successfully"
@@ -738,24 +780,38 @@ install_wings_daemon() {
   # Install rustic using shared function from lib.sh
   install_rustic
 
-  # Get systemd service
-  output "Setting up Wings service..."
-  if ! get_config "wings.service" "/etc/systemd/system/wings.service"; then
-    error "Failed to get Wings service file"
-    exit 1
-  fi
-
-  systemctl daemon-reload
-  systemctl enable wings
-  systemctl restart wings
-
-  # Wait for service to start
-  sleep 3
-
-  if systemctl is-active --quiet wings; then
-    success "Wings is running"
+  if [ "$WINGS_INSTALL_METHOD" == "docker" ]; then
+    output "Starting Wings via Docker Compose..."
+    docker compose -f "${WINGS_DIR}/docker-compose.yml" up -d
+    
+    # Wait for service to start
+    sleep 3
+    
+    if docker compose -f "${WINGS_DIR}/docker-compose.yml" ps | grep -q "Up"; then
+      success "Wings container is running"
+    else
+      warning "Wings container may not have started properly"
+    fi
   else
-    warning "Wings service may not have started properly"
+    # Get systemd service
+    output "Setting up Wings service..."
+    if ! get_config "wings.service" "/etc/systemd/system/wings.service"; then
+      error "Failed to get Wings service file"
+      exit 1
+    fi
+
+    systemctl daemon-reload
+    systemctl enable wings
+    systemctl restart wings
+
+    # Wait for service to start
+    sleep 3
+
+    if systemctl is-active --quiet wings; then
+      success "Wings is running"
+    else
+      warning "Wings service may not have started properly"
+    fi
   fi
 
   # Set proper ownership and permissions on Wings data directories (after service starts)

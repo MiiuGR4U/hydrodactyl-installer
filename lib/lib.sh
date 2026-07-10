@@ -665,7 +665,7 @@ invalid_ip() {
 
 gen_passwd() {
   local length=$1
-  local charset='A-Za-z0-9!@#$%^&*()_+'
+  local charset='A-Za-z0-9'
   tr -dc "$charset" < /dev/urandom | fold -w "$length" | head -n 1
 }
 
