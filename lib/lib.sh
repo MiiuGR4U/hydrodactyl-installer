@@ -1898,11 +1898,11 @@ setup_database_host() {
   # Create database user if it doesn't exist
   output "Creating database host user..."
   
-  local mysql_cmd="mysql -u root -p${MYSQL_ROOT_PASSWORD}"
+  local mysql_cmd="mysql -u root -p\"${MYSQL_ROOT_PASSWORD}\""
   local php_cmd="php artisan"
   
   if [ "$PANEL_INSTALL_METHOD" == "docker" ]; then
-    mysql_cmd="docker compose exec -T database mysql -u root -p${MYSQL_ROOT_PASSWORD}"
+    mysql_cmd="docker compose exec -T database mysql -u root -p\"${MYSQL_ROOT_PASSWORD}\""
     php_cmd="docker compose exec -T panel php artisan"
   fi
 
@@ -4205,14 +4205,32 @@ setup_docker_environment() {
   # Expose database port to host so Wings can access it
   sed -i '/image: mariadb:10.5/a\        ports:\n            - "3306:3306"' docker-compose.yml
 
-  sed -i "s|MYSQL_PASSWORD: \"CHANGE_ME\"|MYSQL_PASSWORD: \"${DB_PASSWORD}\"|g" docker-compose.yml
-  sed -i "s|MYSQL_ROOT_PASSWORD: \"CHANGE_ME\"|MYSQL_ROOT_PASSWORD: \"${MYSQL_ROOT_PASSWORD}\"|g" docker-compose.yml
+  # Escape passwords for sed (escape & and \ and |)
+  local safe_db_pass=$(echo "$DB_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
+  local safe_root_pass=$(echo "$MYSQL_ROOT_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
+
+  # Replace single quoted values used in the official docker-compose.example.yml
+  sed -i "s|MYSQL_PASSWORD: &db-password 'CHANGE_ME'|MYSQL_PASSWORD: \&db-password '${safe_db_pass}'|g" docker-compose.yml
+  sed -i "s|MYSQL_ROOT_PASSWORD: 'CHANGE_ME_TOO'|MYSQL_ROOT_PASSWORD: '${safe_root_pass}'|g" docker-compose.yml
+  
+  # Also handle double quotes just in case the upstream template changes
+  sed -i "s|MYSQL_PASSWORD: \"CHANGE_ME\"|MYSQL_PASSWORD: \"${safe_db_pass}\"|g" docker-compose.yml
+  sed -i "s|MYSQL_ROOT_PASSWORD: \"CHANGE_ME\"|MYSQL_ROOT_PASSWORD: \"${safe_root_pass}\"|g" docker-compose.yml
+  sed -i "s|MYSQL_ROOT_PASSWORD: \"CHANGE_ME_TOO\"|MYSQL_ROOT_PASSWORD: \"${safe_root_pass}\"|g" docker-compose.yml
+
   sed -i "s|APP_URL: \"CHANGE_ME\"|APP_URL: \"${app_url}\"|g" docker-compose.yml
+  # Some templates use single quotes for APP_URL too
+  sed -i "s|APP_URL: 'CHANGE_ME'|APP_URL: '${app_url}'|g" docker-compose.yml
+  
   sed -i "s|APP_TIMEZONE: \"UTC\"|APP_TIMEZONE: \"${PANEL_TIMEZONE}\"|g" docker-compose.yml
+  sed -i "s|APP_TIMEZONE: 'UTC'|APP_TIMEZONE: '${PANEL_TIMEZONE}'|g" docker-compose.yml
+  
   sed -i "s|APP_SERVICE_AUTHOR: \"CHANGE_ME\"|APP_SERVICE_AUTHOR: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
+  sed -i "s|APP_SERVICE_AUTHOR: 'CHANGE_ME'|APP_SERVICE_AUTHOR: '${PANEL_ADMIN_EMAIL}'|g" docker-compose.yml
 
   if [ "$CONFIGURE_LETSENCRYPT" == true ]; then
     sed -i "s|# LE_EMAIL: \"\"|LE_EMAIL: \"${PANEL_ADMIN_EMAIL}\"|g" docker-compose.yml
+    sed -i "s|# LE_EMAIL: ''|LE_EMAIL: '${PANEL_ADMIN_EMAIL}'|g" docker-compose.yml
   fi
 
   success "Docker environment configured"
